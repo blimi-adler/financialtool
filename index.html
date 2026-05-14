@@ -452,6 +452,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 </div>
 
 <script>
+const snData={};
 const steps={
   phase1:[
     {l:'Get QB access, save login to client sheet',n:''},
@@ -1175,7 +1176,10 @@ function initSnapshot(){
   var tab=document.getElementById('tab-snapshot');
   if(tab){
     tab.addEventListener('input',function(e){
-      if(e.target.dataset.snfield){snCalc();}
+      if(e.target.dataset.snfield){
+        snData[e.target.id]=e.target.value;
+        snCalc();
+      }
     });
   }
   snCalc();
