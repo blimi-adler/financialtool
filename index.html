@@ -187,9 +187,9 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
   <button class="tab" onclick="T('breakeven')">Break-even</button>
   <button class="tab" onclick="T('projections')">Projections</button>
   <button class="tab" onclick="T('cashflow')">Cash Flow</button>
-  <button class="tab" onclick="T('collections')">Collections</button>
   <button class="tab" onclick="T('issues')">Issues</button>
   <button class="tab" onclick="T('pricing')">Pricing</button>
+  <button class="tab" onclick="T('snapshot')">Snapshot</button>
   <button class="tab" onclick="T('dashboard')">Dashboard</button>
 </div>
 
@@ -219,7 +219,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 <div id="tab-breakeven" style="display:none">
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Inputs</div>
     <div class="ir"><label>Annual overhead (auto from overhead tab)</label><input type="number" placeholder="$" id="be_oh" oninput="beCalc()"></div>
-    <div class="ir"><label>Allowance for unexpected expenses</label><input type="number" placeholder="$" id="be_allow" oninput="beCalc()"></div>
+    <div class="ir"><label>Allowance for unexpected expenses (annual $)</label><input type="number" placeholder="$" id="be_allow" oninput="beCalc()"></div>
     <div class="ir"><label>Owner annual distribution</label><input type="number" placeholder="$" id="be_draw" oninput="beCalc()"></div>
     <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:6px;padding:10px 12px;margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -317,13 +317,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
     </div>
     <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Payee</th><th>Amount</th><th>Due</th><th>Type</th><th></th></tr></thead><tbody id="co-tb"></tbody></table></div>
   </div>
-  <div id="cf-summary"></div>
-  <div class="br"><button class="btn primary" onclick="T('collections')">Collections <i class="ti ti-arrow-right"></i></button></div>
-</div>
-
-<!-- COLLECTIONS -->
-<div id="tab-collections" style="display:none">
-  <div class="sec"><div class="stitle"><span class="stitle-bar"></span>AR Aging Tracker</div>
+  <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Accounts Receivable (AR Aging)</div>
     <div class="ar">
       <input type="text" placeholder="Customer" id="col_n" style="flex:1;min-width:120px">
       <input type="number" placeholder="Amount $" id="col_a" style="width:110px">
@@ -332,8 +326,9 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       <button class="btn" onclick="addCol()"><i class="ti ti-plus"></i> Add</button>
     </div>
     <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Customer</th><th>Amount</th><th>Age</th><th>Status</th><th></th></tr></thead><tbody id="col-tb"></tbody></table></div>
+    <div id="col-summary"></div>
   </div>
-  <div id="col-summary"></div>
+  <div id="cf-summary"></div>
   <div class="br"><button class="btn primary" onclick="T('issues')">Issues <i class="ti ti-arrow-right"></i></button></div>
 </div>
 
@@ -352,7 +347,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
   <div id="is-summary"></div>
   <div class="br">
     <button class="btn primary" onclick="T('pricing')">Pricing <i class="ti ti-arrow-right"></i></button>
-    <button class="btn" onclick="sendPrompt('Summarize all open QB issues and collections for my client and suggest next steps')"><i class="ti ti-file-text"></i> Summarize ↗</button>
+    <button class="btn" onclick="exportSummaryExcel()"><i class="ti ti-file-text"></i> Export Summary</button>
   </div>
 </div>
 
@@ -397,6 +392,55 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
     <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Cost</th><th>Price</th><th>Margin $</th><th>Margin %</th><th></th></tr></thead><tbody id="pkg-tb"></tbody></table></div>
   </div>
   <div class="br"><button class="btn primary" onclick="T('dashboard')">Dashboard <i class="ti ti-arrow-right"></i></button></div>
+</div>
+
+<!-- SNAPSHOT -->
+<div id="tab-snapshot" style="display:none">
+
+  <!-- Period Labels -->
+  <div class="sec">
+    <div class="stitle"><span class="stitle-bar"></span>Period Labels</div>
+    <div class="ir">
+      <label>Period 1 label</label>
+      <input type="text" placeholder="e.g. 2024" id="sn_p1" oninput="snCalc()" style="flex:1;min-width:0;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">
+    </div>
+    <div class="ir">
+      <label>Period 2 label</label>
+      <input type="text" placeholder="e.g. 2025" id="sn_p2" oninput="snCalc()" style="flex:1;min-width:0;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">
+    </div>
+  </div>
+
+  <!-- P&L -->
+  <div class="sec">
+    <div class="stitle"><span class="stitle-bar"></span>Profit & Loss</div>
+    <div id="sn-pl-table">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;padding:0 4px">
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Line Item</span>
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em" id="sn_lbl_p1_pl">Period 1</span>
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em" id="sn_lbl_p2_pl">Period 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Balance Sheet -->
+  <div class="sec" style="margin-top:16px">
+    <div class="stitle"><span class="stitle-bar"></span>Balance Sheet</div>
+    <div id="sn-bs-table">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;padding:0 4px">
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Line Item</span>
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em" id="sn_lbl_p1_bs">Period 1</span>
+        <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em" id="sn_lbl_p2_bs">Period 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis -->
+  <div id="sn-analysis"></div>
+
+  <div class="br">
+    <button class="btn primary" onclick="T('dashboard')">Dashboard <i class="ti ti-arrow-right"></i></button>
+    <button class="btn dark" onclick="exportSnapshotExcel()"><i class="ti ti-file-spreadsheet"></i> Export Snapshot</button>
+  </div>
 </div>
 
 <!-- DASHBOARD -->
@@ -459,13 +503,14 @@ function fD(n){if(n===null||n===undefined||isNaN(n))return'—';return'$'+Math.r
 function fP(n){if(n===null||isNaN(n))return'—';return(Math.round(n*10)/10)+'%';}
 
 function T(t){
-  ['checklist','overhead','breakeven','projections','cashflow','collections','issues','pricing','dashboard'].forEach(id=>{
+  ['checklist','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','dashboard'].forEach(id=>{
     document.getElementById('tab-'+id).style.display=id===t?'block':'none';
   });
   document.querySelectorAll('.tab').forEach((el,i)=>{
-    el.classList.toggle('active',['checklist','overhead','breakeven','projections','cashflow','collections','issues','pricing','dashboard'][i]===t);
+    el.classList.toggle('active',['checklist','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','dashboard'][i]===t);
   });
-  if(t==='overhead')renderOH();
+  if(t==='overhead')ohCalc();
+  if(t==='snapshot'){snCalc();}
   if(t==='breakeven')beCalc();
   if(t==='pricing')calcOHPerJob();
   if(t==='dashboard')renderDash();
@@ -659,19 +704,10 @@ function ohToggleExtraDetail(catId,idx){
 function ohCalc(){
   const total=ohGetTotal();
   // update category subtotals in headers
-  ohCats.forEach(cat=>{
-    const t=ohCatTotal(cat);
-    const spans=document.querySelectorAll('#oh-categories .stitle span[style*="margin-left:auto"]');
-    // re-render to update subtotals easily
-  });
-  // refresh stitle subtotals
-  ohCats.forEach((cat,ci)=>{
-    const t=ohCatTotal(cat);
-    const all=document.querySelectorAll('#oh-categories .sec');
-    if(all[ci]){
-      const span=all[ci].querySelector('.stitle span[style*="margin-left:auto"]');
-      if(span)span.textContent=t?fD(t):'';
-    }
+  // Update category subtotals
+  ohCats.forEach(function(cat){
+    const el=document.getElementById('cattot_'+cat.id);
+    if(el) el.textContent=ohCatTotal(cat)?fD(ohCatTotal(cat)):'';
   });
   if(!total){document.getElementById('oh-summary').innerHTML='';
     const beEl=document.getElementById('be_oh');if(beEl){beEl.value='';beCalc();}return;}
@@ -713,7 +749,7 @@ function calcGPM(){
 function beCalc(){
   const oh=g('be_oh'),allow=g('be_allow')||0,draw=g('be_draw')||0,gpm=g('be_gpm'),avgSale=g('be_avg_sale'),target=g('be_target')||0;
   if(!oh||!gpm){document.getElementById('be-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual overhead and gross margin % to calculate.</div>';return;}
-  const annOH=oh+(allow*12);
+  const annOH=oh+allow;
   const annTotal=annOH+draw;
   const totalBase=annTotal+target;
   const gpmDec=gpm/100;
@@ -889,7 +925,7 @@ function renderDash(){
   const gross=rev&&cogs?rev-cogs:null,grossPct=gross&&rev?gross/rev*100:null;
   const annOH=moOH*12;
   const net=gross?gross-annOH:null,netPct=net&&rev?net/rev*100:null;
-  const beAnn=beOh?beOh*12:annOH;
+  const beAnn=beOh?beOh:annOH;
   const breakEven=beGpm&&beGpm<100?beAnn/(beGpm/100):null;
   const tCC=ccL.reduce((a,c)=>a+c.b,0),tLn=lnL.reduce((a,l)=>a+l.b,0);
   const colTot=colL.reduce((a,c)=>a+c.a,0),col90=colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
@@ -943,8 +979,260 @@ function renderDash(){
       <div style="margin-top:8px"><div class="pbar" style="height:6px"><div class="pfill" style="width:${pct}%"></div></div></div>
     </div>
     <div class="br">
-      <button class="btn dark" onclick="sendPrompt('Generate a full financial summary for my client based on all the data entered in the financial tracker. Include key ratios, flags, pricing analysis, and recommendations.')"><i class="ti ti-file-text"></i> Generate Full Client Summary</button>
+      <button class="btn dark" onclick="exportSummaryExcel()"><i class="ti ti-file-text"></i> Export Client Summary</button>
     </div>`;}
+
+// ---- SNAPSHOT SYSTEM ----
+const snPL = [
+  {id:'sn_income',   label:'Total Income (Sales)',        bold:false},
+  {id:'sn_cogs',     label:'Cost of Sales',               bold:false},
+  {id:'sn_gp',       label:'Gross Profit',                bold:true, calc:true},
+  {id:'sn_payroll',  label:'Total Payroll (Wages)',        bold:false},
+  {id:'sn_ins',      label:'Total Insurance',             bold:false},
+  {id:'sn_office',   label:'Total Office Expenses',       bold:false},
+  {id:'sn_remoh',    label:'Remaining Overhead Cost',     bold:false},
+  {id:'sn_totexp',   label:'Total Expenses',              bold:true, calc:true},
+  {id:'sn_netprofit',label:'Net Profit',                  bold:true, calc:true},
+  {id:'sn_otherexp', label:'Total Other Expenses',        bold:false},
+];
+const snBS = [
+  {id:'sn_cash',     label:'Cash in Bank',                bold:false},
+  {id:'sn_currasset',label:'Current Assets',              bold:false},
+  {id:'sn_ar',       label:'Accounts Receivable',         bold:false},
+  {id:'sn_ap',       label:'Accounts Payable',            bold:false},
+  {id:'sn_currliab', label:'Current Liabilities',         bold:false},
+  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true},
+  {id:'sn_draw',     label:"Owner's Draw",               bold:false},
+  {id:'sn_equity',   label:'Equity (Capital & Reserves)', bold:true},
+];
+const snExt = [
+  {id:'sn_employees',label:'Number of Employees',         bold:false, noFmt:true},
+  {id:'sn_customers',label:'Number of Customers',         bold:false, noFmt:true},
+];
+
+function snPct(n,d){ return (d&&d!==0)?(Math.round(n/d*1000)/10)+'%':'—'; }
+function snRatio(n,d){ return (d&&d!==0)?Math.round(n/d*100)/100:'—'; }
+function snAvg(r,c){ return (r&&c&&c>0)?'$'+Math.round(r/c).toLocaleString():'—'; }
+function snRevEmp(r,e){ return (r&&e&&e>0)?'$'+Math.round(r/e).toLocaleString():'—'; }
+function snWC(ca,cl){ return (ca!==null&&cl!==null)?'$'+Math.round(ca-cl).toLocaleString():'—'; }
+function snFmt(n){ if(n===null||n===undefined||n===''||isNaN(n))return'—'; return '$'+parseFloat(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function snG(id,per){
+  var key=id+'_'+per;
+  if(snData[key]!==undefined&&snData[key]!=='') return parseFloat(snData[key]);
+  var el=document.getElementById(key);
+  return (el&&el.value!=='') ? parseFloat(el.value) : null;
+}
+
+function snCalcDerived(per){
+  var income  = snG('sn_income',per)||0;
+  var cogs    = snG('sn_cogs',per)||0;
+  var gp      = income-cogs;
+  var payroll = snG('sn_payroll',per)||0;
+  var ins     = snG('sn_ins',per)||0;
+  var office  = snG('sn_office',per)||0;
+  var remoh   = snG('sn_remoh',per)||0;
+  var otherexp= snG('sn_otherexp',per)||0;
+  var totexp  = payroll+ins+office+remoh+otherexp;
+  var net     = gp-totexp;
+  return {income,cogs,gp,payroll,ins,office,remoh,totexp,net,otherexp};
+}
+
+function snCalc(){
+  var p1=(document.getElementById('sn_p1')||{}).value||'Period 1';
+  var p2=(document.getElementById('sn_p2')||{}).value||'Period 2';
+  ['sn_lbl_p1_pl','sn_lbl_p1_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p1;});
+  ['sn_lbl_p2_pl','sn_lbl_p2_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p2;});
+  var d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
+  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net]};
+  Object.keys(calcMap).forEach(function(id){
+    ['p1','p2'].forEach(function(per,pi){
+      var el=document.getElementById('sncalc_'+id+'_'+per);
+      if(!el)return;
+      var v=calcMap[id][pi];
+      el.textContent=snFmt(v);
+      el.style.color=v>=0?'var(--green)':'var(--red)';
+    });
+  });
+  snUpdateRatios();
+}
+
+function snUpdateRatios(){
+  var wrap=document.getElementById('sn-ratios-inner');
+  if(!wrap)return;
+  var p1=(document.getElementById('sn_p1')||{}).value||'Period 1';
+  var p2=(document.getElementById('sn_p2')||{}).value||'Period 2';
+  var d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
+  var i1=snG('sn_income','p1'),i2=snG('sn_income','p2');
+  var ar1=snG('sn_ar','p1'),ar2=snG('sn_ar','p2');
+  var ca1=snG('sn_currasset','p1'),ca2=snG('sn_currasset','p2');
+  var cl1=snG('sn_currliab','p1'),cl2=snG('sn_currliab','p2');
+  var tl1=snG('sn_totliab','p1'),tl2=snG('sn_totliab','p2');
+  var eq1=snG('sn_equity','p1'),eq2=snG('sn_equity','p2');
+  var emp1=snG('sn_employees','p1'),emp2=snG('sn_employees','p2');
+  var cust1=snG('sn_customers','p1'),cust2=snG('sn_customers','p2');
+
+  var sections=[
+    {header:'P&L Analysis',rows:[
+      ['COGS to Sales %',snPct(d1.cogs,i1),snPct(d2.cogs,i2)],
+      ['Gross Profit Margin %',snPct(d1.gp,i1),snPct(d2.gp,i2)],
+      ['Payroll to Sales %',snPct(d1.payroll,i1),snPct(d2.payroll,i2)],
+      ['Overhead to Sales %',snPct(d1.remoh+d1.office+d1.ins,i1),snPct(d2.remoh+d2.office+d2.ins,i2)],
+      ['Net Profit Margin %',snPct(d1.net,i1),snPct(d2.net,i2)],
+    ]},
+    {header:'Operational Metrics',rows:[
+      ['Avg Sale per Customer',snAvg(i1,cust1),snAvg(i2,cust2)],
+      ['Revenue per Employee',snRevEmp(i1,emp1),snRevEmp(i2,emp2)],
+    ]},
+    {header:'Balance Sheet Analysis',rows:[
+      ['Working Capital',snWC(ca1,cl1),snWC(ca2,cl2)],
+      ['Current Ratio',snRatio(ca1,cl1),snRatio(ca2,cl2)],
+      ['Debt-to-Equity Ratio',snRatio(tl1,eq1),snRatio(tl2,eq2)],
+      ['A/R per Revenue',snPct(ar1,i1),snPct(ar2,i2)],
+    ]},
+  ];
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">';
+  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">Metric</div>';
+  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+p1+'</div>';
+  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+p2+'</div>';
+  sections.forEach(function(sec){
+    h+='<div style="grid-column:1/-1;padding:8px 4px 4px;font-family:var(--font-display);font-size:13px;letter-spacing:.06em;border-top:1px solid var(--gray-200);margin-top:4px">'+sec.header+'</div>';
+    sec.rows.forEach(function(r){
+      h+='<div style="font-size:12px;color:var(--gray-700);padding:5px 4px">'+r[0]+'</div>';
+      h+='<div style="font-size:12px;font-weight:600;color:var(--black);padding:5px 4px">'+r[1]+'</div>';
+      h+='<div style="font-size:12px;font-weight:600;color:var(--black);padding:5px 4px">'+r[2]+'</div>';
+    });
+  });
+  h+='</div>';
+  wrap.innerHTML=h;
+}
+
+function initSnapshot(){
+  var snPLDef=[
+    {id:'sn_income',label:'Total Income (Sales)',bold:false},
+    {id:'sn_cogs',label:'Cost of Sales',bold:false},
+    {id:'sn_gp',label:'Gross Profit',bold:true,calc:true},
+    {id:'sn_payroll',label:'Total Payroll (Wages)',bold:false},
+    {id:'sn_ins',label:'Total Insurance',bold:false},
+    {id:'sn_office',label:'Total Office Expenses',bold:false},
+    {id:'sn_remoh',label:'Remaining Overhead Cost',bold:false},
+    {id:'sn_totexp',label:'Total Expenses',bold:true,calc:true},
+    {id:'sn_netprofit',label:'Net Profit',bold:true,calc:true},
+    {id:'sn_otherexp',label:'Total Other Expenses',bold:false},
+  ];
+  var snBSDef=[
+    {id:'sn_cash',label:'Cash in Bank',bold:false},
+    {id:'sn_currasset',label:'Current Assets',bold:false},
+    {id:'sn_ar',label:'Accounts Receivable',bold:false},
+    {id:'sn_ap',label:'Accounts Payable',bold:false},
+    {id:'sn_currliab',label:'Current Liabilities',bold:false},
+    {id:'sn_totliab',label:'Total Liabilities / Debt',bold:true},
+    {id:'sn_draw',label:"Owner's Draw",bold:false},
+    {id:'sn_equity',label:'Equity (Capital & Reserves)',bold:true},
+  ];
+  var snExtDef=[
+    {id:'sn_employees',label:'Number of Employees'},
+    {id:'sn_customers',label:'Number of Customers'},
+  ];
+  function buildGrid(wrap,items,isBS){
+    if(!wrap)return;
+    var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;padding:0 4px">';
+    h+='<span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Line Item</span>';
+    h+='<span id="sn_lbl_p1_'+(isBS?'bs':'pl')+'" style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Period 1</span>';
+    h+='<span id="sn_lbl_p2_'+(isBS?'bs':'pl')+'" style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Period 2</span>';
+    h+='</div>';
+    items.forEach(function(item){
+      var bg=item.bold?'var(--black)':'var(--white)';
+      var fg=item.bold?'var(--white)':'var(--black)';
+      var fw=item.bold?'700':'400';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">';
+      h+='<div style="padding:6px 8px;background:'+bg+';border-radius:4px;font-size:12px;font-weight:'+fw+';color:'+fg+'">'+item.label+'</div>';
+      if(item.calc){
+        h+='<div id="sncalc_'+item.id+'_p1" style="padding:6px 8px;background:var(--gray-100);border-radius:4px;font-size:12px;font-weight:700;color:var(--green)">—</div>';
+        h+='<div id="sncalc_'+item.id+'_p2" style="padding:6px 8px;background:var(--gray-100);border-radius:4px;font-size:12px;font-weight:700;color:var(--green)">—</div>';
+      } else {
+        h+='<input type="number" placeholder="—" id="'+item.id+'_p1" data-snfield="1" style="width:100%;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+        h+='<input type="number" placeholder="—" id="'+item.id+'_p2" data-snfield="1" style="width:100%;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+      }
+      h+='</div>';
+    });
+    wrap.innerHTML=h;
+  }
+  buildGrid(document.getElementById('sn-pl-table'),snPLDef,false);
+  buildGrid(document.getElementById('sn-bs-table'),snBSDef,true);
+  var anaWrap=document.getElementById('sn-analysis');
+  if(anaWrap){
+    var h='<div class="card" style="margin-top:16px"><h3>Operational Inputs</h3>';
+    snExtDef.forEach(function(item){
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:center">';
+      h+='<div style="font-size:12px;color:var(--gray-700)">'+item.label+'</div>';
+      h+='<input type="number" placeholder="—" id="'+item.id+'_p1" data-snfield="1" style="border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+      h+='<input type="number" placeholder="—" id="'+item.id+'_p2" data-snfield="1" style="border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+      h+='</div>';
+    });
+    h+='</div><div id="sn-ratios" class="card" style="margin-top:8px"><h3>Analysis</h3><div id="sn-ratios-inner"></div></div>';
+    anaWrap.innerHTML=h;
+  }
+  var tab=document.getElementById('tab-snapshot');
+  if(tab){
+    tab.addEventListener('input',function(e){
+      if(e.target.dataset.snfield){snCalc();}
+    });
+  }
+  snCalc();
+}
+
+function exportSnapshotExcel(){
+  const clientName = document.getElementById('client_name').value.trim()||'Client';
+  const p1 = document.getElementById('sn_p1').value||'Period 1';
+  const p2 = document.getElementById('sn_p2').value||'Period 2';
+  const date = new Date().toISOString().slice(0,10);
+  const wb = XLSX.utils.book_new();
+  const d1=snCalcDerived('p1'), d2=snCalcDerived('p2');
+  const i1=snG('sn_income','p1'), i2=snG('sn_income','p2');
+  const ar1=snG('sn_ar','p1'), ar2=snG('sn_ar','p2');
+  const ca1=snG('sn_currasset','p1'), ca2=snG('sn_currasset','p2');
+  const cl1=snG('sn_currliab','p1'), cl2=snG('sn_currliab','p2');
+  const tl1=snG('sn_totliab','p1'), tl2=snG('sn_totliab','p2');
+  const eq1=snG('sn_equity','p1'), eq2=snG('sn_equity','p2');
+  const emp1=snG('sn_employees','p1'), emp2=snG('sn_employees','p2');
+  const cust1=snG('sn_customers','p1'), cust2=snG('sn_customers','p2');
+
+  const rows = [
+    [clientName+' — Financial Snapshot'],[],
+    ['PROFIT & LOSS','',p1,p2],
+    ['Total Income (Sales)','',d1.income||'',d2.income||''],
+    ['Cost of Sales','',d1.cogs||'',d2.cogs||''],
+    ['Gross Profit','',d1.gp,d2.gp],
+    ['Total Payroll','',d1.payroll||'',d2.payroll||''],
+    ['Total Insurance','',d1.ins||'',d2.ins||''],
+    ['Total Office Expenses','',d1.office||'',d2.office||''],
+    ['Remaining Overhead','',d1.remoh||'',d2.remoh||''],
+    ['Total Expenses','',d1.totexp,d2.totexp],
+    ['Net Profit','',d1.net,d2.net],
+    ['Total Other Expenses','',d1.otherexp||'',d2.otherexp||''],
+    [],
+    ['BALANCE SHEET','',p1,p2],
+  ];
+  snBS.forEach(function(item){ rows.push([item.label,'',snG(item.id,'p1')||'',snG(item.id,'p2')||'']); });
+  rows.push([]);
+  rows.push(['ANALYSIS','',p1,p2]);
+  rows.push(['COGS to Sales %','',snPct(d1.cogs,i1),snPct(d2.cogs,i2)]);
+  rows.push(['Gross Profit Margin %','',snPct(d1.gp,i1),snPct(d2.gp,i2)]);
+  rows.push(['Payroll to Sales %','',snPct(d1.payroll,i1),snPct(d2.payroll,i2)]);
+  rows.push(['Net Profit Margin %','',snPct(d1.net,i1),snPct(d2.net,i2)]);
+  rows.push(['Number of Employees','',emp1||'',emp2||'']);
+  rows.push(['Number of Customers','',cust1||'',cust2||'']);
+  rows.push(['Avg Sale per Customer','',i1&&cust1?Math.round(i1/cust1):'',i2&&cust2?Math.round(i2/cust2):'']);
+  rows.push(['Revenue per Employee','',i1&&emp1?Math.round(i1/emp1):'',i2&&emp2?Math.round(i2/emp2):'']);
+  rows.push(['Working Capital','',ca1&&cl1?ca1-cl1:'',ca2&&cl2?ca2-cl2:'']);
+  rows.push(['Current Ratio','',snRatio(ca1,cl1),snRatio(ca2,cl2)]);
+  rows.push(['Debt-to-Equity Ratio','',snRatio(tl1,eq1),snRatio(tl2,eq2)]);
+  rows.push(['A/R per Revenue','',snPct(ar1,i1),snPct(ar2,i2)]);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:35},{wch:4},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Financial Snapshot');
+  XLSX.writeFile(wb,'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Snapshot_'+date+'.xlsx');
+}
 
 function saveSession(){
   const clientName = document.getElementById('client_name').value.trim() || 'Client';
@@ -972,6 +1260,8 @@ function saveSession(){
 
   const data = {
     version: 1,
+    snData: Object.assign({}, snData),
+    snP1: getVal('sn_p1'), snP2: getVal('sn_p2'),
     savedAt: new Date().toISOString(),
     clientName,
     checklist: chk,
@@ -1047,6 +1337,8 @@ function loadSession(event){
       if(data.projections){
         if(data.projections.cogsMode) setCogsMode(data.projections.cogsMode);
         ['pr_rev','pr_cogs_val','pr_growth','pr_cash'].forEach(id=>setVal(id, data.projections[id]));
+        const prRevEl=document.getElementById('pr_rev');
+        if(prRevEl) delete prRevEl.dataset.manual;
         if(data.projections.pr_rev) prCalc();
       }
 
@@ -1073,6 +1365,18 @@ function loadSession(event){
         rPkg(); pxCalc(); calcOHPerJob();
       }
 
+      // Snapshot
+      if(data.snData){ Object.keys(data.snData).forEach(k=>{ snData[k]=data.snData[k]; }); }
+      if(data.snP1){ setVal('sn_p1',data.snP1); snData['sn_p1']=data.snP1; }
+      if(data.snP2){ setVal('sn_p2',data.snP2); snData['sn_p2']=data.snP2; }
+      // Rebuild snapshot DOM and restore field values
+      initSnapshot();
+      Object.keys(snData).forEach(function(k){
+        var el=document.getElementById(k);
+        if(el&&el.dataset&&el.dataset.snfield) el.value=snData[k]||'';
+      });
+      snCalc();
+
       // Notify
       const banner = document.createElement('div');
       banner.textContent = 'Session loaded: ' + (data.clientName||'Client');
@@ -1086,6 +1390,137 @@ function loadSession(event){
   };
   reader.readAsText(file);
   event.target.value = '';
+}
+
+function exportSummaryExcel(){
+  const clientName = document.getElementById('client_name').value.trim() || 'Client';
+  const date = new Date().toISOString().slice(0,10);
+  const wb = XLSX.utils.book_new();
+
+  const moOH = ohGetTotal();
+  const annOH = moOH * 12;
+  const rev = g('pr_rev');
+  const cogsRaw = g('pr_cogs_val');
+  const cogs = cogsRaw !== null ? (cogsMode === 'pct' ? (rev||0)*cogsRaw/100 : cogsRaw) : null;
+  const gross = rev && cogs !== null ? rev - cogs : null;
+  const grossPct = gross && rev ? gross/rev*100 : null;
+  const net = gross !== null ? gross - annOH : null;
+  const netPct = net !== null && rev ? net/rev*100 : null;
+  const beOh = g('be_oh'), beGpm = g('be_gpm');
+  const breakEven = beGpm && beGpm < 100 ? (beOh||annOH)/(beGpm/100) : null;
+  const tCC = ccL.reduce((a,c)=>a+c.b,0);
+  const tLn = lnL.reduce((a,l)=>a+l.b,0);
+  const colTot = colL.reduce((a,c)=>a+c.a,0);
+  const col90 = colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
+  const openIss = isL.filter(i=>i.st==='Open').length;
+  const hiIss = isL.filter(i=>i.pri==='High').length;
+  const tIn = ciL.reduce((a,c)=>a+c.a,0);
+  const tOut = coL.reduce((a,c)=>a+c.a,0);
+  const allCL = Object.values(chk).flat(), doneCL = allCL.filter(Boolean).length;
+  const r = (n) => n !== null && n !== undefined && !isNaN(n) ? Math.round(n) : '';
+  const rp = (n) => n !== null && n !== undefined && !isNaN(n) ? (Math.round(n*10)/10)+'%' : '';
+
+  // --- SUMMARY SHEET ---
+  const sumRows = [
+    [clientName + ' — Financial Health Summary'],
+    ['Generated: ' + date],
+    [],
+    ['FINANCIAL OVERVIEW','',''],
+    ['Metric','Value',''],
+    ['Annual Revenue Target', rev ? '$'+Math.round(rev).toLocaleString() : '—', ''],
+    ['Annual COGS', cogs ? '$'+Math.round(cogs).toLocaleString() : '—', ''],
+    ['Gross Profit', gross ? '$'+Math.round(gross).toLocaleString() : '—', ''],
+    ['Gross Margin %', rp(grossPct), ''],
+    ['Annual Overhead', '$'+Math.round(annOH).toLocaleString(), ''],
+    ['Net Profit', net !== null ? '$'+Math.round(net).toLocaleString() : '—', ''],
+    ['Net Margin %', rp(netPct), ''],
+    ['Break-even Revenue', breakEven ? '$'+Math.round(breakEven).toLocaleString() : '—', ''],
+    [],
+    ['CASH & DEBT','',''],
+    ['Cash in Bank', g('cf_cash') ? '$'+Math.round(g('cf_cash')).toLocaleString() : '—', ''],
+    ['Expected Cash In This Month', tIn ? '$'+Math.round(tIn).toLocaleString() : '—', ''],
+    ['Expected Cash Out This Month', tOut ? '$'+Math.round(tOut).toLocaleString() : '—', ''],
+    ['Net Cash Flow This Month', '$'+(Math.round(tIn-tOut)).toLocaleString(), ''],
+    ['Total Credit Card Balances', tCC ? '$'+Math.round(tCC).toLocaleString() : '—', ''],
+    ['Total Loan Balances', tLn ? '$'+Math.round(tLn).toLocaleString() : '—', ''],
+    [],
+    ['COLLECTIONS','',''],
+    ['Total AR Tracked', colTot ? '$'+Math.round(colTot).toLocaleString() : '—', ''],
+    ['AR 90+ Days', col90 ? '$'+Math.round(col90).toLocaleString() : '—', ''],
+    [],
+    ['QB ISSUES','',''],
+    ['Total Issues', isL.length, ''],
+    ['Open Issues', openIss, ''],
+    ['High Priority Issues', hiIss, ''],
+    ['Fixed Issues', isL.filter(i=>i.st==='Fixed').length, ''],
+    [],
+    ['CHECKLIST PROGRESS','',''],
+    ['Steps Complete', doneCL + ' / ' + allCL.length, ''],
+    [],
+    ['FLAGS','',''],
+  ];
+
+  // Flags
+  if(grossPct !== null && grossPct < 30) sumRows.push(['⚠ Low gross margin', rp(grossPct), '']);
+  if(net !== null && net < 0) sumRows.push(['✗ Operating at a loss', rp(netPct), '']);
+  if(net !== null && netPct >= 0 && netPct < 5) sumRows.push(['⚠ Thin net margin — review overhead', rp(netPct), '']);
+  if(net !== null && netPct > 15) sumRows.push(['✓ Healthy net margin', rp(netPct), '']);
+  if(col90 > 0) sumRows.push(['⚠ AR 90+ days outstanding', '$'+Math.round(col90).toLocaleString(), '']);
+  if(hiIss > 0) sumRows.push(['✗ High priority QB issues open', hiIss, '']);
+  if(tIn - tOut < 0 && (ciL.length || coL.length)) sumRows.push(['✗ Negative cash flow this month', '$'+(Math.round(tIn-tOut)).toLocaleString(), '']);
+
+  const sumWs = XLSX.utils.aoa_to_sheet(sumRows);
+  sumWs['!cols'] = [{wch:40},{wch:20},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, sumWs, 'Client Summary');
+
+  // --- OPEN ISSUES SHEET ---
+  const issRows = [
+    [clientName + ' — Open QB Issues'],
+    [],
+    ['Area','Issue','Priority','Status']
+  ];
+  isL.filter(i=>i.st!=='Fixed').forEach(s=>issRows.push([s.area, s.desc, s.pri, s.st]));
+  if(isL.filter(i=>i.st!=='Fixed').length === 0) issRows.push(['No open issues','','','']);
+  const issWs = XLSX.utils.aoa_to_sheet(issRows);
+  issWs['!cols'] = [{wch:20},{wch:45},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, issWs, 'Open Issues');
+
+  // --- COLLECTIONS SHEET ---
+  const colRows = [
+    [clientName + ' — Collections'],
+    [],
+    ['Customer','Amount','Age','Status']
+  ];
+  colL.forEach(c=>colRows.push([c.n, '$'+Math.round(c.a).toLocaleString(), c.age, c.st]));
+  if(!colL.length) colRows.push(['No accounts tracked','','','']);
+  const colWs = XLSX.utils.aoa_to_sheet(colRows);
+  colWs['!cols'] = [{wch:25},{wch:15},{wch:14},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, colWs, 'Collections');
+
+  // --- OVERHEAD DETAIL SHEET ---
+  const ohRows = [
+    [clientName + ' — Overhead Detail'],
+    [],
+    ['Category','Line Item','Monthly ($)','Annual ($)','Payee / Vendor','Notes']
+  ];
+  ohCats.forEach(cat=>{
+    cat.items.forEach(item=>{
+      const v = g(item.id)||0;
+      const payee = (document.getElementById('payee_'+item.id)||{}).value||'';
+      const notes = (document.getElementById('notes_'+item.id)||{}).value||'';
+      if(v||payee) ohRows.push([cat.label, item.label, v||'', v?v*12:'', payee, notes]);
+    });
+    ohExtra[cat.id].forEach(x=>{
+      if(x.amount||x.label) ohRows.push([cat.label, x.label||'(unlabeled)', x.amount||0, (x.amount||0)*12, x.payee||'', x.notes||'']);
+    });
+  });
+  ohRows.push(['','','','','','']);
+  ohRows.push(['TOTAL','', moOH, annOH,'','']);
+  const ohWs = XLSX.utils.aoa_to_sheet(ohRows);
+  ohWs['!cols'] = [{wch:22},{wch:28},{wch:14},{wch:14},{wch:22},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, ohWs, 'Overhead Detail');
+
+  XLSX.writeFile(wb, 'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Summary_'+date+'.xlsx');
 }
 
 function exportToExcel(){
@@ -1240,7 +1675,7 @@ function exportToExcel(){
   XLSX.writeFile(wb, 'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Financial_'+date+'.xlsx');
 }
 
-renderCL();renderOH();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();
+renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();
 </script>
 </body>
 </html>
