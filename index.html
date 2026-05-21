@@ -342,7 +342,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       <select id="is_st" style="width:110px"><option>Open</option><option>In progress</option><option>Fixed</option></select>
       <button class="btn" onclick="addIss()"><i class="ti ti-plus"></i> Add</button>
     </div>
-    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
   </div>
   <div id="is-summary"></div>
   <div class="br">
@@ -775,6 +775,7 @@ function beCalc(){
 }
 
 let cogsMode='dollar';
+const prMonthExtra = Array(12).fill(null);
 function setCogsMode(mode){
   cogsMode=mode;
   const db=document.getElementById('cogs_btn_dollar');
@@ -783,6 +784,53 @@ function setCogsMode(mode){
   else{pb.style.background='var(--black)';pb.style.color='var(--white)';db.style.background='var(--white)';db.style.color='var(--gray-500)';}
   document.getElementById('pr_cogs_val').placeholder=mode==='dollar'?'Annual $ amount':'% of revenue';
   prCalc();
+}
+let prExtraTimer=null;
+function prMonthExtraChange(i,val){
+  const v=parseFloat(val);
+  prMonthExtra[i]=isNaN(v)||val===''?null:v;
+  // update just this cell's border/bg without full re-render
+  const inp=document.getElementById('pr_extra_'+i);
+  if(inp){
+    inp.style.borderColor=prMonthExtra[i]?'var(--amber)':'var(--gray-200)';
+    inp.style.background=prMonthExtra[i]?'#fffbf0':'var(--gray-100)';
+  }
+  clearTimeout(prExtraTimer);
+  prExtraTimer=setTimeout(()=>{ prCalcSilent(); },600);
+}
+function prCalcSilent(){
+  // recalc numbers and update only the net profit + ending cash cells, no full re-render
+  const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
+  const moOH=ohGetTotal();
+  if(!rev)return;
+  const baseMonthly=rev/12;
+  let cogsRate=0;
+  if(cogsVal!==null){cogsRate=cogsMode==='pct'?cogsVal/100:(cogsVal/rev);}
+  const months=Array.from({length:12},(_,i)=>{
+    const moRev=baseMonthly*Math.pow(1+growth/100,i);
+    const moCogs=moRev*cogsRate;
+    const moGP=moRev-moCogs;
+    const extra=prMonthExtra[i]||0;
+    const moNet=moGP-moOH-extra;
+    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,extra};
+  });
+  let cash=startCash;
+  const gc=v=>v>=0?'var(--green)':'var(--red)';
+  months.forEach((m,i)=>{
+    const end=cash+m.net; cash=end;
+    const netEl=document.getElementById('pr_net_'+i);
+    const cashEl=document.getElementById('pr_cash_'+i);
+    if(netEl){netEl.textContent=fD(m.net);netEl.style.color=gc(m.net);}
+    if(cashEl){cashEl.textContent=fD(end);cashEl.style.color=gc(end);}
+  });
+  // update summary metrics
+  const totalRev=months.reduce((a,m)=>a+m.rev,0);
+  const totalGP=months.reduce((a,m)=>a+m.gp,0);
+  const totalNet=months.reduce((a,m)=>a+m.net,0);
+  const yearEndEl=document.getElementById('pr_yearend_cash');
+  if(yearEndEl) yearEndEl.textContent=fD(cash);
+  const totalNetEl=document.getElementById('pr_total_net');
+  if(totalNetEl) totalNetEl.textContent=fD(totalNet);
 }
 function prCalc(){
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
@@ -795,8 +843,9 @@ function prCalc(){
     const moRev=baseMonthly*Math.pow(1+growth/100,i);
     const moCogs=moRev*cogsRate;
     const moGP=moRev-moCogs;
-    const moNet=moGP-moOH;
-    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet};
+    const extra=prMonthExtra[i]||0;
+    const moNet=moGP-moOH-extra;
+    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,extra};
   });
   let cash=startCash;
   const cashFlow=months.map(m=>{const end=cash+m.net;const r={start:cash,net:m.net,end};cash=end;return r;});
@@ -804,16 +853,18 @@ function prCalc(){
   const gc=v=>v>=0?'var(--green)':'var(--red)';
   document.getElementById('proj-results').innerHTML=`
     <div class="card" style="margin-top:14px"><h3>12-Month Projection</h3>
+    <div style="font-size:11px;color:var(--gray-500);margin-bottom:8px">Enter any additional or fluctuating expenses per month in the <strong>+ Fluctuating</strong> column — these are added after overhead and reduce net profit.</div>
       <div style="overflow-x:auto">
-      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th><th>Net Profit</th><th>Ending Cash</th></tr></thead>
+      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th><th>+ Fluctuating</th><th>Net Profit</th><th>Ending Cash</th></tr></thead>
       <tbody>${months.map((m,i)=>`<tr>
         <td style="font-weight:600">${labels[i]}</td>
         <td>${fD(m.rev)}</td>
         <td style="color:var(--red)">${fD(m.cogs)}</td>
         <td style="color:${gc(m.gp)};font-weight:600">${fD(m.gp)}</td>
         <td style="color:var(--gray-700)">${fD(moOH)}</td>
-        <td style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
-        <td style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
+        <td><input type="number" id="pr_extra_${i}" placeholder="0" value="${m.extra?Math.round(m.extra):''}" oninput="prMonthExtraChange(${i},this.value)" style="width:90px;border:1.5px solid ${m.extra?'var(--amber)':'var(--gray-200)'};border-radius:4px;padding:3px 7px;font-size:11px;font-family:var(--font-body);background:${m.extra?'#fffbf0':'var(--gray-100)'};color:var(--black)"></td>
+        <td id="pr_net_${i}" style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
+        <td id="pr_cash_${i}" style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
       </tr>`).join('')}</tbody></table></div></div>
     <div class="grid4">
       <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(months.reduce((a,m)=>a+m.rev,0))}</div></div>
@@ -857,9 +908,22 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
     <div class="kv"><span class="kk">Accounts tracked</span><span class="kv2">${colL.length}</span></div>
   </div>`;}
 
-function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});document.getElementById('is_desc').value='';rIss();}
+function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st,notes:''});document.getElementById('is_desc').value='';rIss();}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
-function rIss(){const tb=document.getElementById('is-tb');if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues logged yet</td></tr>';return;}tb.innerHTML=isL.map((s,i)=>`<tr><td><span class="pill blue">${s.area}</span></td><td style="max-width:200px;font-size:12px">${s.desc}</td><td><span class="pill ${priC(s.pri)}">${s.pri}</span></td><td><span class="pill ${s.st==='Fixed'?'green':s.st==='In progress'?'amber':'red'}">${s.st}</span></td><td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td></tr>`).join('');
+function issUpdateSt(i,v){isL[i].st=v;rIss();}
+function issUpdateNotes(i,v){isL[i].notes=v;}
+function rIss(){const tb=document.getElementById('is-tb');if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="6">No issues logged yet</td></tr>';return;}tb.innerHTML=isL.map((s,i)=>`<tr>
+  <td><span class="pill blue">${s.area}</span></td>
+  <td style="max-width:180px;font-size:12px">${s.desc}</td>
+  <td><span class="pill ${priC(s.pri)}">${s.pri}</span></td>
+  <td><select onchange="issUpdateSt(${i},this.value)" style="border:1.5px solid var(--gray-200);border-radius:4px;padding:3px 6px;font-size:11px;font-family:var(--font-body);background:${s.st==='Fixed'?'var(--green-light)':s.st==='In progress'?'var(--amber-light)':'var(--red-light)'};color:${s.st==='Fixed'?'var(--green)':s.st==='In progress'?'var(--amber)':'var(--red-dark)'};cursor:pointer">
+    <option ${s.st==='Open'?'selected':''}>Open</option>
+    <option ${s.st==='In progress'?'selected':''}>In progress</option>
+    <option ${s.st==='Fixed'?'selected':''}>Fixed</option>
+  </select></td>
+  <td><input type="text" value="${(s.notes||'').replace(/"/g,'&quot;')}" placeholder="Add note…" oninput="issUpdateNotes(${i},this.value)" style="border:1.5px solid var(--gray-200);border-radius:4px;padding:3px 7px;font-size:11px;font-family:var(--font-body);background:var(--gray-100);color:var(--black);width:140px"></td>
+  <td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
+</tr>`).join('');
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
     <div class="kv"><span class="kk">Total issues</span><span class="kv2">${isL.length}</span></div>
@@ -1002,7 +1066,7 @@ const snBS = [
   {id:'sn_ar',       label:'Accounts Receivable',         bold:false},
   {id:'sn_ap',       label:'Accounts Payable',            bold:false},
   {id:'sn_currliab', label:'Current Liabilities',         bold:false},
-  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true},
+  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true, calc:true},
   {id:'sn_draw',     label:"Owner's Draw",               bold:false},
   {id:'sn_equity',   label:'Equity (Capital & Reserves)', bold:true},
 ];
@@ -1035,7 +1099,10 @@ function snCalcDerived(per){
   var otherexp= snG('sn_otherexp',per)||0;
   var totexp  = payroll+ins+office+remoh+otherexp;
   var net     = gp-totexp;
-  return {income,cogs,gp,payroll,ins,office,remoh,totexp,net,otherexp};
+  var ap      = snG('sn_ap',per)||0;
+  var currliab= snG('sn_currliab',per)||0;
+  var totliab = ap+currliab;
+  return {income,cogs,gp,payroll,ins,office,remoh,totexp,net,otherexp,ap,currliab,totliab};
 }
 
 function snCalc(){
@@ -1044,7 +1111,7 @@ function snCalc(){
   ['sn_lbl_p1_pl','sn_lbl_p1_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p1;});
   ['sn_lbl_p2_pl','sn_lbl_p2_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p2;});
   var d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
-  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net]};
+  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net],sn_totliab:[d1.totliab,d2.totliab]};
   Object.keys(calcMap).forEach(function(id){
     ['p1','p2'].forEach(function(per,pi){
       var el=document.getElementById('sncalc_'+id+'_'+per);
@@ -1278,7 +1345,8 @@ function saveSession(){
     },
     projections: {
       pr_rev: getVal('pr_rev'), pr_cogs_val: getVal('pr_cogs_val'),
-      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode
+      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode,
+      monthExtra: prMonthExtra.slice()
     },
     cashflow: {
       cf_cash: getVal('cf_cash'), ccL, lnL, ciL, coL
@@ -1341,6 +1409,11 @@ function loadSession(event){
       if(data.projections){
         if(data.projections.cogsMode) setCogsMode(data.projections.cogsMode);
         ['pr_rev','pr_cogs_val','pr_growth','pr_cash'].forEach(id=>setVal(id, data.projections[id]));
+        if(data.projections.monthExtra){
+          data.projections.monthExtra.forEach((v,i)=>{ prMonthExtra[i]=v; });
+        } else {
+          prMonthExtra.fill(null);
+        }
         const prRevEl=document.getElementById('pr_rev');
         if(prRevEl) delete prRevEl.dataset.manual;
         if(data.projections.pr_rev) prCalc();
@@ -1359,8 +1432,12 @@ function loadSession(event){
       // Collections
       if(data.collections){ colL.splice(0,colL.length,...data.collections); rCol(); }
 
-      // Issues
-      if(data.issues){ isL.splice(0,isL.length,...data.issues); rIss(); }
+      // Issues — normalize old files that lack notes field
+      if(data.issues){
+        const normalized=data.issues.map(s=>({area:s.area,desc:s.desc,pri:s.pri,st:s.st,notes:s.notes||''}));
+        isL.splice(0,isL.length,...normalized);
+        rIss();
+      }
 
       // Pricing
       if(data.pricing){
@@ -1389,7 +1466,8 @@ function loadSession(event){
       setTimeout(()=>banner.remove(), 3000);
 
     } catch(err) {
-      alert('Could not load file. Make sure it is a valid PivotYes session file.');
+      alert('Could not load file: ' + err.message + '\n\nMake sure it is a valid PivotYes session JSON file.');
+      console.error('Load error:', err);
     }
   };
   reader.readAsText(file);
