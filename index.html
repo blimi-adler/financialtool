@@ -155,6 +155,8 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 .empty-state p{font-size:13px}
 
 .sec{margin-bottom:4px}
+
+.fmt-input { ime-mode: disabled; }
 </style>
 </head>
 <body>
@@ -342,7 +344,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       <select id="is_st" style="width:110px"><option>Open</option><option>In progress</option><option>Fixed</option></select>
       <button class="btn" onclick="addIss()"><i class="ti ti-plus"></i> Add</button>
     </div>
-    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
   </div>
   <div id="is-summary"></div>
   <div class="br">
@@ -453,6 +455,55 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 
 <script>
 const snData={};
+
+// ── Currency formatting for inputs ──
+function fmtNum(n){
+  if(n===null||n===undefined||n==='') return '';
+  var v=parseFloat(String(n).replace(/,/g,''));
+  if(isNaN(v)) return '';
+  return v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+function unFmt(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/,/g,'');
+}
+function attachCurrencyFormat(el){
+  if(!el||el.dataset.fmtAttached) return;
+  el.dataset.fmtAttached='1';
+  // Convert to text input — avoids browser number quirks
+  el.type='text';
+  el.inputMode='decimal';
+  el.addEventListener('focus',function(){
+    // Strip formatting so user can type freely
+    this.value=unFmt(this.value);
+  });
+  el.addEventListener('blur',function(){
+    // Re-format on exit
+    var v=parseFloat(unFmt(this.value));
+    this.value=isNaN(v)?'':fmtNum(v);
+    // Trigger any oninput handler manually
+    this.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  el.addEventListener('keypress',function(e){
+    // Allow digits, dot, minus, backspace, delete, arrows, tab
+    if(!/[\d.\-]/.test(e.key)&&!['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
+      e.preventDefault();
+    }
+  });
+}
+function attachAllCurrency(){
+  var skip=['be_gpm','be_cogs_pct','pr_growth','px_tgm','px_tnm','px_jobs','px_jobs_yr','sn_employees','sn_customers','be_num_clients','ln_r'];
+  // Target both type=number and type=text inputs with data-snfield
+  document.querySelectorAll('input[type="number"], input[data-snfield]').forEach(function(el){
+    var id=el.id||'';
+    var skipThis=skip.some(function(s){ return id===s||id.startsWith(s); });
+    // Skip text inputs that aren't numeric (customer names, payee, notes, dates)
+    var skipTypes=['col_n','co_n','ci_n','cc_n','ln_n','is_desc','is_area','sn_p1','sn_p2','client_name','pkg_n','px_ind_lbl','co_d','ci_d','cc_d','ln_p'];
+    var skipType=skipTypes.some(function(s){ return id===s; });
+    if(!skipThis&&!skipType) attachCurrencyFormat(el);
+  });
+}
+
 const steps={
   phase1:[
     {l:'Get QB access, save login to client sheet',n:''},
@@ -499,7 +550,7 @@ const chk={};
 ['phase1','phase2','phase3','phase4','phase5'].forEach(p=>{chk[p]=steps[p].map(()=>false);});
 const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[];
 
-function g(id){const v=parseFloat(document.getElementById(id).value);return isNaN(v)?null:v;}
+function g(id){const el=document.getElementById(id);if(!el)return null;const v=parseFloat(String(el.value).replace(/,/g,''));return isNaN(v)?null:v;}
 function fD(n){if(n===null||n===undefined||isNaN(n))return'—';return'$'+Math.round(n).toLocaleString();}
 function fP(n){if(n===null||isNaN(n))return'—';return(Math.round(n*10)/10)+'%';}
 
@@ -616,25 +667,6 @@ function renderOH(){
     html += '</div>';
   });
   wrap.innerHTML = html;
-
-  // Event delegation — avoids all inline onclick quoting
-  wrap.addEventListener('input', function(e){
-    if(e.target.dataset.nopropagate) ohCalc();
-  });
-  wrap.addEventListener('click', function(e){
-    // Toggle detail row
-    var row = e.target.closest('[data-toggle]');
-    if(row && !e.target.dataset.nopropagate){ ohToggleDetail(row.dataset.toggle); return; }
-    // Add line button
-    var addBtn = e.target.closest('.oh-add-btn');
-    if(addBtn){ ohAddLine(addBtn.dataset.cat); return; }
-    // Extra item delete
-    var delBtn = e.target.closest('.oh-del-btn');
-    if(delBtn){ ohRemoveLine(delBtn.dataset.cat, parseInt(delBtn.dataset.idx)); return; }
-    // Extra item toggle
-    var xToggle = e.target.closest('.oh-xtoggle');
-    if(xToggle){ ohToggleExtraDetail(xToggle.dataset.cat, parseInt(xToggle.dataset.idx)); return; }
-  });
 
   renderOHExtras();
   ohCalc();
@@ -775,7 +807,6 @@ function beCalc(){
 }
 
 let cogsMode='dollar';
-const prMonthExtra = Array(12).fill(null);
 function setCogsMode(mode){
   cogsMode=mode;
   const db=document.getElementById('cogs_btn_dollar');
@@ -784,53 +815,6 @@ function setCogsMode(mode){
   else{pb.style.background='var(--black)';pb.style.color='var(--white)';db.style.background='var(--white)';db.style.color='var(--gray-500)';}
   document.getElementById('pr_cogs_val').placeholder=mode==='dollar'?'Annual $ amount':'% of revenue';
   prCalc();
-}
-let prExtraTimer=null;
-function prMonthExtraChange(i,val){
-  const v=parseFloat(val);
-  prMonthExtra[i]=isNaN(v)||val===''?null:v;
-  // update just this cell's border/bg without full re-render
-  const inp=document.getElementById('pr_extra_'+i);
-  if(inp){
-    inp.style.borderColor=prMonthExtra[i]?'var(--amber)':'var(--gray-200)';
-    inp.style.background=prMonthExtra[i]?'#fffbf0':'var(--gray-100)';
-  }
-  clearTimeout(prExtraTimer);
-  prExtraTimer=setTimeout(()=>{ prCalcSilent(); },600);
-}
-function prCalcSilent(){
-  // recalc numbers and update only the net profit + ending cash cells, no full re-render
-  const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
-  const moOH=ohGetTotal();
-  if(!rev)return;
-  const baseMonthly=rev/12;
-  let cogsRate=0;
-  if(cogsVal!==null){cogsRate=cogsMode==='pct'?cogsVal/100:(cogsVal/rev);}
-  const months=Array.from({length:12},(_,i)=>{
-    const moRev=baseMonthly*Math.pow(1+growth/100,i);
-    const moCogs=moRev*cogsRate;
-    const moGP=moRev-moCogs;
-    const extra=prMonthExtra[i]||0;
-    const moNet=moGP-moOH-extra;
-    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,extra};
-  });
-  let cash=startCash;
-  const gc=v=>v>=0?'var(--green)':'var(--red)';
-  months.forEach((m,i)=>{
-    const end=cash+m.net; cash=end;
-    const netEl=document.getElementById('pr_net_'+i);
-    const cashEl=document.getElementById('pr_cash_'+i);
-    if(netEl){netEl.textContent=fD(m.net);netEl.style.color=gc(m.net);}
-    if(cashEl){cashEl.textContent=fD(end);cashEl.style.color=gc(end);}
-  });
-  // update summary metrics
-  const totalRev=months.reduce((a,m)=>a+m.rev,0);
-  const totalGP=months.reduce((a,m)=>a+m.gp,0);
-  const totalNet=months.reduce((a,m)=>a+m.net,0);
-  const yearEndEl=document.getElementById('pr_yearend_cash');
-  if(yearEndEl) yearEndEl.textContent=fD(cash);
-  const totalNetEl=document.getElementById('pr_total_net');
-  if(totalNetEl) totalNetEl.textContent=fD(totalNet);
 }
 function prCalc(){
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
@@ -843,9 +827,8 @@ function prCalc(){
     const moRev=baseMonthly*Math.pow(1+growth/100,i);
     const moCogs=moRev*cogsRate;
     const moGP=moRev-moCogs;
-    const extra=prMonthExtra[i]||0;
-    const moNet=moGP-moOH-extra;
-    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,extra};
+    const moNet=moGP-moOH;
+    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet};
   });
   let cash=startCash;
   const cashFlow=months.map(m=>{const end=cash+m.net;const r={start:cash,net:m.net,end};cash=end;return r;});
@@ -853,18 +836,16 @@ function prCalc(){
   const gc=v=>v>=0?'var(--green)':'var(--red)';
   document.getElementById('proj-results').innerHTML=`
     <div class="card" style="margin-top:14px"><h3>12-Month Projection</h3>
-    <div style="font-size:11px;color:var(--gray-500);margin-bottom:8px">Enter any additional or fluctuating expenses per month in the <strong>+ Fluctuating</strong> column — these are added after overhead and reduce net profit.</div>
       <div style="overflow-x:auto">
-      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th><th>+ Fluctuating</th><th>Net Profit</th><th>Ending Cash</th></tr></thead>
+      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th><th>Net Profit</th><th>Ending Cash</th></tr></thead>
       <tbody>${months.map((m,i)=>`<tr>
         <td style="font-weight:600">${labels[i]}</td>
         <td>${fD(m.rev)}</td>
         <td style="color:var(--red)">${fD(m.cogs)}</td>
         <td style="color:${gc(m.gp)};font-weight:600">${fD(m.gp)}</td>
         <td style="color:var(--gray-700)">${fD(moOH)}</td>
-        <td><input type="number" id="pr_extra_${i}" placeholder="0" value="${m.extra?Math.round(m.extra):''}" oninput="prMonthExtraChange(${i},this.value)" style="width:90px;border:1.5px solid ${m.extra?'var(--amber)':'var(--gray-200)'};border-radius:4px;padding:3px 7px;font-size:11px;font-family:var(--font-body);background:${m.extra?'#fffbf0':'var(--gray-100)'};color:var(--black)"></td>
-        <td id="pr_net_${i}" style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
-        <td id="pr_cash_${i}" style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
+        <td style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
+        <td style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
       </tr>`).join('')}</tbody></table></div></div>
     <div class="grid4">
       <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(months.reduce((a,m)=>a+m.rev,0))}</div></div>
@@ -908,22 +889,9 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
     <div class="kv"><span class="kk">Accounts tracked</span><span class="kv2">${colL.length}</span></div>
   </div>`;}
 
-function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st,notes:''});document.getElementById('is_desc').value='';rIss();}
+function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});document.getElementById('is_desc').value='';rIss();}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
-function issUpdateSt(i,v){isL[i].st=v;rIss();}
-function issUpdateNotes(i,v){isL[i].notes=v;}
-function rIss(){const tb=document.getElementById('is-tb');if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="6">No issues logged yet</td></tr>';return;}tb.innerHTML=isL.map((s,i)=>`<tr>
-  <td><span class="pill blue">${s.area}</span></td>
-  <td style="max-width:180px;font-size:12px">${s.desc}</td>
-  <td><span class="pill ${priC(s.pri)}">${s.pri}</span></td>
-  <td><select onchange="issUpdateSt(${i},this.value)" style="border:1.5px solid var(--gray-200);border-radius:4px;padding:3px 6px;font-size:11px;font-family:var(--font-body);background:${s.st==='Fixed'?'var(--green-light)':s.st==='In progress'?'var(--amber-light)':'var(--red-light)'};color:${s.st==='Fixed'?'var(--green)':s.st==='In progress'?'var(--amber)':'var(--red-dark)'};cursor:pointer">
-    <option ${s.st==='Open'?'selected':''}>Open</option>
-    <option ${s.st==='In progress'?'selected':''}>In progress</option>
-    <option ${s.st==='Fixed'?'selected':''}>Fixed</option>
-  </select></td>
-  <td><input type="text" value="${(s.notes||'').replace(/"/g,'&quot;')}" placeholder="Add note…" oninput="issUpdateNotes(${i},this.value)" style="border:1.5px solid var(--gray-200);border-radius:4px;padding:3px 7px;font-size:11px;font-family:var(--font-body);background:var(--gray-100);color:var(--black);width:140px"></td>
-  <td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
-</tr>`).join('');
+function rIss(){const tb=document.getElementById('is-tb');if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues logged yet</td></tr>';return;}tb.innerHTML=isL.map((s,i)=>`<tr><td><span class="pill blue">${s.area}</span></td><td style="max-width:200px;font-size:12px">${s.desc}</td><td><span class="pill ${priC(s.pri)}">${s.pri}</span></td><td><span class="pill ${s.st==='Fixed'?'green':s.st==='In progress'?'amber':'red'}">${s.st}</span></td><td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td></tr>`).join('');
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
     <div class="kv"><span class="kk">Total issues</span><span class="kv2">${isL.length}</span></div>
@@ -1066,7 +1034,7 @@ const snBS = [
   {id:'sn_ar',       label:'Accounts Receivable',         bold:false},
   {id:'sn_ap',       label:'Accounts Payable',            bold:false},
   {id:'sn_currliab', label:'Current Liabilities',         bold:false},
-  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true, calc:true},
+  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true},
   {id:'sn_draw',     label:"Owner's Draw",               bold:false},
   {id:'sn_equity',   label:'Equity (Capital & Reserves)', bold:true},
 ];
@@ -1099,10 +1067,7 @@ function snCalcDerived(per){
   var otherexp= snG('sn_otherexp',per)||0;
   var totexp  = payroll+ins+office+remoh+otherexp;
   var net     = gp-totexp;
-  var ap      = snG('sn_ap',per)||0;
-  var currliab= snG('sn_currliab',per)||0;
-  var totliab = ap+currliab;
-  return {income,cogs,gp,payroll,ins,office,remoh,totexp,net,otherexp,ap,currliab,totliab};
+  return {income,cogs,gp,payroll,ins,office,remoh,totexp,net,otherexp};
 }
 
 function snCalc(){
@@ -1111,7 +1076,7 @@ function snCalc(){
   ['sn_lbl_p1_pl','sn_lbl_p1_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p1;});
   ['sn_lbl_p2_pl','sn_lbl_p2_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p2;});
   var d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
-  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net],sn_totliab:[d1.totliab,d2.totliab]};
+  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net]};
   Object.keys(calcMap).forEach(function(id){
     ['p1','p2'].forEach(function(per,pi){
       var el=document.getElementById('sncalc_'+id+'_'+per);
@@ -1345,8 +1310,7 @@ function saveSession(){
     },
     projections: {
       pr_rev: getVal('pr_rev'), pr_cogs_val: getVal('pr_cogs_val'),
-      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode,
-      monthExtra: prMonthExtra.slice()
+      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode
     },
     cashflow: {
       cf_cash: getVal('cf_cash'), ccL, lnL, ciL, coL
@@ -1409,11 +1373,6 @@ function loadSession(event){
       if(data.projections){
         if(data.projections.cogsMode) setCogsMode(data.projections.cogsMode);
         ['pr_rev','pr_cogs_val','pr_growth','pr_cash'].forEach(id=>setVal(id, data.projections[id]));
-        if(data.projections.monthExtra){
-          data.projections.monthExtra.forEach((v,i)=>{ prMonthExtra[i]=v; });
-        } else {
-          prMonthExtra.fill(null);
-        }
         const prRevEl=document.getElementById('pr_rev');
         if(prRevEl) delete prRevEl.dataset.manual;
         if(data.projections.pr_rev) prCalc();
@@ -1432,12 +1391,8 @@ function loadSession(event){
       // Collections
       if(data.collections){ colL.splice(0,colL.length,...data.collections); rCol(); }
 
-      // Issues — normalize old files that lack notes field
-      if(data.issues){
-        const normalized=data.issues.map(s=>({area:s.area,desc:s.desc,pri:s.pri,st:s.st,notes:s.notes||''}));
-        isL.splice(0,isL.length,...normalized);
-        rIss();
-      }
+      // Issues
+      if(data.issues){ isL.splice(0,isL.length,...data.issues); rIss(); }
 
       // Pricing
       if(data.pricing){
@@ -1466,8 +1421,7 @@ function loadSession(event){
       setTimeout(()=>banner.remove(), 3000);
 
     } catch(err) {
-      alert('Could not load file: ' + err.message + '\n\nMake sure it is a valid PivotYes session JSON file.');
-      console.error('Load error:', err);
+      alert('Could not load file. Make sure it is a valid PivotYes session file.');
     }
   };
   reader.readAsText(file);
@@ -1758,6 +1712,43 @@ function exportToExcel(){
 }
 
 renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();
+attachAllCurrency();
+
+// Re-attach after dynamic rows are added
+const _origRCC=rCC,_origRLn=rLn,_origRCI=rCI,_origRCO=rCO,_origRCol=rCol,_origRIss=rIss,_origRPkg=rPkg,_origRenderOHExtras=renderOHExtras;
+rCC=function(){_origRCC();attachAllCurrency();};
+rLn=function(){_origRLn();attachAllCurrency();};
+rCI=function(){_origRCI();attachAllCurrency();};
+rCO=function(){_origRCO();attachAllCurrency();};
+rCol=function(){_origRCol();attachAllCurrency();};
+rIss=function(){_origRIss();attachAllCurrency();};
+rPkg=function(){_origRPkg();attachAllCurrency();};
+renderOHExtras=function(){_origRenderOHExtras();attachAllCurrency();};
+
+// Overhead event delegation — attached once after renderOH builds the DOM
+(function(){
+  var ohWrap = document.getElementById('oh-categories');
+  if(!ohWrap) return;
+  ohWrap.addEventListener('input', function(e){
+    ohCalc();
+  });
+  ohWrap.addEventListener('click', function(e){
+    // number input click — don't toggle
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    // chevron / row toggle
+    var row = e.target.closest('[data-toggle]');
+    if(row){ ohToggleDetail(row.dataset.toggle); return; }
+    // Add line button
+    var addBtn = e.target.closest('.oh-add-btn');
+    if(addBtn){ ohAddLine(addBtn.dataset.cat); return; }
+    // Extra delete
+    var delBtn = e.target.closest('.oh-del-btn');
+    if(delBtn){ ohRemoveLine(delBtn.dataset.cat, parseInt(delBtn.dataset.idx)); return; }
+    // Extra toggle
+    var xToggle = e.target.closest('.oh-xtoggle');
+    if(xToggle){ ohToggleExtraDetail(xToggle.dataset.cat, parseInt(xToggle.dataset.idx)); return; }
+  });
+})();
 </script>
 </body>
 </html>
