@@ -184,7 +184,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 </div>
 
 <div class="tabs-bar">
-  <button class="tab active" onclick="T('checklist')">Checklist</button>
+  <button class="tab active" onclick="T('dashboard')">Dashboard</button>
   <button class="tab" onclick="T('overhead')">Overhead</button>
   <button class="tab" onclick="T('breakeven')">Break-even</button>
   <button class="tab" onclick="T('projections')">Projections</button>
@@ -192,13 +192,13 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
   <button class="tab" onclick="T('issues')">Issues</button>
   <button class="tab" onclick="T('pricing')">Pricing</button>
   <button class="tab" onclick="T('snapshot')">Snapshot</button>
-  <button class="tab" onclick="T('dashboard')">Dashboard</button>
+  <button class="tab" onclick="T('checklist')">Checklist</button>
 </div>
 
 <div class="content">
 
 <!-- CHECKLIST -->
-<div id="tab-checklist">
+<div id="tab-checklist" style="display:none">
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Phase 1 — QB Review <span class="bdg" id="b1"></span></div><div id="phase1"></div></div>
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Phase 2 — Balance Sheet <span class="bdg" id="b2"></span></div><div id="phase2"></div></div>
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Phase 3 — P&L Analysis <span class="bdg" id="b3"></span></div><div id="phase3"></div></div>
@@ -344,6 +344,21 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       <select id="is_st" style="width:110px"><option>Open</option><option>In progress</option><option>Fixed</option></select>
       <button class="btn" onclick="addIss()"><i class="ti ti-plus"></i> Add</button>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px">
+      <select id="f_area" onchange="rIss()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body)">
+        <option value="">All Areas</option>
+        <option>Banking</option><option>Balance sheet</option><option>P&L - sales</option><option>P&L - expenses</option><option>COGS</option><option>AR</option><option>AP</option><option>Chart of accounts</option><option>Payroll</option><option>Other</option>
+      </select>
+      <select id="f_pri" onchange="rIss()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body)">
+        <option value="">All Priorities</option>
+        <option>High</option><option>Medium</option><option>Low</option>
+      </select>
+      <select id="f_st" onchange="rIss()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body)">
+        <option value="">All Statuses</option>
+        <option>Open</option><option>In progress</option><option>Fixed</option>
+      </select>
+      <button onclick="document.getElementById('f_area').value='';document.getElementById('f_pri').value='';document.getElementById('f_st').value='';rIss();" style="font-size:11px;padding:4px 10px;border:1.5px solid var(--gray-200);border-radius:5px;background:none;color:var(--gray-500);font-family:var(--font-body);cursor:pointer">Clear filters</button>
+    </div>
     <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
   </div>
   <div id="is-summary"></div>
@@ -446,7 +461,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 </div>
 
 <!-- DASHBOARD -->
-<div id="tab-dashboard" style="display:none">
+<div id="tab-dashboard">
   <div id="dash-content"><div class="empty-state"><i class="ti ti-chart-bar"></i><p>Fill in the tabs above to see your full financial dashboard.</p></div></div>
 </div>
 
@@ -559,7 +574,7 @@ function T(t){
     document.getElementById('tab-'+id).style.display=id===t?'block':'none';
   });
   document.querySelectorAll('.tab').forEach((el,i)=>{
-    el.classList.toggle('active',['checklist','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','dashboard'][i]===t);
+    el.classList.toggle('active',['dashboard','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','checklist'][i]===t);
   });
   if(t==='overhead')ohCalc();
   if(t==='snapshot'){snCalc();}
@@ -690,7 +705,7 @@ function ohRemoveLine(catId,idx){
 }
 
 function ohExtraChange(catId,idx,field,val){
-  ohExtra[catId][idx][field]=field==='amount'?(parseFloat(val)||null):val;
+  ohExtra[catId][idx][field]=field==='amount'?(parseFloat(String(val).replace(/,/g,''))||null):val;
   ohCalc();
 }
 
@@ -891,14 +906,33 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
 
 function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});document.getElementById('is_desc').value='';rIss();}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
-function rIss(){const tb=document.getElementById('is-tb');if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues logged yet</td></tr>';return;}tb.innerHTML=isL.map((s,i)=>`<tr><td><span class="pill blue">${s.area}</span></td><td style="max-width:200px;font-size:12px">${s.desc}</td><td><span class="pill ${priC(s.pri)}">${s.pri}</span></td><td><span class="pill ${s.st==='Fixed'?'green':s.st==='In progress'?'amber':'red'}">${s.st}</span></td><td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td></tr>`).join('');
+function rIss(){
+  const tb=document.getElementById('is-tb');
+  const fArea=(document.getElementById('f_area')||{}).value||'';
+  const fPri=(document.getElementById('f_pri')||{}).value||'';
+  const fSt=(document.getElementById('f_st')||{}).value||'';
+  const filtered=isL.filter((s,i)=>(!fArea||s.area===fArea)&&(!fPri||s.pri===fPri)&&(!fSt||s.st===fSt));
+  if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues logged yet</td></tr>';}
+  else if(!filtered.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues match the current filters</td></tr>';}
+  else{tb.innerHTML=filtered.map((s)=>{const i=isL.indexOf(s);return`<tr>
+    <td><span class="pill blue">${s.area}</span></td>
+    <td style="max-width:200px;font-size:12px">${s.desc}</td>
+    <td><span class="pill ${priC(s.pri)}">${s.pri}</span></td>
+    <td><select onchange="isL[${i}].st=this.value;rIss()" style="font-size:11px;padding:3px 6px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body);cursor:pointer">
+      <option${s.st==='Open'?' selected':''}>Open</option>
+      <option${s.st==='In progress'?' selected':''}>In progress</option>
+      <option${s.st==='Fixed'?' selected':''}>Fixed</option>
+    </select></td>
+    <td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
+  </tr>`;}).join('');}
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
     <div class="kv"><span class="kk">Total issues</span><span class="kv2">${isL.length}</span></div>
     <div class="kv"><span class="kk">Open</span><span class="kv2 ${open>0?'bad':''}">${open}</span></div>
     <div class="kv"><span class="kk">High priority</span><span class="kv2 ${hi>0?'bad':''}">${hi}</span></div>
     <div class="kv"><span class="kk">Fixed</span><span class="kv2 good">${fixed}</span></div>
-  </div>`;}
+  </div>`;
+}
 
 function calcOHPerJob(){
   const annOH = ohGetTotal() * 12;
@@ -1711,7 +1745,7 @@ function exportToExcel(){
   XLSX.writeFile(wb, 'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Financial_'+date+'.xlsx');
 }
 
-renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();
+renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();renderDash();
 attachAllCurrency();
 
 // Re-attach after dynamic rows are added
