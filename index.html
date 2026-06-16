@@ -271,6 +271,28 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
     <div class="ir"><label>Monthly growth rate %</label><input type="number" placeholder="e.g. 2" id="pr_growth" oninput="prCalc()"></div>
     <div class="ir"><label>Starting cash</label><input type="number" placeholder="$" id="pr_cash" oninput="prCalc()"></div>
   </div>
+  <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Revenue Adjustments</div>
+    <div style="font-size:11px;color:var(--gray-500);margin-bottom:8px">Add monthly revenue changes — new contracts, seasonal dips, lost accounts, etc.</div>
+    <div class="ar">
+      <select id="ra_mo" style="width:80px"><option>M1</option><option>M2</option><option>M3</option><option>M4</option><option>M5</option><option>M6</option><option>M7</option><option>M8</option><option>M9</option><option>M10</option><option>M11</option><option>M12</option></select>
+      <select id="ra_type" style="width:110px"><option value="ongoing">Ongoing</option><option value="once">One month only</option></select>
+      <input type="text" placeholder="Label (e.g. New contract starts)" id="ra_lbl" style="flex:1;min-width:140px">
+      <input type="number" placeholder="+/- $ per month" id="ra_amt" data-nofmt="1" style="width:140px">
+      <button class="btn" onclick="addRA()"><i class="ti ti-plus"></i> Add</button>
+    </div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>From</th><th>Type</th><th>Label</th><th>+/- Monthly Revenue</th><th></th></tr></thead><tbody id="ra-tb"></tbody></table></div>
+  </div>
+  <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Expense Adjustments</div>
+    <div style="font-size:11px;color:var(--gray-500);margin-bottom:8px">Equipment, hiring costs, repairs, new recurring expenses, or any cost change hitting a specific month.</div>
+    <div class="ar">
+      <select id="oe_mo" style="width:80px"><option>M1</option><option>M2</option><option>M3</option><option>M4</option><option>M5</option><option>M6</option><option>M7</option><option>M8</option><option>M9</option><option>M10</option><option>M11</option><option>M12</option></select>
+      <select id="oe_type" style="width:110px"><option value="once">One month only</option><option value="ongoing">Ongoing</option></select>
+      <input type="text" placeholder="Label (e.g. Equipment purchase)" id="oe_lbl" style="flex:1;min-width:140px">
+      <input type="number" placeholder="$ amount" id="oe_amt" data-nofmt="1" style="width:140px">
+      <button class="btn" onclick="addOE()"><i class="ti ti-plus"></i> Add</button>
+    </div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>From</th><th>Type</th><th>Label</th><th>Amount</th><th></th></tr></thead><tbody id="oe-tb"></tbody></table></div>
+  </div>
   <div id="proj-results"></div>
   <div class="br"><button class="btn primary" onclick="T('cashflow')">Cash Flow <i class="ti ti-arrow-right"></i></button></div>
 </div>
@@ -510,6 +532,7 @@ function attachAllCurrency(){
   var skip=['be_gpm','be_cogs_pct','pr_growth','px_tgm','px_tnm','px_jobs','px_jobs_yr','sn_employees','sn_customers','be_num_clients','ln_r'];
   // Target both type=number and type=text inputs with data-snfield
   document.querySelectorAll('input[type="number"], input[data-snfield]').forEach(function(el){
+    if(el.dataset.nofmt) return;
     var id=el.id||'';
     var skipThis=skip.some(function(s){ return id===s||id.startsWith(s); });
     // Skip text inputs that aren't numeric (customer names, payee, notes, dates)
@@ -563,7 +586,7 @@ const steps={
 };
 const chk={};
 ['phase1','phase2','phase3','phase4','phase5'].forEach(p=>{chk[p]=steps[p].map(()=>false);});
-const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[];
+const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[],raL=[],oeL=[];
 
 function g(id){const el=document.getElementById(id);if(!el)return null;const v=parseFloat(String(el.value).replace(/,/g,''));return isNaN(v)?null:v;}
 function fD(n){if(n===null||n===undefined||isNaN(n))return'—';return'$'+Math.round(n).toLocaleString();}
@@ -803,21 +826,28 @@ function beCalc(){
   const gpmDec=gpm/100;
   const annSalesReq=gpmDec>0?totalBase/gpmDec:null;
   const moSalesReq=annSalesReq?annSalesReq/12:null;
+  const netProfitPct=(target&&annSalesReq)?Math.round((target/annSalesReq)*100*10)/10:null;
   // Auto-fill projections revenue target if target net income was set
   const prRevEl=document.getElementById('pr_rev');
   if(annSalesReq&&target&&prRevEl&&!prRevEl.dataset.manual){prRevEl.value=Math.round(annSalesReq);prCalc();}
   const clientsNeeded=(moSalesReq&&avgSale&&avgSale>0)?moSalesReq/avgSale:null;
+  const hasTarget=target>0;
   document.getElementById('be-results').innerHTML=`
     <div class="grid4" style="margin-top:14px">
       <div class="met"><div class="ml">Annual Overhead</div><div class="mv">${fD(annOH)}</div><div class="ms">incl. allowance</div></div>
       <div class="met"><div class="ml">Annual Base Needed</div><div class="mv">${fD(annTotal)}</div><div class="ms">overhead + draw</div></div>
-      <div class="met good"><div class="ml">Annual Sales Required</div><div class="mv">${fD(annSalesReq)}</div><div class="ms">at ${gpm}% margin</div></div>
-      <div class="met good"><div class="ml">Monthly Sales Target</div><div class="mv">${fD(moSalesReq)}</div><div class="ms">to break even</div></div>
+      <div class="met good"><div class="ml">${hasTarget?'Annual Sales to Hit Target':'Annual Sales Required'}</div><div class="mv">${fD(annSalesReq)}</div><div class="ms">at ${gpm}% margin</div></div>
+      <div class="met good"><div class="ml">Monthly Sales Target</div><div class="mv">${fD(moSalesReq)}</div><div class="ms">${hasTarget?'to hit profit target':'to break even'}</div></div>
     </div>
+    ${hasTarget&&netProfitPct!==null?`<div class="card" style="margin-top:14px"><h3>Profit Target Summary</h3>
+      <div class="kv"><span class="kk">Target net income</span><span class="kv2">${fD(target)}</span></div>
+      <div class="kv"><span class="kk">Annual sales required</span><span class="kv2">${fD(annSalesReq)}</span></div>
+      <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Net profit % of sales</span><span class="kv2 good" style="font-size:16px">${netProfitPct}%</span></div>
+    </div>`:''}
     ${clientsNeeded?`<div class="card"><h3>Client / Job Target</h3>
       <div class="kv"><span class="kk">Average sale per client</span><span class="kv2">${fD(avgSale)}</span></div>
       <div class="kv"><span class="kk">Clients / jobs needed per month</span><span class="kv2 good">${Math.ceil(clientsNeeded)}</span></div>
-      ${target?`<div class="kv"><span class="kk">Target net income included</span><span class="kv2">${fD(target)}</span></div>`:''}
+      ${hasTarget?`<div class="kv"><span class="kk">Target net income included</span><span class="kv2">${fD(target)}</span></div>`:''}
     </div>`:''}`;
 }
 
@@ -831,6 +861,11 @@ function setCogsMode(mode){
   document.getElementById('pr_cogs_val').placeholder=mode==='dollar'?'Annual $ amount':'% of revenue';
   prCalc();
 }
+function addRA(){const mo=document.getElementById('ra_mo').value,type=document.getElementById('ra_type').value,lbl=document.getElementById('ra_lbl').value.trim(),amt=parseFloat(String(document.getElementById('ra_amt').value).replace(/,/g,''));if(!lbl||isNaN(amt))return;raL.push({mo,type,lbl,amt});document.getElementById('ra_lbl').value='';document.getElementById('ra_amt').value='';rRA();prCalc();}
+function rRA(){const tb=document.getElementById('ra-tb');if(!raL.length){tb.innerHTML='<tr class="er"><td colspan="5">No adjustments added yet</td></tr>';return;}tb.innerHTML=raL.map((r,i)=>`<tr><td style="font-weight:600">${r.mo}</td><td><span class="pill ${r.type==='ongoing'?'blue':'amber'}">${r.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${r.lbl}</td><td style="color:${r.amt>=0?'var(--green)':'var(--red)'};font-weight:600">${r.amt>=0?'+':''}${fD(Math.abs(r.amt))}</td><td><button class="delb" onclick="raL.splice(${i},1);rRA();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function addOE(){const mo=document.getElementById('oe_mo').value,type=document.getElementById('oe_type').value,lbl=document.getElementById('oe_lbl').value.trim(),amt=parseFloat(String(document.getElementById('oe_amt').value).replace(/,/g,''));if(!lbl||isNaN(amt))return;oeL.push({mo,type,lbl,amt});document.getElementById('oe_lbl').value='';document.getElementById('oe_amt').value='';rOE();prCalc();}
+function rOE(){const tb=document.getElementById('oe-tb');if(!oeL.length){tb.innerHTML='<tr class="er"><td colspan="5">No expense adjustments added yet</td></tr>';return;}tb.innerHTML=oeL.map((o,i)=>`<tr><td style="font-weight:600">${o.mo}</td><td><span class="pill ${o.type==='ongoing'?'blue':'amber'}">${o.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${o.lbl}</td><td style="color:var(--red);font-weight:600">${fD(o.amt)}</td><td><button class="delb" onclick="oeL.splice(${i},1);rOE();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+
 function prCalc(){
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
   const moOH=ohGetTotal();
@@ -838,33 +873,54 @@ function prCalc(){
   const baseMonthly=rev/12;
   let cogsRate=0;
   if(cogsVal!==null){cogsRate=cogsMode==='pct'?cogsVal/100:(cogsVal/rev);}
+  const labels=['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
   const months=Array.from({length:12},(_,i)=>{
-    const moRev=baseMonthly*Math.pow(1+growth/100,i);
+    const moLabel=labels[i];
+    const moIndex=i+1;
+    const raAdj=raL.reduce((a,r)=>{
+      const rIdx=parseInt(r.mo.replace('M',''));
+      if(r.type==='ongoing'&&moIndex>=rIdx) return a+r.amt;
+      if(r.type==='once'&&moIndex===rIdx) return a+r.amt;
+      return a;
+    },0);
+    const oeAmt=oeL.reduce((a,o)=>{
+      const oIdx=parseInt(o.mo.replace('M',''));
+      if(o.type==='ongoing'&&moIndex>=oIdx) return a+o.amt;
+      if((!o.type||o.type==='once')&&moIndex===oIdx) return a+o.amt;
+      return a;
+    },0);
+    const moRev=(baseMonthly*Math.pow(1+growth/100,i))+raAdj;
     const moCogs=moRev*cogsRate;
     const moGP=moRev-moCogs;
-    const moNet=moGP-moOH;
-    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet};
+    const moNet=moGP-moOH-oeAmt;
+    const hasAdj=raAdj!==0||oeAmt>0;
+    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,oeAmt,raAdj,hasAdj};
   });
   let cash=startCash;
   const cashFlow=months.map(m=>{const end=cash+m.net;const r={start:cash,net:m.net,end};cash=end;return r;});
-  const labels=['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
   const gc=v=>v>=0?'var(--green)':'var(--red)';
+  const hasOE=oeL.length>0;
+  const hasRA=raL.length>0;
+  const hasAnyAdj=hasOE||hasRA;
   document.getElementById('proj-results').innerHTML=`
     <div class="card" style="margin-top:14px"><h3>12-Month Projection</h3>
       <div style="overflow-x:auto">
-      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th><th>Net Profit</th><th>Ending Cash</th></tr></thead>
-      <tbody>${months.map((m,i)=>`<tr>
+      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th>${hasOE?'<th>Exp Adj</th>':''}${hasRA?'<th>Rev Adj</th>':''}<th>Net Profit</th><th>Ending Cash</th></tr></thead>
+      <tbody>${months.map((m,i)=>`<tr${m.hasAdj?' style="background:var(--gray-100)"':''}>
         <td style="font-weight:600">${labels[i]}</td>
         <td>${fD(m.rev)}</td>
         <td style="color:var(--red)">${fD(m.cogs)}</td>
         <td style="color:${gc(m.gp)};font-weight:600">${fD(m.gp)}</td>
         <td style="color:var(--gray-700)">${fD(moOH)}</td>
+        ${hasOE?`<td style="color:var(--red)">${m.oeAmt>0?fD(m.oeAmt):'—'}</td>`:''}
+        ${hasRA?`<td style="color:${m.raAdj>=0?'var(--green)':'var(--red)'}">${m.raAdj!==0?(m.raAdj>0?'+':'')+fD(Math.abs(m.raAdj)):'—'}</td>`:''}
         <td style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
         <td style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
       </tr>`).join('')}</tbody></table></div></div>
     <div class="grid4">
       <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(months.reduce((a,m)=>a+m.rev,0))}</div></div>
       <div class="met ${months.reduce((a,m)=>a+m.gp,0)>=0?'good':'bad'}"><div class="ml">Total Gross Profit</div><div class="mv">${fD(months.reduce((a,m)=>a+m.gp,0))}</div></div>
+      ${hasOE?`<div class="met bad"><div class="ml">Total Expense Adjustments</div><div class="mv">${fD(months.reduce((a,m)=>a+m.oeAmt,0))}</div></div>`:''}
       <div class="met ${months.reduce((a,m)=>a+m.net,0)>=0?'good':'bad'}"><div class="ml">Total Net Profit</div><div class="mv">${fD(months.reduce((a,m)=>a+m.net,0))}</div></div>
       <div class="met ${cashFlow[11].end>=0?'good':'bad'}"><div class="ml">Year-End Cash</div><div class="mv">${fD(cashFlow[11].end)}</div></div>
     </div>`;
@@ -1344,7 +1400,7 @@ function saveSession(){
     },
     projections: {
       pr_rev: getVal('pr_rev'), pr_cogs_val: getVal('pr_cogs_val'),
-      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode
+      pr_growth: getVal('pr_growth'), pr_cash: getVal('pr_cash'), cogsMode, raL, oeL
     },
     cashflow: {
       cf_cash: getVal('cf_cash'), ccL, lnL, ciL, coL
@@ -1409,6 +1465,9 @@ function loadSession(event){
         ['pr_rev','pr_cogs_val','pr_growth','pr_cash'].forEach(id=>setVal(id, data.projections[id]));
         const prRevEl=document.getElementById('pr_rev');
         if(prRevEl) delete prRevEl.dataset.manual;
+        if(data.projections.raL) raL.splice(0,raL.length,...data.projections.raL);
+        if(data.projections.oeL) oeL.splice(0,oeL.length,...data.projections.oeL);
+        rRA(); rOE();
         if(data.projections.pr_rev) prCalc();
       }
 
@@ -1745,7 +1804,7 @@ function exportToExcel(){
   XLSX.writeFile(wb, 'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Financial_'+date+'.xlsx');
 }
 
-renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();renderDash();
+renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();rRA();rOE();renderDash();
 attachAllCurrency();
 
 // Re-attach after dynamic rows are added
