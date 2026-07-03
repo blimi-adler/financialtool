@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprinkler Head Takeoff — Dousefire</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --blueprint: #0e3a52;
+    --blueprint-line-soft: rgba(140,200,220,0.14);
+    --paper: #f6f4ee;
+    --ink: #12222a;
+    --ink-soft: #4c6672;
+    --red: #c1272d;
+    --red-dim: rgba(193,39,45,0.15);
+    --amber: #d98c1f;
+    --amber-dim: rgba(217,140,31,0.12);
+    --green: #2f8f5b;
+    --panel: #ffffff;
+    --border: #d8dee0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background:var(--paper); color:var(--ink); font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+  .mono { font-family:'IBM Plex Mono','SF Mono',Consolas,monospace; }
+  #app { display:grid; grid-template-columns:1fr 350px; grid-template-rows:auto 1fr; height:100vh;
+    grid-template-areas: "header header" "canvas sidebar"; }
+  header { grid-area:header; background:var(--blueprint); color:#eaf4f8; padding:12px 22px; border-bottom:3px solid var(--red); }
+  .brand { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .brand .mark { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:var(--red); border:1px solid var(--red); padding:3px 7px; border-radius:3px; }
+  .brand h1 { font-size:17px; font-weight:600; margin:0; letter-spacing:0.01em; }
+  .brand .sub { font-size:12px; color:#a9c7d3; font-family:'IBM Plex Mono',monospace; }
+  .toolbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .divider { width:1px; align-self:stretch; background:rgba(255,255,255,0.18); margin:0 4px; }
+  button, select { font-family:inherit; font-size:12px; font-weight:600; border:1px solid rgba(255,255,255,0.25);
+    background:rgba(255,255,255,0.06); color:#eaf4f8; padding:7px 11px; border-radius:5px; cursor:pointer; transition:background .12s,border-color .12s; white-space:nowrap; }
+  button:hover:not(:disabled) { background:rgba(255,255,255,0.14); }
+  button.active { background:var(--red); border-color:var(--red); }
+  button.accent { background:var(--amber); border-color:var(--amber); color:#2a1c04; }
+  button.accent:hover:not(:disabled) { background:#c17f1a; }
+  button:disabled { opacity:0.32; cursor:not-allowed; }
+  select { background:rgba(255,255,255,0.06); }
+  select option { color:#111; }
+  .upload-btn { position:relative; overflow:hidden; display:inline-block; }
+  .upload-btn input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+  #canvasWrap { grid-area:canvas; position:relative; overflow:auto;
+    background: repeating-linear-gradient(0deg, var(--blueprint-line-soft) 0 1px, transparent 1px 28px),
+                repeating-linear-gradient(90deg, var(--blueprint-line-soft) 0 1px, transparent 1px 28px), var(--blueprint);
+    display:flex; align-items:flex-start; justify-content:flex-start; }
+  #emptyState { margin:auto; text-align:center; color:#a9c7d3; padding:40px; }
+  #emptyState .mono { font-size:12px; letter-spacing:0.08em; color:var(--red); margin-bottom:8px; display:block; }
+  #emptyState h2 { color:#eaf4f8; font-weight:500; margin:6px 0 10px; }
+  #emptyState ol { text-align:left; max-width:380px; margin:14px auto 0; font-size:13px; line-height:1.9; color:#cfe3ea; padding-left:20px; }
+  #stage { position:relative; margin:24px; box-shadow:0 8px 30px rgba(0,0,0,0.35); background:#fff; }
+  canvas#planCanvas { display:block; cursor:crosshair; }
+  #sidebar { grid-area:sidebar; background:var(--panel); border-left:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+  .panel { padding:16px 18px; border-bottom:1px solid var(--border); }
+  .panel h3 { font-size:11px; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-soft); margin:0 0 12px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:600; }
+  .field select, .field input { width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:5px; font-size:13px; font-family:inherit; color:var(--ink); }
+  .stat-row { display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; border-bottom:1px dashed var(--border); font-size:13px; }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-row .label { color:var(--ink-soft); }
+  .stat-row .value { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+  .stat-row .value.big { font-size:20px; }
+  .stat-row .value.warn { color:var(--red); }
+  .stat-row .value.ok { color:var(--green); }
+  .ref-table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  .ref-table th, .ref-table td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--border); }
+  .ref-table th { color:var(--ink-soft); font-weight:600; }
+  .ref-table tr.current { background:var(--red-dim); }
+  .ref-table td.num { font-family:'IBM Plex Mono',monospace; }
+  .warning-item { font-size:12px; line-height:1.5; padding:8px 10px; border-radius:5px; background:var(--red-dim); color:#7a1a1e; margin-bottom:6px; }
+  .warning-item.info { background:#eef3f0; color:#2f5f45; }
+  .no-warnings { font-size:12.5px; color:var(--ink-soft); font-style:italic; }
+  .head-list, .area-list { max-height:200px; overflow-y:auto; }
+  .head-row, .area-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:6px 4px; border-bottom:1px solid var(--border); gap:6px; }
+  .tag { font-size:9.5px; font-weight:700; padding:1px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.04em; }
+  .tag.auto { background:var(--amber-dim); color:#8a5a10; }
+  .tag.manual { background:#eef1f2; color:var(--ink-soft); }
+  .head-row .del, .area-row .del { background:none; border:none; color:var(--red); font-size:14px; padding:0 4px; cursor:pointer; font-weight:700; }
+  .footnote { font-size:11px; color:var(--ink-soft); line-height:1.6; padding:14px 18px 20px; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(14,58,82,0.55); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal { background:white; border-radius:8px; padding:22px 24px; width:300px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+  .modal h4 { margin:0 0 10px; font-size:14px; }
+  .modal p { font-size:12.5px; color:var(--ink-soft); margin:0 0 12px; line-height:1.5; }
+  .modal input { width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:5px; font-size:14px; margin-bottom:14px; }
+  .modal .row { display:flex; gap:8px; justify-content:flex-end; }
+  .modal button { background:var(--blueprint); color:white; border:none; padding:9px 14px; border-radius:5px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .modal button.ghost { background:none; color:var(--ink-soft); }
+  .hint { font-size:11.5px; color:var(--ink-soft); margin-top:4px; line-height:1.5; }
+  .zoom-controls { display:flex; gap:4px; }
+  .zoom-controls button { padding:7px 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="mark">DOUSEFIRE</span>
+      <div>
+        <h1>Sprinkler Head Takeoff</h1>
+        <div class="sub">NFPA 13 spacing reference tool — auto-placement</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <label class="upload-btn"><button id="uploadBtn">Upload Plan</button><input type="file" id="fileInput" accept="image/*,.pdf"></label>
+      <button id="calibrateBtn" disabled>Set Scale</button>
+      <div class="divider"></div>
+      <button id="drawAreaBtn" disabled>Draw Area</button>
+      <button id="undoPointBtn" disabled>Undo Point</button>
+      <button id="finishAreaBtn" disabled>Finish Area</button>
+      <button id="cancelAreaBtn" disabled>Cancel</button>
+      <button id="autoPlaceBtn" disabled class="accent">Auto-Place Heads</button>
+      <div class="divider"></div>
+      <button id="placeModeBtn" disabled class="active">Place Head</button>
+      <button id="removeModeBtn" disabled>Remove Head</button>
+      <button id="coverageToggleBtn" disabled>Show Coverage</button>
+      <div class="divider"></div>
+      <div class="zoom-controls"><button id="zoomOut" disabled>&minus;</button><button id="zoomIn" disabled>&plus;</button></div>
+      <div class="divider"></div>
+      <button id="exportCsvBtn" disabled>Export CSV</button>
+      <button id="exportPngBtn" disabled>Export Image</button>
+      <button id="clearBtn" disabled>Clear All</button>
+      <div class="divider"></div>
+      <button id="saveProgressBtn" disabled>Save Work</button>
+      <label class="upload-btn"><button id="loadProgressBtnLabel">Load Work</button><input type="file" id="loadProgressInput" accept="application/json,.json"></label>
+    </div>
+  </header>
+
+  <div id="canvasWrap">
+    <div id="emptyState">
+      <span class="mono">GETTING STARTED</span>
+      <h2>Upload a sprinkler or reflected ceiling plan</h2>
+      <ol>
+        <li>Upload the plan (image or PDF).</li>
+        <li>Set the scale using any known dimension on the drawing.</li>
+        <li>Draw the area(s) to cover, then click Auto-Place Heads. Adjust manually after.</li>
+      </ol>
+    </div>
+    <div id="stage" style="display:none;"><canvas id="planCanvas"></canvas></div>
+  </div>
+
+  <div id="sidebar">
+    <div class="panel">
+      <h3>Job Setup</h3>
+      <div class="field">
+        <label>Hazard Classification (NFPA 13)</label>
+        <select id="hazardSelect">
+          <option value="light">Light Hazard</option>
+          <option value="ordinary1">Ordinary Hazard — Group 1</option>
+          <option value="ordinary2">Ordinary Hazard — Group 2</option>
+          <option value="extra1">Extra Hazard — Group 1</option>
+          <option value="extra2">Extra Hazard — Group 2</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Manual area override (sq ft) — optional</label>
+        <input type="number" id="roomAreaInput" placeholder="only used if no area is drawn">
+      </div>
+      <div class="hint" id="scaleStatus">Scale not set. Use "Set Scale" once a plan is loaded.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Areas <span id="areaTotalLabel" class="hint" style="margin:0;"></span></h3>
+      <div class="hint" style="margin-bottom:8px;">Click "Draw Area" then click each corner of the room. Click "Finish Area" when done (3+ points). Auto-Place Heads fills every drawn area.</div>
+      <div class="area-list" id="areaList"><div class="no-warnings">No areas drawn yet.</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>Live Count</h3>
+      <div class="stat-row"><span class="label">Heads placed</span><span class="value big" id="statHeadCount">0</span></div>
+      <div class="stat-row"><span class="label">Est. minimum required</span><span class="value" id="statMinRequired">—</span></div>
+      <div class="stat-row"><span class="label">Coverage per head (max)</span><span class="value" id="statMaxArea">—</span></div>
+      <div class="stat-row"><span class="label">Max spacing / wall dist.</span><span class="value" id="statSpacing">—</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Spacing Check</h3>
+      <div id="warningsBox"><div class="no-warnings">Place at least two heads with a scale set to run spacing checks.</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>Placed Heads</h3>
+      <div class="head-list" id="headList"><div class="no-warnings">No heads placed yet.</div></div>
+    </div>
+
+    <div class="panel" style="border-bottom:none;">
+      <h3>NFPA 13 Quick Reference</h3>
+      <table class="ref-table" id="refTable"><thead><tr><th>Class</th><th>Max area</th><th>Max spacing</th><th>Max wall</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="footnote">
+      Auto-placement uses the standard NFPA 13 bay-spacing method (equal bays sized to the smaller of max area or max spacing, heads centered in each bay). It fills the bounding shape of each drawn area and drops any grid point that falls outside the outline you drew — irregular or L-shaped rooms may need a manual head added to patch a corner. Values are standard-spray upright/pendent defaults; obstructions, extended-coverage heads, storage occupancies, and NYS/local AHJ amendments can change these numbers. Confirm the currently adopted code edition and have the final layout reviewed and stamped by the engineer of record before submittal.
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+const HAZARD = {
+  light:     { label:'Light Hazard',             maxArea:225, maxSpacing:15, minSpacing:8, maxWall:7.5 },
+  ordinary1: { label:'Ordinary Hazard — Group 1', maxArea:130, maxSpacing:15, minSpacing:8, maxWall:7.5 },
+  ordinary2: { label:'Ordinary Hazard — Group 2', maxArea:130, maxSpacing:15, minSpacing:8, maxWall:7.5 },
+  extra1:    { label:'Extra Hazard — Group 1',    maxArea:100, maxSpacing:12, minSpacing:8, maxWall:6   },
+  extra2:    { label:'Extra Hazard — Group 2',    maxArea:90,  maxSpacing:12, minSpacing:8, maxWall:6   },
+};
+
+let state = {
+  img:null, imageDataUrl:null, naturalW:0, naturalH:0, displayScale:1,
+  ftPerImgPx:null,
+  heads:[],
+  areas:[],
+  currentAreaPoints:[],
+  mode:'place',
+  calPoints:[],
+  hazard:'light',
+  showCoverage:false,
+};
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('planCanvas');
+const ctx = canvas.getContext('2d');
+
+function buildRefTable(){
+  const tbody = document.querySelector('#refTable tbody');
+  tbody.innerHTML = '';
+  Object.entries(HAZARD).forEach(([key,h]) => {
+    const tr = document.createElement('tr');
+    if (key === state.hazard) tr.className = 'current';
+    tr.innerHTML = `<td>${h.label.replace('Hazard','Haz.').replace(' — Group',' G')}</td><td class="num">${h.maxArea} ft2</td><td class="num">${h.maxSpacing} ft</td><td class="num">${h.maxWall} ft</td>`;
+    tbody.appendChild(tr);
+  });
+}
+buildRefTable();
+
+function refreshToolbarAvailability(){
+  const hasImage = !!state.img;
+  ['calibrateBtn','placeModeBtn','removeModeBtn','coverageToggleBtn','zoomOut','zoomIn','exportCsvBtn','exportPngBtn','clearBtn','drawAreaBtn','saveProgressBtn']
+    .forEach(id => $(id).disabled = !hasImage);
+  const drawing = state.mode === 'area';
+  $('undoPointBtn').disabled = !drawing || state.currentAreaPoints.length === 0;
+  $('finishAreaBtn').disabled = !drawing || state.currentAreaPoints.length < 3;
+  $('cancelAreaBtn').disabled = !drawing;
+  $('autoPlaceBtn').disabled = !(hasImage && state.ftPerImgPx && state.areas.length > 0);
+}
+
+$('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) { await loadPdf(file); }
+  else { await loadImageFile(file); }
+});
+
+function loadImageFile(file){
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => { state.imageDataUrl = ev.target.result; onImageReady(img); resolve(); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadPdf(file){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2.5 });
+  const off = document.createElement('canvas');
+  off.width = viewport.width; off.height = viewport.height;
+  await page.render({ canvasContext: off.getContext('2d'), viewport }).promise;
+  const dataUrl = off.toDataURL('image/png');
+  const img = new Image();
+  img.onload = () => { state.imageDataUrl = dataUrl; onImageReady(img); };
+  img.src = dataUrl;
+}
+
+function onImageReady(img){
+  state.img = img;
+  state.naturalW = img.naturalWidth || img.width;
+  state.naturalH = img.naturalHeight || img.height;
+  state.heads = []; state.areas = []; state.currentAreaPoints = [];
+  state.ftPerImgPx = null; state.calPoints = []; state.mode = 'place';
+  $('emptyState').style.display = 'none';
+  $('stage').style.display = 'block';
+  fitToWidth();
+  updateModeButtons();
+  refreshToolbarAvailability();
+  render(); updateStats();
+  $('scaleStatus').textContent = 'Scale not set. Use "Set Scale" once a plan is loaded.';
+  $('scaleStatus').style.color = '';
+}
+
+function fitToWidth(){
+  const wrapW = $('canvasWrap').clientWidth - 48;
+  const targetW = Math.min(state.naturalW, Math.max(wrapW, 400));
+  state.displayScale = targetW / state.naturalW;
+  applyCanvasSize();
+}
+function applyCanvasSize(){
+  canvas.width = Math.round(state.naturalW * state.displayScale);
+  canvas.height = Math.round(state.naturalH * state.displayScale);
+}
+
+function toFtPt(p){ return { x: p.xImg*state.ftPerImgPx, y: p.yImg*state.ftPerImgPx }; }
+function pointInPolygon(pt, poly){
+  let inside = false;
+  for (let i=0, j=poly.length-1; i<poly.length; j=i++){
+    const xi=poly[i].x, yi=poly[i].y, xj=poly[j].x, yj=poly[j].y;
+    const intersect = ((yi>pt.y) !== (yj>pt.y)) && (pt.x < (xj-xi)*(pt.y-yi)/(yj-yi)+xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function polygonAreaFt(polyFt){
+  let sum = 0;
+  for (let i=0;i<polyFt.length;i++){
+    const p1 = polyFt[i], p2 = polyFt[(i+1)%polyFt.length];
+    sum += p1.x*p2.y - p2.x*p1.y;
+  }
+  return Math.abs(sum/2);
+}
+
+function render(){
+  if (!state.img) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(state.img, 0, 0, canvas.width, canvas.height);
+
+  state.areas.forEach((area, idx) => { drawAreaPolygon(area.points, false, idx); });
+  if (state.mode === 'area' && state.currentAreaPoints.length > 0){ drawAreaPolygon(state.currentAreaPoints, true, null); }
+
+  if (state.calPoints.length === 1) drawDot(state.calPoints[0], '#d98c1f');
+  if (state.calPoints.length === 2){
+    ctx.strokeStyle = '#d98c1f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(state.calPoints[0].x*state.displayScale, state.calPoints[0].y*state.displayScale);
+    ctx.lineTo(state.calPoints[1].x*state.displayScale, state.calPoints[1].y*state.displayScale);
+    ctx.stroke();
+  }
+
+  const h = HAZARD[state.hazard];
+  if (state.showCoverage && state.ftPerImgPx){
+    const radiusImgPx = (h.maxSpacing/2) / state.ftPerImgPx;
+    state.heads.forEach(hd => {
+      ctx.beginPath();
+      ctx.arc(hd.xImg*state.displayScale, hd.yImg*state.displayScale, radiusImgPx*state.displayScale, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(193,39,45,0.08)'; ctx.strokeStyle = 'rgba(193,39,45,0.35)'; ctx.lineWidth = 1;
+      ctx.fill(); ctx.stroke();
+    });
+  }
+
+  state.heads.forEach((hd, i) => {
+    const x = hd.xImg*state.displayScale, y = hd.yImg*state.displayScale;
+    ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2);
+    ctx.fillStyle = hd.auto ? '#d98c1f' : '#c1272d'; ctx.fill();
+    ctx.strokeStyle = hd.auto ? '#8a5a10' : '#7a1a1e'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-10,y); ctx.lineTo(x+10,y); ctx.moveTo(x,y-10); ctx.lineTo(x,y+10);
+    ctx.strokeStyle = hd.auto ? '#8a5a10' : '#7a1a1e'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#0e3a52'; ctx.font = '600 11px IBM Plex Mono, monospace';
+    ctx.fillText(String(i+1), x+10, y-8);
+  });
+}
+
+function drawAreaPolygon(points, inProgress, idx){
+  if (points.length === 0) return;
+  ctx.beginPath();
+  points.forEach((p,i) => {
+    const x = p.xImg*state.displayScale, y = p.yImg*state.displayScale;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  if (!inProgress) ctx.closePath();
+  ctx.fillStyle = inProgress ? 'rgba(217,140,31,0.10)' : 'rgba(47,111,201,0.12)';
+  ctx.strokeStyle = inProgress ? '#d98c1f' : '#2f6fc9';
+  ctx.lineWidth = 2;
+  if (inProgress) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+  if (!inProgress) ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.xImg*state.displayScale, p.yImg*state.displayScale, 4, 0, Math.PI*2);
+    ctx.fillStyle = inProgress ? '#d98c1f' : '#2f6fc9';
+    ctx.fill();
+  });
+  if (!inProgress && points.length > 0){
+    const cx = points.reduce((s,p)=>s+p.xImg,0)/points.length * state.displayScale;
+    const cy = points.reduce((s,p)=>s+p.yImg,0)/points.length * state.displayScale;
+    ctx.fillStyle = '#1b4a6b'; ctx.font = '700 12px IBM Plex Mono, monospace';
+    ctx.fillText('Area ' + (idx+1), cx-22, cy);
+  }
+}
+
+function drawDot(p, color){
+  ctx.beginPath(); ctx.arc(p.x*state.displayScale, p.y*state.displayScale, 5, 0, Math.PI*2);
+  ctx.fillStyle = color; ctx.fill();
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const xImg = cx / state.displayScale, yImg = cy / state.displayScale;
+
+  if (state.mode === 'calibrate'){
+    state.calPoints.push({x:xImg,y:yImg});
+    render();
+    if (state.calPoints.length === 2) openCalibrationModal();
+    return;
+  }
+  if (state.mode === 'area'){
+    state.currentAreaPoints.push({xImg,yImg});
+    refreshToolbarAvailability();
+    render();
+    return;
+  }
+  if (state.mode === 'place'){
+    state.heads.push({xImg,yImg,auto:false,areaIdx:null});
+    render(); updateStats();
+    return;
+  }
+  if (state.mode === 'remove'){
+    const thresholdImg = 14 / state.displayScale;
+    let closestIdx=-1, closestDist=Infinity;
+    state.heads.forEach((hd,i) => { const d=Math.hypot(hd.xImg-xImg, hd.yImg-yImg); if (d<closestDist){closestDist=d; closestIdx=i;} });
+    if (closestIdx>=0 && closestDist<=thresholdImg){ state.heads.splice(closestIdx,1); render(); updateStats(); }
+  }
+});
+
+function updateModeButtons(){
+  $('placeModeBtn').classList.toggle('active', state.mode==='place');
+  $('removeModeBtn').classList.toggle('active', state.mode==='remove');
+  $('calibrateBtn').classList.toggle('active', state.mode==='calibrate');
+  $('drawAreaBtn').classList.toggle('active', state.mode==='area');
+}
+
+$('placeModeBtn').addEventListener('click', () => { state.mode='place'; updateModeButtons(); refreshToolbarAvailability(); });
+$('removeModeBtn').addEventListener('click', () => { state.mode='remove'; updateModeButtons(); refreshToolbarAvailability(); });
+$('calibrateBtn').addEventListener('click', () => { state.mode='calibrate'; state.calPoints=[]; updateModeButtons(); refreshToolbarAvailability(); render(); });
+
+$('drawAreaBtn').addEventListener('click', () => { state.mode='area'; state.currentAreaPoints=[]; updateModeButtons(); refreshToolbarAvailability(); render(); });
+$('undoPointBtn').addEventListener('click', () => { state.currentAreaPoints.pop(); refreshToolbarAvailability(); render(); });
+$('cancelAreaBtn').addEventListener('click', () => { state.currentAreaPoints=[]; state.mode='place'; updateModeButtons(); refreshToolbarAvailability(); render(); });
+$('finishAreaBtn').addEventListener('click', () => {
+  if (state.currentAreaPoints.length < 3) return;
+  state.areas.push({ points: state.currentAreaPoints.slice() });
+  state.currentAreaPoints = [];
+  state.mode = 'place';
+  updateModeButtons(); refreshToolbarAvailability();
+  render(); updateStats();
+});
+
+$('autoPlaceBtn').addEventListener('click', autoPlaceHeads);
+
+$('coverageToggleBtn').addEventListener('click', () => { state.showCoverage=!state.showCoverage; $('coverageToggleBtn').classList.toggle('active', state.showCoverage); render(); });
+$('zoomIn').addEventListener('click', () => zoom(1.2));
+$('zoomOut').addEventListener('click', () => zoom(1/1.2));
+function zoom(factor){ state.displayScale = Math.min(4, Math.max(0.1, state.displayScale*factor)); applyCanvasSize(); render(); }
+
+$('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all heads and drawn areas? This cannot be undone.')) return;
+  state.heads = []; state.areas = []; state.currentAreaPoints = [];
+  refreshToolbarAvailability(); render(); updateStats();
+});
+
+$('hazardSelect').addEventListener('change', (e) => { state.hazard = e.target.value; buildRefTable(); updateStats(); render(); });
+
+function openCalibrationModal(){
+  const root = $('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop"><div class="modal">
+    <h4>Set real-world distance</h4>
+    <p>Enter the true distance, in feet, between the two points you just clicked.</p>
+    <input type="number" step="0.1" id="calDistInput" placeholder="e.g. 20" autofocus>
+    <div class="row"><button class="ghost" id="calCancel">Cancel</button><button id="calConfirm">Set Scale</button></div>
+  </div></div>`;
+  $('calCancel').addEventListener('click', () => {
+    state.calPoints=[]; state.mode='place'; updateModeButtons(); refreshToolbarAvailability();
+    root.innerHTML=''; render();
+  });
+  $('calConfirm').addEventListener('click', () => {
+    const ft = parseFloat($('calDistInput').value);
+    if (!ft || ft<=0) return;
+    const [p1,p2] = state.calPoints;
+    const distImgPx = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+    state.ftPerImgPx = ft/distImgPx;
+    state.calPoints=[]; state.mode='place'; updateModeButtons(); refreshToolbarAvailability();
+    root.innerHTML='';
+    $('scaleStatus').textContent = `Scale set: 1 pixel ≈ ${state.ftPerImgPx.toFixed(4)} ft. Click "Set Scale" again to recalibrate.`;
+    $('scaleStatus').style.color = '#2f8f5b';
+    render(); updateStats();
+  });
+}
+
+function autoPlaceForArea(area, hazardKey){
+  const h = HAZARD[hazardKey];
+  const ftPts = area.points.map(toFtPt);
+  const xs = ftPts.map(p=>p.x), ys = ftPts.map(p=>p.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const W = maxX-minX, H = maxY-minY;
+  if (W<=0 || H<=0) return [];
+
+  let nCols = Math.max(1, Math.ceil(W/h.maxSpacing));
+  let nRows = Math.max(1, Math.ceil(H/h.maxSpacing));
+  let guard = 0;
+  while ((W/nCols)*(H/nRows) > h.maxArea && guard < 80){
+    if ((W/nCols) >= (H/nRows)) nCols++; else nRows++;
+    guard++;
+  }
+  const colW = W/nCols, rowH = H/nRows;
+  const pts = [];
+  for (let i=0;i<nCols;i++){
+    for (let j=0;j<nRows;j++){
+      const xFt = minX + colW*(i+0.5);
+      const yFt = minY + rowH*(j+0.5);
+      if (pointInPolygon({x:xFt,y:yFt}, ftPts)){
+        pts.push({ xImg: xFt/state.ftPerImgPx, yImg: yFt/state.ftPerImgPx });
+      }
+    }
+  }
+  return pts;
+}
+
+function autoPlaceHeads(){
+  if (!state.ftPerImgPx || state.areas.length===0) return;
+  state.heads = state.heads.filter(hd => !hd.auto);
+  state.areas.forEach((area, idx) => {
+    const pts = autoPlaceForArea(area, state.hazard);
+    pts.forEach(p => state.heads.push({ xImg:p.xImg, yImg:p.yImg, auto:true, areaIdx:idx }));
+  });
+  render(); updateStats();
+}
+
+function updateStats(){
+  const h = HAZARD[state.hazard];
+  $('statHeadCount').textContent = state.heads.length;
+  $('statMaxArea').textContent = `${h.maxArea} ft2 / head`;
+  $('statSpacing').textContent = `${h.maxSpacing} ft / ${h.maxWall} ft`;
+
+  let areaForCalc = null;
+  if (state.areas.length > 0 && state.ftPerImgPx){
+    areaForCalc = state.areas.reduce((sum,a) => sum + polygonAreaFt(a.points.map(toFtPt)), 0);
+    $('areaTotalLabel').textContent = `- ${areaForCalc.toFixed(0)} ft2 drawn`;
+  } else {
+    $('areaTotalLabel').textContent = '';
+    const manual = parseFloat($('roomAreaInput').value);
+    if (manual > 0) areaForCalc = manual;
+  }
+
+  if (areaForCalc){
+    const minReq = Math.ceil(areaForCalc / h.maxArea);
+    const el = $('statMinRequired');
+    el.textContent = `${minReq} heads`;
+    el.className = 'value ' + (state.heads.length < minReq ? 'warn' : 'ok');
+  } else {
+    $('statMinRequired').textContent = '-';
+    $('statMinRequired').className = 'value';
+  }
+
+  renderAreaList();
+  renderHeadList();
+  renderWarnings(h);
+}
+
+function renderAreaList(){
+  const box = $('areaList');
+  if (state.areas.length === 0){ box.innerHTML = '<div class="no-warnings">No areas drawn yet.</div>'; return; }
+  box.innerHTML = '';
+  state.areas.forEach((area, idx) => {
+    const row = document.createElement('div');
+    row.className = 'area-row';
+    let sqft = 'set scale for ft2';
+    if (state.ftPerImgPx) sqft = polygonAreaFt(area.points.map(toFtPt)).toFixed(0) + ' ft2';
+    row.innerHTML = `<span>Area ${idx+1} - <span class="mono">${sqft}</span> <span class="hint">(${area.points.length} pts)</span></span>`;
+    const del = document.createElement('button');
+    del.className = 'del'; del.textContent = '\u2715';
+    del.addEventListener('click', () => {
+      state.heads = state.heads.filter(hd => hd.areaIdx !== idx)
+        .map(hd => hd.areaIdx !== null && hd.areaIdx > idx ? {...hd, areaIdx: hd.areaIdx-1} : hd);
+      state.areas.splice(idx,1);
+      render(); updateStats();
+    });
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+function renderHeadList(){
+  const box = $('headList');
+  if (state.heads.length === 0){ box.innerHTML = '<div class="no-warnings">No heads placed yet.</div>'; return; }
+  box.innerHTML = '';
+  state.heads.forEach((hd,i) => {
+    const row = document.createElement('div');
+    row.className = 'head-row';
+    let coord = 'set scale for ft coordinates';
+    if (state.ftPerImgPx) coord = `${(hd.xImg*state.ftPerImgPx).toFixed(1)}, ${(hd.yImg*state.ftPerImgPx).toFixed(1)} ft`;
+    const tag = hd.auto ? '<span class="tag auto">auto</span>' : '<span class="tag manual">manual</span>';
+    row.innerHTML = `<span>#${i+1} ${tag} <span class="mono">${coord}</span></span>`;
+    const del = document.createElement('button');
+    del.className = 'del'; del.textContent = '\u2715';
+    del.addEventListener('click', () => { state.heads.splice(i,1); render(); updateStats(); });
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+function renderWarnings(h){
+  const box = $('warningsBox');
+  if (!state.ftPerImgPx){ box.innerHTML = '<div class="no-warnings">Set the scale to run spacing checks.</div>'; return; }
+  if (state.heads.length < 2){ box.innerHTML = '<div class="no-warnings">Place at least two heads to run spacing checks.</div>'; return; }
+  const warnings = [];
+  state.heads.forEach((hd,i) => {
+    let nearest = Infinity;
+    state.heads.forEach((other,j) => { if (i===j) return; const dFt = Math.hypot(hd.xImg-other.xImg, hd.yImg-other.yImg)*state.ftPerImgPx; if (dFt<nearest) nearest=dFt; });
+    if (nearest > h.maxSpacing) warnings.push(`Head #${i+1}: nearest head is ${nearest.toFixed(1)} ft away - exceeds ${h.maxSpacing} ft max spacing for ${h.label}. Possible coverage gap.`);
+    else if (nearest < h.minSpacing) warnings.push(`Head #${i+1}: nearest head is only ${nearest.toFixed(1)} ft away - under the ${h.minSpacing} ft minimum spacing. Check for redundant coverage.`);
+  });
+  if (warnings.length === 0){ box.innerHTML = `<div class="warning-item info">All nearest-neighbor spacing falls within the ${h.minSpacing}-${h.maxSpacing} ft range for ${h.label}.</div>`; return; }
+  box.innerHTML = '';
+  warnings.forEach(w => { const div = document.createElement('div'); div.className='warning-item'; div.textContent=w; box.appendChild(div); });
+}
+
+$('roomAreaInput').addEventListener('input', updateStats);
+
+$('exportCsvBtn').addEventListener('click', () => {
+  const h = HAZARD[state.hazard];
+  let csv = `Dousefire Sprinkler Head Takeoff\n`;
+  csv += `Hazard Classification,${h.label}\n`;
+  csv += `Max Area per Head (ft2),${h.maxArea}\n`;
+  csv += `Max Spacing (ft),${h.maxSpacing}\n`;
+  csv += `Max Wall Distance (ft),${h.maxWall}\n`;
+  csv += `Areas Drawn,${state.areas.length}\n`;
+  csv += `Total Heads,${state.heads.length}\n\n`;
+  csv += `Head #,Source,X (ft),Y (ft)\n`;
+  state.heads.forEach((hd,i) => {
+    const x = state.ftPerImgPx ? (hd.xImg*state.ftPerImgPx).toFixed(2) : 'n/a';
+    const y = state.ftPerImgPx ? (hd.yImg*state.ftPerImgPx).toFixed(2) : 'n/a';
+    csv += `${i+1},${hd.auto ? 'auto' : 'manual'},${x},${y}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sprinkler-takeoff.csv'; a.click();
+});
+
+$('exportPngBtn').addEventListener('click', () => {
+  const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'sprinkler-takeoff-marked-plan.png'; a.click();
+});
+
+window.addEventListener('resize', () => { if (state.img){ fitToWidth(); render(); } });
+
+// ---------- Save / Load Work ----------
+function saveProgress(){
+  if (!state.img) return;
+  const data = {
+    type: 'dousefire-sprinkler-takeoff-save',
+    version: 1,
+    savedAt: new Date().toISOString(),
+    imageDataUrl: state.imageDataUrl,
+    naturalW: state.naturalW,
+    naturalH: state.naturalH,
+    ftPerImgPx: state.ftPerImgPx,
+    hazard: state.hazard,
+    heads: state.heads,
+    areas: state.areas,
+  };
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0,10);
+  a.download = `sprinkler-takeoff-save-${stamp}.json`;
+  a.click();
+}
+
+function restoreProgress(data){
+  if (!data || !data.imageDataUrl){
+    alert('That file doesn\'t look like a saved takeoff file (missing plan image data).');
+    return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    state.img = img;
+    state.imageDataUrl = data.imageDataUrl;
+    state.naturalW = data.naturalW || img.naturalWidth;
+    state.naturalH = data.naturalH || img.naturalHeight;
+    state.ftPerImgPx = data.ftPerImgPx || null;
+    state.hazard = data.hazard || 'light';
+    state.heads = data.heads || [];
+    state.areas = data.areas || [];
+    state.currentAreaPoints = [];
+    state.calPoints = [];
+    state.mode = 'place';
+
+    $('hazardSelect').value = state.hazard;
+    buildRefTable();
+    $('emptyState').style.display = 'none';
+    $('stage').style.display = 'block';
+    fitToWidth();
+    updateModeButtons();
+    refreshToolbarAvailability();
+
+    if (state.ftPerImgPx){
+      $('scaleStatus').textContent = `Scale set: 1 pixel ≈ ${state.ftPerImgPx.toFixed(4)} ft. Click "Set Scale" again to recalibrate.`;
+      $('scaleStatus').style.color = '#2f8f5b';
+    } else {
+      $('scaleStatus').textContent = 'Scale not set. Use "Set Scale" once a plan is loaded.';
+      $('scaleStatus').style.color = '';
+    }
+    render();
+    updateStats();
+  };
+  img.src = data.imageDataUrl;
+}
+
+$('saveProgressBtn').addEventListener('click', saveProgress);
+$('loadProgressInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      restoreProgress(data);
+    } catch (err) {
+      alert('Could not read that file. Make sure it\'s a saved takeoff JSON file.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+refreshToolbarAvailability();
+</script>
+</body>
+</html>
