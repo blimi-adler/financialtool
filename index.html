@@ -194,6 +194,8 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 .drag:hover{color:var(--black)}
 tr.drag-over td{border-top:2px solid var(--red)}
 .nowrap{white-space:nowrap}
+.is-table{min-width:620px}
+.mx-table{min-width:520px}
 
 /* BENCHMARKS */
 .bm-sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -223,7 +225,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
     <span class="header-title">Financial Health Tracker</span>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-    <div class="header-sub">Checklist · Overhead · Break-even · Projections · Cash Flow · Collections · Issues · Pricing · Benchmarks · Dashboard</div>
+    <div class="header-sub">Dashboard · Overhead · Break-even · Projections · Cash Flow · Issues · Pricing · Snapshot · Benchmarks · Checklist</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button onclick="saveSession()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-device-floppy"></i> Save</button>
       <label style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-folder-open"></i> Load<input type="file" accept=".json" onchange="loadSession(event)" style="display:none"></label>
@@ -276,7 +278,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
 <!-- BREAK-EVEN -->
 <div id="tab-breakeven" style="display:none">
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Inputs</div>
-    <div class="ir"><label>Annual overhead (auto from overhead tab)</label><input type="number" placeholder="$" id="be_oh" oninput="beCalc()"></div>
+    <div class="ir"><label>Annual overhead (auto from overhead tab)</label><input type="number" placeholder="$" id="be_oh" oninput="if(event.isTrusted)delete this.dataset.auto;beCalc()"></div>
     <div class="ir"><label>Allowance for unexpected expenses (annual $)</label><input type="number" placeholder="$" id="be_allow" oninput="beCalc()"></div>
     <div class="ir"><label>Owner annual distribution</label><input type="number" placeholder="$" id="be_draw" oninput="beCalc()"></div>
     <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:6px;padding:10px 12px;margin-bottom:5px">
@@ -312,11 +314,11 @@ tr.drag-over td{border-top:2px solid var(--red)}
     <div class="ar">
       <input type="text" placeholder="Package / service name" id="mx_n" style="flex:1;min-width:140px">
       <input type="number" placeholder="Price $" id="mx_p" style="width:110px">
-      <input type="number" placeholder="Customers / mo" id="mx_q" data-nofmt="1" style="width:120px">
+      <input type="number" placeholder="# / month" id="mx_q" data-nofmt="1" style="width:100px">
       <button class="btn" onclick="addMix()"><i class="ti ti-plus"></i> Add</button>
       <button class="btn" onclick="importMixFromPricing()" title="Copy packages from the Pricing tab"><i class="ti ti-download"></i> From Pricing</button>
     </div>
-    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Price</th><th>Customers / mo</th><th>Revenue / mo</th><th>Mix %</th><th></th></tr></thead><tbody id="mx-tb"></tbody></table></div>
+    <div style="overflow-x:auto"><table class="dt mx-table"><thead><tr><th>Package</th><th>Price</th><th>Customers / mo</th><th>Revenue / mo</th><th>Mix %</th><th></th></tr></thead><tbody id="mx-tb"></tbody></table></div>
   </div>
   <div id="be-results"></div>
   <div class="br"><button class="btn primary" onclick="T('projections')">Projections <i class="ti ti-arrow-right"></i></button></div>
@@ -325,7 +327,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
 <!-- PROJECTIONS -->
 <div id="tab-projections" style="display:none">
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Assumptions</div>
-    <div class="ir"><label>Annual revenue target</label><input type="number" placeholder="$ (auto-filled from break-even)" id="pr_rev" oninput="document.getElementById('pr_rev').dataset.manual='1';prCalc()"></div>
+    <div class="ir"><label>Annual revenue target</label><input type="number" placeholder="$ (auto-filled from Break-even)" id="pr_rev" oninput="if(event.isTrusted)this.dataset.manual='1';prCalc()"></div>
     <div class="ir" style="align-items:center">
       <label>COGS</label>
       <div style="display:flex;align-items:center;gap:6px;flex:1">
@@ -450,7 +452,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
       <button onclick="document.getElementById('f_area').value='';document.getElementById('f_pri').value='';document.getElementById('f_st').value='';rIss();" style="font-size:11px;padding:4px 10px;border:1.5px solid var(--gray-200);border-radius:5px;background:none;color:var(--gray-500);font-family:var(--font-body);cursor:pointer">Clear filters</button>
     </div>
     <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px">Click any cell to edit. Drag <i class="ti ti-grip-vertical"></i> or use the arrows to reorder.</div>
-    <div style="overflow-x:auto"><table class="dt"><thead><tr><th style="width:24px"></th><th style="width:130px">Area</th><th>Issue</th><th style="width:96px">Priority</th><th style="width:116px">Status</th><th style="width:84px"></th></tr></thead><tbody id="is-tb"></tbody></table></div>
+    <div style="overflow-x:auto"><table class="dt is-table"><thead><tr><th style="width:24px"></th><th style="width:130px">Area</th><th>Issue</th><th style="width:96px">Priority</th><th style="width:116px">Status</th><th style="width:84px"></th></tr></thead><tbody id="is-tb"></tbody></table></div>
   </div>
   <div id="is-summary"></div>
   <div class="br">
@@ -499,7 +501,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
     </div>
     <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Cost</th><th>Price</th><th>Margin $</th><th>Margin %</th><th></th></tr></thead><tbody id="pkg-tb"></tbody></table></div>
   </div>
-  <div class="br"><button class="btn primary" onclick="T('dashboard')">Dashboard <i class="ti ti-arrow-right"></i></button></div>
+  <div class="br"><button class="btn primary" onclick="T('snapshot')">Snapshot <i class="ti ti-arrow-right"></i></button></div>
 </div>
 
 <!-- SNAPSHOT -->
@@ -546,7 +548,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
   <div id="sn-analysis"></div>
 
   <div class="br">
-    <button class="btn primary" onclick="T('dashboard')">Dashboard <i class="ti ti-arrow-right"></i></button>
+    <button class="btn primary" onclick="T('benchmarks')">Benchmarks <i class="ti ti-arrow-right"></i></button>
     <button class="btn dark" onclick="exportSnapshotExcel()"><i class="ti ti-file-spreadsheet"></i> Export Snapshot</button>
   </div>
 </div>
@@ -569,8 +571,8 @@ tr.drag-over td{border-top:2px solid var(--red)}
     <div class="info-grid">
       <div class="info-item"><b>COGS %</b><span>Direct cost to deliver the product or service (materials, direct labor, subcontractors) divided by sales. Lower is better.</span></div>
       <div class="info-item"><b>Gross Margin %</b><span>What is left after COGS (100% minus COGS %). This is what pays for overhead and profit.</span></div>
-      <div class="info-item"><b>Overhead %</b><span>Fixed operating costs (rent, admin payroll, software, insurance, marketing) divided by sales. Lower is better.</span></div>
-      <div class="info-item"><b>Net Profit %</b><span>What the business keeps after all costs, before owner distributions. Gross margin % minus overhead %.</span></div>
+      <div class="info-item"><b>Overhead %</b><span>Fixed operating costs (rent, payroll not in COGS, software, insurance, marketing) divided by sales. Lower is better.</span></div>
+      <div class="info-item"><b>Net Profit %</b><span>What the business keeps after all costs, including fair pay for the owner. Gross margin % minus overhead % and owner pay.</span></div>
     </div>
   </div>
   <div class="card">
@@ -694,7 +696,7 @@ const chk={};
 const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[],raL=[],oeL=[];
 
 function g(id){const el=document.getElementById(id);if(!el)return null;const v=parseFloat(String(el.value).replace(/,/g,''));return isNaN(v)?null:v;}
-function fD(n){if(n===null||n===undefined||isNaN(n))return'—';return'$'+Math.round(n).toLocaleString();}
+function fD(n){if(n===null||n===undefined||isNaN(n))return'—';const r=Math.round(n);return(r<0?'-':'')+'$'+Math.abs(r).toLocaleString();}
 function fP(n){if(n===null||isNaN(n))return'—';return(Math.round(n*10)/10)+'%';}
 function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function num(v){const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?null:n;}
@@ -707,7 +709,8 @@ function T(t){
   if(t==='overhead')ohCalc();
   if(t==='snapshot'){snCalc();}
   if(t==='breakeven')beCalc();
-  if(t==='pricing')calcOHPerJob();
+  if(t==='projections')prCalc();
+  if(t==='pricing'){calcOHPerJob();pxCalc();}
   if(t==='benchmarks')renderBench();
   if(t==='dashboard')renderDash();
 }
@@ -770,9 +773,9 @@ function renderOH(){
         <input type="text" class="oh-cat-name" data-act="catname" value="${esc(cat.label)}" placeholder="Section name" title="Rename section">
         <span class="oh-cattot" id="cattot_${cat.id}"></span>
         <span class="oh-tools">
-          <button class="ibtn" data-act="catup" title="Move section up" ${ci===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
-          <button class="ibtn" data-act="catdown" title="Move section down" ${ci===ohCats.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
-          <button class="ibtn" data-act="catdel" title="Delete section"><i class="ti ti-trash"></i></button>
+          <button type="button" class="ibtn" data-act="catup" title="Move section up" ${ci===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
+          <button type="button" class="ibtn" data-act="catdown" title="Move section down" ${ci===ohCats.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
+          <button type="button" class="ibtn" data-act="catdel" title="Delete section"><i class="ti ti-trash"></i></button>
         </span>
       </div>`;
     cat.items.forEach((it,ii)=>{
@@ -783,9 +786,9 @@ function renderOH(){
           <input type="text" class="oh-lbl" data-act="lbl" value="${esc(it.label)}" placeholder="Line item name">
           <input type="number" class="oh-amt" data-act="amt" value="${it.amount!=null?it.amount:''}" placeholder="$/mo">
           <span class="oh-tools">
-            <button class="ibtn" data-act="toggle" title="Payee & notes"><i class="ti ti-chevron-${open?'up':'down'}"></i></button>
-            <button class="ibtn" data-act="up" title="Move up" ${ii===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
-            <button class="ibtn" data-act="down" title="Move down" ${ii===cat.items.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
+            <button type="button" class="ibtn" data-act="toggle" title="Payee & notes"><i class="ti ti-chevron-${open?'up':'down'}"></i></button>
+            <button type="button" class="ibtn" data-act="up" title="Move up" ${ii===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
+            <button type="button" class="ibtn" data-act="down" title="Move down" ${ii===cat.items.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
           </span>
           <select class="oh-move" data-act="move" title="Move to another section">${opts}</select>
           <button class="delb" data-act="del" title="Remove line"><i class="ti ti-trash"></i></button>
@@ -855,7 +858,7 @@ function ohInitEvents(){
     if(!found)return;
     if(act==='toggle'){ohOpen.has(found.item.id)?ohOpen.delete(found.item.id):ohOpen.add(found.item.id);renderOH();return;}
     if(act==='up'||act==='down'){moveIn(found.cat.items,found.i,found.i+(act==='up'?-1:1));renderOH();return;}
-    if(act==='del'){found.cat.items.splice(found.i,1);ohOpen.delete(found.item.id);renderOH();return;}
+    if(act==='del'){if(found.item.amount&&!confirm('Remove "'+(found.item.label||'this line')+'" ('+fD(found.item.amount)+'/mo)?'))return;found.cat.items.splice(found.i,1);ohOpen.delete(found.item.id);renderOH();return;}
   });
 }
 
@@ -866,14 +869,16 @@ function ohCalc(){
     if(el){const t=ohCatTotal(cat);el.textContent=t?fD(t)+'/mo':'';}
   });
   if(!total){document.getElementById('oh-summary').innerHTML='';
-    const beEl=document.getElementById('be_oh');if(beEl){beEl.value='';beCalc();}return;}
+    const beEl=document.getElementById('be_oh');if(beEl&&beEl.dataset.auto){beEl.value='';delete beEl.dataset.auto;beCalc();}
+    prCalc();calcOHPerJob();pxCalc();return;}
   document.getElementById('oh-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Overhead Summary</h3>
     ${ohCats.map((cat,i)=>`<div class="kv"><span class="kk">${i+1}. ${esc(cat.label||'(unnamed)')}</span><span class="kv2">${fD(ohCatTotal(cat))}</span></div>`).join('')}
     <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Total monthly overhead</span><span class="kv2" style="font-size:16px">${fD(total)}</span></div>
     <div class="kv"><span class="kk">Annual overhead</span><span class="kv2">${fD(total*12)}</span></div>
   </div>`;
   const beEl=document.getElementById('be_oh');
-  if(beEl){beEl.value=fmtNum(Math.round(total*12));beCalc();}
+  if(beEl){beEl.value=fmtNum(Math.round(total*12));beEl.dataset.auto='1';beCalc();}
+  prCalc();calcOHPerJob();pxCalc();
 }
 
 // Session load: accepts new format (cats) and the old fixed-field format
@@ -905,7 +910,7 @@ function calcAvgSale(){
 function applyAvgSale(){
   const sales=g('be_total_sales'), clients=g('be_num_clients');
   if(sales && clients && clients>0){
-    document.getElementById('be_avg_sale').value = Math.round(sales/clients);
+    document.getElementById('be_avg_sale').value = fmtNum(Math.round(sales/clients));
     beCalc();
   }
 }
@@ -916,8 +921,7 @@ function calcGPM(){
   if(cogs !== null && cogs >= 0 && cogs <= 100){
     gpmEl.value = Math.round((100 - cogs) * 10) / 10;
     // sync to projections tab — switch to % mode and set value
-    setCogsMode('pct');
-    if(cogsEl) cogsEl.value = cogs;
+    if(cogsEl && (cogsMode==='pct' || !cogsEl.value)){ setCogsMode('pct'); cogsEl.value = cogs; }
     prCalc();
   }
   beCalc();
@@ -1043,7 +1047,7 @@ function rMix(){
     <td><input type="text" inputmode="decimal" value="${m.q||''}" placeholder="0" oninput="mixEdit(${i},'q',this.value)" style="max-width:90px"></td>
     <td class="mx-rev">${fD(r)}</td>
     <td class="mx-pct">${t.rev?fP(r/t.rev*100):'—'}</td>
-    <td class="nowrap"><button class="ibtn" title="Move up" ${i===0?'disabled':''} onclick="moveIn(mixL,${i},${i-1});rMix();beCalc()"><i class="ti ti-arrow-up"></i></button><button class="ibtn" title="Move down" ${i===mixL.length-1?'disabled':''} onclick="moveIn(mixL,${i},${i+1});rMix();beCalc()"><i class="ti ti-arrow-down"></i></button><button class="delb" onclick="mixL.splice(${i},1);rMix();beCalc()"><i class="ti ti-trash"></i></button></td>
+    <td class="nowrap"><button type="button" class="ibtn" title="Move up" ${i===0?'disabled':''} onclick="moveIn(mixL,${i},${i-1});rMix();beCalc()"><i class="ti ti-arrow-up"></i></button><button type="button" class="ibtn" title="Move down" ${i===mixL.length-1?'disabled':''} onclick="moveIn(mixL,${i},${i+1});rMix();beCalc()"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" aria-label="Delete" onclick="mixL.splice(${i},1);rMix();beCalc()"><i class="ti ti-trash"></i></button></td>
   </tr>`;}).join('')+`<tr id="mx-tot" style="background:var(--gray-100)">${mixTotRow(t)}</tr>`;
 }
 
@@ -1053,7 +1057,7 @@ function beCompute(){
   if(!oh||!gpm||gpm<=0)return null;
   const annOH=oh+allow,annTotal=annOH+draw,totalBase=annTotal+target;
   const annSalesReq=totalBase/(gpm/100),moSalesReq=annSalesReq/12;
-  return {oh,allow,draw,gpm,avgSale,target,annOH,annTotal,annSalesReq,moSalesReq,
+  return {oh,allow,draw,gpm,avgSale,target,annOH,annTotal,annSalesReq,moSalesReq,beSales:annTotal/(gpm/100),
     cogsPct:100-gpm,ohPct:annOH/annSalesReq*100,drawPct:draw/annSalesReq*100,netPct:target/annSalesReq*100,
     clientsNeeded:(avgSale&&avgSale>0)?moSalesReq/avgSale:null};
 }
@@ -1075,7 +1079,7 @@ function beCalc(){
   const {annOH,annTotal,annSalesReq,moSalesReq,gpm,target,avgSale,clientsNeeded}=c;
   const netProfitPct=target?Math.round(c.netPct*10)/10:null;
   const prRevEl=document.getElementById('pr_rev');
-  if(target&&prRevEl&&!prRevEl.dataset.manual){prRevEl.value=fmtNum(Math.round(annSalesReq));prCalc();}
+  if(prRevEl&&!prRevEl.dataset.manual){prRevEl.value=fmtNum(Math.round(annSalesReq));prCalc();}
   const hasTarget=target>0;
   const mx=beMixBreakdown(c);
   let mixHtml='';
@@ -1120,7 +1124,7 @@ function beCalc(){
       <div class="kv"><span class="kk">Annual sales required</span><span class="kv2">${fD(annSalesReq)}</span></div>
       <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Net profit % of sales</span><span class="kv2 good" style="font-size:16px">${netProfitPct}%</span></div>
     </div>`:''}
-    ${clientsNeeded?`<div class="card"><h3>Client / Job Target</h3>
+    ${clientsNeeded&&!(mx&&mx.t.cust)?`<div class="card"><h3>Client / Job Target</h3>
       <div class="kv"><span class="kk">Average sale per client</span><span class="kv2">${fD(avgSale)}</span></div>
       <div class="kv"><span class="kk">Clients / jobs needed per month</span><span class="kv2 good">${Math.ceil(clientsNeeded)}</span></div>
       ${hasTarget?`<div class="kv"><span class="kk">Target net income included</span><span class="kv2">${fD(target)}</span></div>`:''}
@@ -1140,14 +1144,15 @@ function setCogsMode(mode){
   prCalc();
 }
 function addRA(){const mo=document.getElementById('ra_mo').value,type=document.getElementById('ra_type').value,lbl=document.getElementById('ra_lbl').value.trim(),amt=parseFloat(String(document.getElementById('ra_amt').value).replace(/,/g,''));if(!lbl||isNaN(amt))return;raL.push({mo,type,lbl,amt});document.getElementById('ra_lbl').value='';document.getElementById('ra_amt').value='';rRA();prCalc();}
-function rRA(){const tb=document.getElementById('ra-tb');if(!raL.length){tb.innerHTML='<tr class="er"><td colspan="5">No adjustments added yet</td></tr>';return;}tb.innerHTML=raL.map((r,i)=>`<tr><td style="font-weight:600">${r.mo}</td><td><span class="pill ${r.type==='ongoing'?'blue':'amber'}">${r.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${r.lbl}</td><td style="color:${r.amt>=0?'var(--green)':'var(--red)'};font-weight:600">${r.amt>=0?'+':''}${fD(Math.abs(r.amt))}</td><td><button class="delb" onclick="raL.splice(${i},1);rRA();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function rRA(){const tb=document.getElementById('ra-tb');if(!raL.length){tb.innerHTML='<tr class="er"><td colspan="5">No adjustments added yet</td></tr>';return;}tb.innerHTML=raL.map((r,i)=>`<tr><td style="font-weight:600">${r.mo}</td><td><span class="pill ${r.type==='ongoing'?'blue':'amber'}">${r.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${esc(r.lbl)}</td><td style="color:${r.amt>=0?'var(--green)':'var(--red)'};font-weight:600">${r.amt>=0?'+':''}${fD(r.amt)}</td><td><button class="delb" title="Delete" aria-label="Delete" onclick="raL.splice(${i},1);rRA();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
 function addOE(){const mo=document.getElementById('oe_mo').value,type=document.getElementById('oe_type').value,lbl=document.getElementById('oe_lbl').value.trim(),amt=parseFloat(String(document.getElementById('oe_amt').value).replace(/,/g,''));if(!lbl||isNaN(amt))return;oeL.push({mo,type,lbl,amt});document.getElementById('oe_lbl').value='';document.getElementById('oe_amt').value='';rOE();prCalc();}
-function rOE(){const tb=document.getElementById('oe-tb');if(!oeL.length){tb.innerHTML='<tr class="er"><td colspan="5">No expense adjustments added yet</td></tr>';return;}tb.innerHTML=oeL.map((o,i)=>`<tr><td style="font-weight:600">${o.mo}</td><td><span class="pill ${o.type==='ongoing'?'blue':'amber'}">${o.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${o.lbl}</td><td style="color:var(--red);font-weight:600">${fD(o.amt)}</td><td><button class="delb" onclick="oeL.splice(${i},1);rOE();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function rOE(){const tb=document.getElementById('oe-tb');if(!oeL.length){tb.innerHTML='<tr class="er"><td colspan="5">No expense adjustments added yet</td></tr>';return;}tb.innerHTML=oeL.map((o,i)=>`<tr><td style="font-weight:600">${o.mo}</td><td><span class="pill ${o.type==='ongoing'?'blue':'amber'}">${o.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${esc(o.lbl)}</td><td style="color:${o.amt<0?'var(--green)':'var(--red)'};font-weight:600">${fD(o.amt)}</td><td><button class="delb" title="Delete" aria-label="Delete" onclick="oeL.splice(${i},1);rOE();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
 
 function prCompute(){
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
   if(!rev)return null;
   const moOH=ohGetTotal();
+  const moAllow=(g('be_allow')||0)/12,moDraw=(g('be_draw')||0)/12;
   const baseMonthly=rev/12;
   let cogsRate=0;
   if(cogsVal!==null){cogsRate=cogsMode==='pct'?cogsVal/100:(cogsVal/rev);}
@@ -1168,60 +1173,64 @@ function prCompute(){
     const moRev=(baseMonthly*Math.pow(1+growth/100,i))+raAdj;
     const moCogs=moRev*cogsRate;
     const moGP=moRev-moCogs;
-    const moNet=moGP-moOH-oeAmt;
-    return{label:'M'+moIndex,rev:moRev,cogs:moCogs,gp:moGP,oh:moOH,net:moNet,netPct:moRev?moNet/moRev*100:null,oeAmt,raAdj,hasAdj:raAdj!==0||oeAmt>0};
+    const moNet=moGP-moOH-moAllow-moDraw-oeAmt;
+    return{label:'M'+moIndex,rev:moRev,cogs:moCogs,gp:moGP,oh:moOH,net:moNet,netPct:moRev?moNet/moRev*100:null,oeAmt,raAdj,hasAdj:raAdj!==0||oeAmt!==0};
   });
   let cash=startCash;
   months.forEach(m=>{m.start=cash;m.end=cash+m.net;cash=m.end;});
-  const tot={rev:0,gp:0,net:0,oe:0};
-  months.forEach(m=>{tot.rev+=m.rev;tot.gp+=m.gp;tot.net+=m.net;tot.oe+=m.oeAmt;});
+  const tot={rev:0,cogs:0,gp:0,net:0,oe:0};
+  months.forEach(m=>{tot.rev+=m.rev;tot.cogs+=m.cogs;tot.gp+=m.gp;tot.net+=m.net;tot.oe+=m.oeAmt;});
   tot.netPct=tot.rev?tot.net/tot.rev*100:null;
   tot.gpPct=tot.rev?tot.gp/tot.rev*100:null;
-  return {months,tot,moOH};
+  return {months,tot,moOH,moAllow,moDraw};
 }
 function prCalc(){
   const pc=prCompute();
   if(!pc){document.getElementById('proj-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual revenue target to generate projections.</div>';return;}
-  const {months,tot,moOH}=pc;
+  const {months,tot,moOH,moAllow,moDraw}=pc;
+  const hasAl=moAllow>0,hasDr=moDraw>0;
   const gc=v=>v>=0?'var(--green)':'var(--red)';
   const hasOE=oeL.length>0,hasRA=raL.length>0;
   const npc=v=>v==null?'':(v>=15?'green':v>=5?'amber':'red');
   document.getElementById('proj-results').innerHTML=`
     <div class="card" style="margin-top:14px"><h3>12-Month Projection</h3>
       <div style="overflow-x:auto">
-      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th>${hasOE?'<th>Exp Adj</th>':''}${hasRA?'<th>Rev Adj</th>':''}<th>Net Profit</th><th>Net %</th><th>Ending Cash</th></tr></thead>
+      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th>${hasAl?'<th>Allowance</th>':''}${hasDr?'<th>Owner Pay</th>':''}${hasOE?'<th>Exp Adj</th>':''}${hasRA?'<th>Rev Adj</th>':''}<th>Net Profit</th><th>Net %</th><th>Ending Cash</th></tr></thead>
       <tbody>${months.map(m=>`<tr${m.hasAdj?' style="background:var(--gray-100)"':''}>
         <td style="font-weight:600">${m.label}</td>
         <td>${fD(m.rev)}</td>
         <td style="color:var(--red)">${fD(m.cogs)}</td>
         <td style="color:${gc(m.gp)};font-weight:600">${fD(m.gp)}</td>
         <td style="color:var(--gray-700)">${fD(moOH)}</td>
-        ${hasOE?`<td style="color:var(--red)">${m.oeAmt>0?fD(m.oeAmt):'—'}</td>`:''}
+        ${hasAl?`<td style="color:var(--gray-700)">${fD(moAllow)}</td>`:''}
+        ${hasDr?`<td style="color:var(--gray-700)">${fD(moDraw)}</td>`:''}
+        ${hasOE?`<td style="color:${m.oeAmt<0?'var(--green)':'var(--red)'}">${m.oeAmt!==0?fD(m.oeAmt):'—'}</td>`:''}
         ${hasRA?`<td style="color:${m.raAdj>=0?'var(--green)':'var(--red)'}">${m.raAdj!==0?(m.raAdj>0?'+':'-')+fD(Math.abs(m.raAdj)):'—'}</td>`:''}
         <td style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
         <td><span class="pill ${npc(m.netPct)}">${fP(m.netPct)}</span></td>
         <td style="color:${gc(m.end)};font-weight:600">${fD(m.end)}</td>
       </tr>`).join('')}
-      <tr style="background:var(--gray-100)"><td style="font-weight:700">Total</td><td style="font-weight:700">${fD(tot.rev)}</td><td></td><td style="font-weight:700">${fD(tot.gp)}</td><td style="font-weight:700">${fD(moOH*12)}</td>${hasOE?`<td style="font-weight:700">${fD(tot.oe)}</td>`:''}${hasRA?'<td></td>':''}<td style="font-weight:700;color:${gc(tot.net)}">${fD(tot.net)}</td><td><span class="pill ${npc(tot.netPct)}">${fP(tot.netPct)}</span></td><td></td></tr>
+      <tr style="background:var(--gray-100)"><td style="font-weight:700">Total</td><td style="font-weight:700">${fD(tot.rev)}</td><td></td><td style="font-weight:700">${fD(tot.gp)}</td><td style="font-weight:700">${fD(moOH*12)}</td>${hasAl?`<td style="font-weight:700">${fD(moAllow*12)}</td>`:''}${hasDr?`<td style="font-weight:700">${fD(moDraw*12)}</td>`:''}${hasOE?`<td style="font-weight:700">${fD(tot.oe)}</td>`:''}${hasRA?'<td></td>':''}<td style="font-weight:700;color:${gc(tot.net)}">${fD(tot.net)}</td><td><span class="pill ${npc(tot.netPct)}">${fP(tot.netPct)}</span></td><td></td></tr>
       </tbody></table></div></div>
+    ${hasDr||hasAl?'<div style="font-size:11px;color:var(--gray-500);margin:-4px 0 10px">Allowance and owner pay come from the Break-even tab, so net profit here matches the Break-even target.</div>':''}
     <div class="grid4">
       <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(tot.rev)}</div></div>
       <div class="met ${tot.gp>=0?'good':'bad'}"><div class="ml">Total Gross Profit</div><div class="mv">${fD(tot.gp)}</div><div class="ms">${fP(tot.gpPct)} of revenue</div></div>
       ${hasOE?`<div class="met bad"><div class="ml">Total Expense Adjustments</div><div class="mv">${fD(tot.oe)}</div></div>`:''}
-      <div class="met ${tot.net>=0?'good':'bad'}"><div class="ml">Total Net Profit</div><div class="mv">${fD(tot.net)}</div></div>
+      <div class="met ${tot.net>=0?'good':'bad'}"><div class="ml">Total Net Profit</div><div class="mv">${fD(tot.net)}</div><div class="ms">${hasDr||hasAl?'after owner pay & allowance':'after overhead'}</div></div>
       <div class="met ${tot.netPct==null?'':tot.netPct>=15?'good':tot.netPct>=5?'warn':'bad'}"><div class="ml">Net Profit %</div><div class="mv">${fP(tot.netPct)}</div><div class="ms">of total revenue</div></div>
       <div class="met ${months[11].end>=0?'good':'bad'}"><div class="ml">Year-End Cash</div><div class="mv">${fD(months[11].end)}</div></div>
     </div>`;
 }
 
-function addCC(){const n=document.getElementById('cc_n').value.trim(),b=parseFloat(document.getElementById('cc_b').value),l=parseFloat(document.getElementById('cc_l').value),d=document.getElementById('cc_d').value.trim();if(!n||isNaN(b))return;ccL.push({n,b,l:isNaN(l)?null:l,d});['cc_n','cc_b','cc_l','cc_d'].forEach(id=>document.getElementById(id).value='');rCC();cfCalc();}
-function rCC(){const tb=document.getElementById('cc-tb');if(!ccL.length){tb.innerHTML='<tr class="er"><td colspan="6">No cards added yet</td></tr>';return;}tb.innerHTML=ccL.map((c,i)=>`<tr><td>${c.n}</td><td>${fD(c.b)}</td><td>${c.l?fD(c.l):'—'}</td><td>${c.l?fD(c.l-c.b):'—'}</td><td>${c.d||'—'}</td><td><button class="delb" onclick="ccL.splice(${i},1);rCC();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
-function addLoan(){const n=document.getElementById('ln_n').value.trim(),b=parseFloat(document.getElementById('ln_b').value),p=document.getElementById('ln_p').value.trim(),r=document.getElementById('ln_r').value.trim();if(!n||isNaN(b))return;lnL.push({n,b,p,r});['ln_n','ln_b','ln_p','ln_r'].forEach(id=>document.getElementById(id).value='');rLn();cfCalc();}
-function rLn(){const tb=document.getElementById('ln-tb');if(!lnL.length){tb.innerHTML='<tr class="er"><td colspan="5">No loans added yet</td></tr>';return;}tb.innerHTML=lnL.map((l,i)=>`<tr><td>${l.n}</td><td>${fD(l.b)}</td><td>${l.p?'$'+l.p:'—'}</td><td>${l.r?l.r+'%':'—'}</td><td><button class="delb" onclick="lnL.splice(${i},1);rLn();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
-function addCI(){const n=document.getElementById('ci_n').value.trim(),a=parseFloat(document.getElementById('ci_a').value),d=document.getElementById('ci_d').value.trim();if(!n||isNaN(a))return;ciL.push({n,a,d});['ci_n','ci_a','ci_d'].forEach(id=>document.getElementById(id).value='');rCI();cfCalc();}
-function rCI(){const tb=document.getElementById('ci-tb');if(!ciL.length){tb.innerHTML='<tr class="er"><td colspan="4">No items added yet</td></tr>';return;}tb.innerHTML=ciL.map((c,i)=>`<tr><td>${c.n}</td><td style="color:var(--green);font-weight:600">${fD(c.a)}</td><td>${c.d||'—'}</td><td><button class="delb" onclick="ciL.splice(${i},1);rCI();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
-function addCO(){const n=document.getElementById('co_n').value.trim(),a=parseFloat(document.getElementById('co_a').value),d=document.getElementById('co_d').value.trim(),t=document.getElementById('co_t').value;if(!n||isNaN(a))return;coL.push({n,a,d,t});['co_n','co_a','co_d'].forEach(id=>document.getElementById(id).value='');rCO();cfCalc();}
-function rCO(){const tb=document.getElementById('co-tb');if(!coL.length){tb.innerHTML='<tr class="er"><td colspan="5">No items added yet</td></tr>';return;}tb.innerHTML=coL.map((c,i)=>`<tr><td>${c.n}</td><td style="color:var(--red);font-weight:600">${fD(c.a)}</td><td>${c.d||'—'}</td><td><span class="pill blue">${c.t}</span></td><td><button class="delb" onclick="coL.splice(${i},1);rCO();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function addCC(){const n=document.getElementById('cc_n').value.trim(),b=(num(document.getElementById('cc_b').value)??NaN),l=(num(document.getElementById('cc_l').value)??NaN),d=document.getElementById('cc_d').value.trim();if(!n||isNaN(b))return;ccL.push({n,b,l:isNaN(l)?null:l,d});['cc_n','cc_b','cc_l','cc_d'].forEach(id=>document.getElementById(id).value='');rCC();cfCalc();}
+function rCC(){const tb=document.getElementById('cc-tb');if(!ccL.length){tb.innerHTML='<tr class="er"><td colspan="6">No cards added yet</td></tr>';return;}tb.innerHTML=ccL.map((c,i)=>`<tr><td>${esc(c.n)}</td><td>${fD(c.b)}</td><td>${c.l?fD(c.l):'—'}</td><td>${c.l?fD(c.l-c.b):'—'}</td><td>${esc(c.d||'—')}</td><td><button class="delb" title="Delete" aria-label="Delete" onclick="ccL.splice(${i},1);rCC();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function addLoan(){const n=document.getElementById('ln_n').value.trim(),b=(num(document.getElementById('ln_b').value)??NaN),p=document.getElementById('ln_p').value.trim(),r=document.getElementById('ln_r').value.trim();if(!n||isNaN(b))return;lnL.push({n,b,p,r});['ln_n','ln_b','ln_p','ln_r'].forEach(id=>document.getElementById(id).value='');rLn();cfCalc();}
+function rLn(){const tb=document.getElementById('ln-tb');if(!lnL.length){tb.innerHTML='<tr class="er"><td colspan="5">No loans added yet</td></tr>';return;}tb.innerHTML=lnL.map((l,i)=>`<tr><td>${esc(l.n)}</td><td>${fD(l.b)}</td><td>${l.p?esc('$'+l.p):'—'}</td><td>${l.r?esc(l.r+'%'):'—'}</td><td><button class="delb" title="Delete" aria-label="Delete" onclick="lnL.splice(${i},1);rLn();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function addCI(){const n=document.getElementById('ci_n').value.trim(),a=(num(document.getElementById('ci_a').value)??NaN),d=document.getElementById('ci_d').value.trim();if(!n||isNaN(a))return;ciL.push({n,a,d});['ci_n','ci_a','ci_d'].forEach(id=>document.getElementById(id).value='');rCI();cfCalc();}
+function rCI(){const tb=document.getElementById('ci-tb');if(!ciL.length){tb.innerHTML='<tr class="er"><td colspan="4">No items added yet</td></tr>';return;}tb.innerHTML=ciL.map((c,i)=>`<tr><td>${esc(c.n)}</td><td style="color:var(--green);font-weight:600">${fD(c.a)}</td><td>${esc(c.d||'—')}</td><td><button class="delb" title="Delete" aria-label="Delete" onclick="ciL.splice(${i},1);rCI();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+function addCO(){const n=document.getElementById('co_n').value.trim(),a=(num(document.getElementById('co_a').value)??NaN),d=document.getElementById('co_d').value.trim(),t=document.getElementById('co_t').value;if(!n||isNaN(a))return;coL.push({n,a,d,t});['co_n','co_a','co_d'].forEach(id=>document.getElementById(id).value='');rCO();cfCalc();}
+function rCO(){const tb=document.getElementById('co-tb');if(!coL.length){tb.innerHTML='<tr class="er"><td colspan="5">No items added yet</td></tr>';return;}tb.innerHTML=coL.map((c,i)=>`<tr><td>${esc(c.n)}</td><td style="color:var(--red);font-weight:600">${fD(c.a)}</td><td>${esc(c.d||'—')}</td><td><span class="pill blue">${esc(c.t)}</span></td><td><button class="delb" title="Delete" aria-label="Delete" onclick="coL.splice(${i},1);rCO();cfCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
 function cfCalc(){
   const tIn=ciL.reduce((a,c)=>a+c.a,0),tOut=coL.reduce((a,c)=>a+c.a,0),net=tIn-tOut;
   const cash=g('cf_cash'),proj=cash!==null?cash+net:null;
@@ -1236,10 +1245,10 @@ function cfCalc(){
     <div class="kv"><span class="kk">Total loan balances</span><span class="kv2">${fD(tLn)}</span></div>
   </div>`;}
 
-function addCol(){const n=document.getElementById('col_n').value.trim(),a=parseFloat(document.getElementById('col_a').value),age=document.getElementById('col_age').value,st=document.getElementById('col_st').value;if(!n||isNaN(a))return;colL.push({n,a,age,st});['col_n','col_a'].forEach(id=>document.getElementById(id).value='');rCol();}
+function addCol(){const n=document.getElementById('col_n').value.trim(),a=(num(document.getElementById('col_a').value)??NaN),age=document.getElementById('col_age').value,st=document.getElementById('col_st').value;if(!n||isNaN(a))return;colL.push({n,a,age,st});['col_n','col_a'].forEach(id=>document.getElementById(id).value='');rCol();}
 function ageC(a){return a==='90+ days'?'red':a==='61-90 days'?'amber':a==='31-60 days'?'blue':'green';}
 function stC(s){return s==='Write off'||s==='Dispute'?'red':s==='Open'?'blue':'amber';}
-function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.innerHTML='<tr class="er"><td colspan="5">No accounts tracked yet</td></tr>';return;}tb.innerHTML=colL.map((c,i)=>`<tr><td>${c.n}</td><td style="font-weight:600">${fD(c.a)}</td><td><span class="pill ${ageC(c.age)}">${c.age}</span></td><td><span class="pill ${stC(c.st)}">${c.st}</span></td><td><button class="delb" onclick="colL.splice(${i},1);rCol()"><i class="ti ti-trash"></i></button></td></tr>`).join('');
+function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.innerHTML='<tr class="er"><td colspan="5">No accounts tracked yet</td></tr>';return;}tb.innerHTML=colL.map((c,i)=>`<tr><td>${esc(c.n)}</td><td style="font-weight:600">${fD(c.a)}</td><td><span class="pill ${ageC(c.age)}">${esc(c.age)}</span></td><td><span class="pill ${stC(c.st)}">${esc(c.st)}</span></td><td><button class="delb" title="Delete" aria-label="Delete" onclick="colL.splice(${i},1);rCol()"><i class="ti ti-trash"></i></button></td></tr>`).join('');
   const tot=colL.reduce((a,c)=>a+c.a,0),at90=colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0),open=colL.filter(c=>c.st==='Open').reduce((a,c)=>a+c.a,0);
   document.getElementById('col-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Collections Summary</h3>
     <div class="kv"><span class="kk">Total AR tracked</span><span class="kv2">${fD(tot)}</span></div>
@@ -1279,7 +1288,7 @@ function rIss(){
     <td><input type="text" value="${esc(s.desc)}" oninput="editIss(${i},'desc',this.value)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';}" style="min-width:160px"></td>
     <td><select class="sel-${priC(s.pri)}" onchange="editIss(${i},'pri',this.value)">${issOpts(IS_PRI,s.pri)}</select></td>
     <td><select class="sel-${stC2(s.st)}" onchange="editIss(${i},'st',this.value)">${issOpts(IS_ST,s.st)}</select></td>
-    <td class="nowrap"><button class="ibtn" title="Move up" ${k===0?'disabled':''} onclick="moveIss(${i},-1)"><i class="ti ti-arrow-up"></i></button><button class="ibtn" title="Move down" ${k===filtered.length-1?'disabled':''} onclick="moveIss(${i},1)"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
+    <td class="nowrap"><button type="button" class="ibtn" title="Move up" ${k===0?'disabled':''} onclick="moveIss(${i},-1)"><i class="ti ti-arrow-up"></i></button><button type="button" class="ibtn" title="Move down" ${k===filtered.length-1?'disabled':''} onclick="moveIss(${i},1)"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" aria-label="Delete" onclick="if(confirm('Delete this issue?')){isL.splice(${i},1);rIss()}"><i class="ti ti-trash"></i></button></td>
   </tr>`;}).join('');}
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
@@ -1322,18 +1331,18 @@ function applyOHPerJob(){
   const annOH = ohGetTotal() * 12;
   const jobs = g('px_jobs_yr');
   if(annOH && jobs && jobs > 0){
-    document.getElementById('px_oh').value = Math.round(annOH / jobs);
+    document.getElementById('px_oh').value = fmtNum(Math.round(annOH / jobs));
     pxCalc();
   }
 }
 function pxCalc(){
-  const labor=g('px_labor')||0,mat=g('px_mat')||0,oh=g('px_oh')||0,jobs=g('px_jobs')||1;
+  const labor=g('px_labor')||0,mat=g('px_mat')||0,oh=g('px_oh')||0,jobs=g('px_jobs');
   const tgm=g('px_tgm'),tnm=g('px_tnm'),ind=g('px_ind'),curr=g('px_curr');
   const directCost=labor+mat;
   const totalCost=directCost+oh;
   const costPlusPrice=tgm&&tgm<100?totalCost/(1-tgm/100):null;
   const moOH=ohGetTotal();
-  const ohPerJob=moOH&&jobs?moOH/jobs:oh;
+  const ohPerJob=g('px_oh')!==null?oh:(moOH&&jobs?moOH/jobs:0);
   const fullCost=directCost+ohPerJob;
   const marginPrice=tnm&&tnm<100?fullCost/(1-tnm/100):null;
   const currMargin=curr&&totalCost?((curr-totalCost)/curr*100):null;
@@ -1360,20 +1369,24 @@ function pxCalc(){
       <div class="kv"><span class="kk">Minimum price to break even</span><span class="kv2">${fD(totalCost)}</span></div>
     </div>`;}
 
-function addPkg(){const n=document.getElementById('pkg_n').value.trim(),c=parseFloat(document.getElementById('pkg_c').value),p=parseFloat(document.getElementById('pkg_p').value);if(!n||isNaN(c)||isNaN(p))return;pkgL.push({n,c,p});['pkg_n','pkg_c','pkg_p'].forEach(id=>document.getElementById(id).value='');rPkg();}
-function rPkg(){const tb=document.getElementById('pkg-tb');if(!pkgL.length){tb.innerHTML='<tr class="er"><td colspan="6">No packages added yet</td></tr>';return;}tb.innerHTML=pkgL.map((pk,i)=>{const m=pk.p-pk.c,mp=pk.p?m/pk.p*100:0;return`<tr><td style="font-weight:600">${pk.n}</td><td>${fD(pk.c)}</td><td>${fD(pk.p)}</td><td style="color:${m>=0?'var(--green)':'var(--red)'};font-weight:600">${fD(m)}</td><td><span class="pill ${mp>=30?'green':mp>=15?'amber':'red'}">${fP(mp)}</span></td><td><button class="delb" onclick="pkgL.splice(${i},1);rPkg()"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');}
+function addPkg(){const n=document.getElementById('pkg_n').value.trim(),c=(num(document.getElementById('pkg_c').value)??NaN),p=(num(document.getElementById('pkg_p').value)??NaN);if(!n||isNaN(c)||isNaN(p))return;pkgL.push({n,c,p});['pkg_n','pkg_c','pkg_p'].forEach(id=>document.getElementById(id).value='');rPkg();}
+function rPkg(){const tb=document.getElementById('pkg-tb');if(!pkgL.length){tb.innerHTML='<tr class="er"><td colspan="6">No packages added yet</td></tr>';return;}tb.innerHTML=pkgL.map((pk,i)=>{const m=pk.p-pk.c,mp=pk.p?m/pk.p*100:0;return`<tr><td style="font-weight:600">${esc(pk.n)}</td><td>${fD(pk.c)}</td><td>${fD(pk.p)}</td><td style="color:${m>=0?'var(--green)':'var(--red)'};font-weight:600">${fD(m)}</td><td><span class="pill ${mp>=30?'green':mp>=15?'amber':'red'}">${fP(mp)}</span></td><td><button class="delb" title="Delete" aria-label="Delete" onclick="pkgL.splice(${i},1);rPkg()"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');}
 
+function finMetrics(){
+  const pc=prCompute(),bc=beCompute(),moOH=ohGetTotal();
+  const t=pc?pc.tot:null;
+  return {pc,bc,moOH,annOH:moOH*12,target:g('pr_rev'),
+    rev:t?t.rev:null,cogs:t?t.cogs:null,gross:t?t.gp:null,grossPct:t?t.gpPct:null,net:t?t.net:null,netPct:t?t.netPct:null,
+    cogsP:t&&t.rev?t.cogs/t.rev*100:null,ohP:t&&t.rev?moOH*12/t.rev*100:null,
+    breakEven:bc?bc.beSales:null,
+    openIss:isL.filter(i=>i.st==='Open').length,hiIss:isL.filter(i=>i.pri==='High'&&i.st!=='Fixed').length};
+}
 function renderDash(){
-  const moOH=ohGetTotal();
-  const rev=g('pr_rev'),cogsRaw=g('pr_cogs_val'),cogs=cogsRaw!==null?(cogsMode==='pct'?rev*cogsRaw/100:cogsRaw):null,cash=g('cf_cash'),beOh=g('be_oh'),beGpm=g('be_gpm');
-  const gross=rev&&cogs?rev-cogs:null,grossPct=gross&&rev?gross/rev*100:null;
-  const annOH=moOH*12;
-  const net=gross?gross-annOH:null,netPct=net&&rev?net/rev*100:null;
-  const beAnn=beOh?beOh:annOH;
-  const breakEven=beGpm&&beGpm<100?beAnn/(beGpm/100):null;
+  const fm=finMetrics();
+  const {moOH,annOH,gross,grossPct,net,netPct,breakEven,cogsP,openIss,hiIss}=fm;
+  const rev=fm.target,cash=g('cf_cash'),payrollP=fm.ohP;
   const tCC=ccL.reduce((a,c)=>a+c.b,0),tLn=lnL.reduce((a,l)=>a+l.b,0);
   const colTot=colL.reduce((a,c)=>a+c.a,0),col90=colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
-  const openIss=isL.filter(i=>i.st==='Open').length,hiIss=isL.filter(i=>i.pri==='High').length;
   const tIn=ciL.reduce((a,c)=>a+c.a,0),tOut=coL.reduce((a,c)=>a+c.a,0),cfNet=tIn-tOut;
   const all=Object.values(chk).flat(),done=all.filter(Boolean).length,pct=all.length?Math.round(done/all.length*100):0;
   const hasData=rev||moOH||colL.length||isL.length||ccL.length||ciL.length;
@@ -1387,14 +1400,12 @@ function renderDash(){
   if(hiIss>0)flags.push({t:hiIss+' high-priority QB issue'+(hiIss>1?'s':''),c:'red'});
   if(openIss>0)flags.push({t:openIss+' open QB issue'+(openIss>1?'s':''),c:'amber'});
   if(cfNet<0&&(ciL.length||coL.length))flags.push({t:'Negative cash flow this month',c:'red'});
-  const cogsP=rev&&cogs?cogs/rev*100:null;
-  const payrollP=rev&&moOH?(moOH*12)/rev*100:null;
   document.getElementById('dash-content').innerHTML=`
     <div class="grid4">
       <div class="met ${grossPct!==null?(grossPct>=30?'good':'bad'):''}"><div class="ml">Gross Margin</div><div class="mv">${fP(grossPct)}</div><div class="ms">${fD(gross)}</div></div>
-      <div class="met ${netPct!==null?(netPct>0?'good':'bad'):''}"><div class="ml">Net Margin</div><div class="mv">${fP(netPct)}</div><div class="ms">${fD(net)}</div></div>
+      <div class="met ${netPct!==null?(netPct>0?'good':'bad'):''}"><div class="ml">Net Margin</div><div class="mv">${fP(netPct)}</div><div class="ms">${fD(net)} projected</div></div>
       <div class="met"><div class="ml">Monthly Overhead</div><div class="mv">${fD(moOH||null)}</div><div class="ms">Annual: ${fD(annOH||null)}</div></div>
-      <div class="met ${breakEven?'good':''}"><div class="ml">Break-even Revenue</div><div class="mv">${fD(breakEven)}</div><div class="ms">annual</div></div>
+      <div class="met ${breakEven?'good':''}"><div class="ml">Break-even Revenue</div><div class="mv">${fD(breakEven)}</div><div class="ms">annual, incl. owner pay</div></div>
     </div>
     ${flags.length?`<div class="card"><h3>Flags</h3><div class="flags">${flags.map(f=>`<span class="fl ${f.c}"><i class="ti ti-${f.c==='red'?'alert-circle':f.c==='amber'?'alert-triangle':'circle-check'}"></i>${f.t}</span>`).join('')}</div></div>`:''}
     <div class="card"><h3>Key Ratios</h3>
@@ -1416,7 +1427,7 @@ function renderDash(){
       <div class="kv"><span class="kk">High-priority issues</span><span class="kv2 ${hiIss>0?'bad':''}">${hiIss||'—'}</span></div>
     </div>
     <div class="card"><h3>Pricing Snapshot</h3>
-      ${pkgL.length?`<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Cost</th><th>Price</th><th>Margin</th></tr></thead><tbody>${pkgL.map(pk=>{const mp=pk.p?(pk.p-pk.c)/pk.p*100:0;return`<tr><td style="font-weight:600">${pk.n}</td><td>${fD(pk.c)}</td><td>${fD(pk.p)}</td><td><span class="pill ${mp>=30?'green':mp>=15?'amber':'red'}">${fP(mp)}</span></td></tr>`;}).join('')}</tbody></table></div>`:'<div style="font-size:12px;color:var(--gray-500)">No packages added yet — go to Pricing tab.</div>'}
+      ${pkgL.length?`<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Cost</th><th>Price</th><th>Margin</th></tr></thead><tbody>${pkgL.map(pk=>{const mp=pk.p?(pk.p-pk.c)/pk.p*100:0;return`<tr><td style="font-weight:600">${esc(pk.n)}</td><td>${fD(pk.c)}</td><td>${fD(pk.p)}</td><td><span class="pill ${mp>=30?'green':mp>=15?'amber':'red'}">${fP(mp)}</span></td></tr>`;}).join('')}</tbody></table></div>`:'<div style="font-size:12px;color:var(--gray-500)">No packages added yet — go to Pricing tab.</div>'}
     </div>
     <div class="card"><h3>Checklist Progress</h3>
       <div class="kv"><span class="kk">Steps complete</span><span class="kv2 ${pct===100?'good':''}">${done} / ${all.length} (${pct}%)</span></div>
@@ -1462,9 +1473,9 @@ function snWC(ca,cl){ return (ca!==null&&cl!==null)?'$'+Math.round(ca-cl).toLoca
 function snFmt(n){ if(n===null||n===undefined||n===''||isNaN(n))return'—'; return '$'+parseFloat(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function snG(id,per){
   var key=id+'_'+per;
-  if(snData[key]!==undefined&&snData[key]!=='') return parseFloat(snData[key]);
+  if(snData[key]!==undefined&&snData[key]!=='') return num(snData[key]);
   var el=document.getElementById(key);
-  return (el&&el.value!=='') ? parseFloat(el.value) : null;
+  return (el&&el.value!=='') ? num(el.value) : null;
 }
 
 function snCalcDerived(per){
@@ -1536,8 +1547,8 @@ function snUpdateRatios(){
   ];
   var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">';
   h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">Metric</div>';
-  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+p1+'</div>';
-  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+p2+'</div>';
+  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+esc(p1)+'</div>';
+  h+='<div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;padding:4px">'+esc(p2)+'</div>';
   sections.forEach(function(sec){
     h+='<div style="grid-column:1/-1;padding:8px 4px 4px;font-family:var(--font-display);font-size:13px;letter-spacing:.06em;border-top:1px solid var(--gray-200);margin-top:4px">'+sec.header+'</div>';
     sec.rows.forEach(function(r){
@@ -1609,15 +1620,16 @@ function initSnapshot(){
     snExtDef.forEach(function(item){
       h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:center">';
       h+='<div style="font-size:12px;color:var(--gray-700)">'+item.label+'</div>';
-      h+='<input type="number" placeholder="—" id="'+item.id+'_p1" data-snfield="1" style="border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
-      h+='<input type="number" placeholder="—" id="'+item.id+'_p2" data-snfield="1" style="border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+      h+='<input type="number" placeholder="—" id="'+item.id+'_p1" data-snfield="1" style="width:100%;min-width:0;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
+      h+='<input type="number" placeholder="—" id="'+item.id+'_p2" data-snfield="1" style="width:100%;min-width:0;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
       h+='</div>';
     });
     h+='</div><div id="sn-ratios" class="card" style="margin-top:8px"><h3>Analysis</h3><div id="sn-ratios-inner"></div></div>';
     anaWrap.innerHTML=h;
   }
   var tab=document.getElementById('tab-snapshot');
-  if(tab){
+  if(tab&&!tab.dataset.snl){
+    tab.dataset.snl='1';
     tab.addEventListener('input',function(e){
       if(e.target.dataset.snfield){
         snData[e.target.id]=e.target.value;
@@ -1666,12 +1678,13 @@ function exportSnapshotExcel(){
   rows.push(['COGS to Sales %','',snPct(d1.cogs,i1),snPct(d2.cogs,i2)]);
   rows.push(['Gross Profit Margin %','',snPct(d1.gp,i1),snPct(d2.gp,i2)]);
   rows.push(['Payroll to Sales %','',snPct(d1.payroll,i1),snPct(d2.payroll,i2)]);
+  rows.push(['Overhead to Sales %','',snPct(d1.remoh+d1.office+d1.ins,i1),snPct(d2.remoh+d2.office+d2.ins,i2)]);
   rows.push(['Net Profit Margin %','',snPct(d1.net,i1),snPct(d2.net,i2)]);
   rows.push(['Number of Employees','',emp1||'',emp2||'']);
   rows.push(['Number of Customers','',cust1||'',cust2||'']);
   rows.push(['Avg Sale per Customer','',i1&&cust1?Math.round(i1/cust1):'',i2&&cust2?Math.round(i2/cust2):'']);
   rows.push(['Revenue per Employee','',i1&&emp1?Math.round(i1/emp1):'',i2&&emp2?Math.round(i2/emp2):'']);
-  rows.push(['Working Capital','',ca1&&cl1?ca1-cl1:'',ca2&&cl2?ca2-cl2:'']);
+  rows.push(['Working Capital','',ca1!=null&&cl1!=null?ca1-cl1:'',ca2!=null&&cl2!=null?ca2-cl2:'']);
   rows.push(['Current Ratio','',snRatio(ca1,cl1),snRatio(ca2,cl2)]);
   rows.push(['Debt-to-Equity Ratio','',snRatio(tl1,eq1),snRatio(tl2,eq2)]);
   rows.push(['A/R per Revenue','',snPct(ar1,i1),snPct(ar2,i2)]);
@@ -1728,6 +1741,19 @@ function saveSession(){
   URL.revokeObjectURL(url);
 }
 
+// Clear everything so a loaded client file never inherits the previous client's data
+function resetAll(){
+  document.querySelectorAll('.content input').forEach(el=>{ if(el.type!=='file') el.value=''; });
+  ['pr_rev','be_oh'].forEach(id=>{const el=document.getElementById(id);if(el){delete el.dataset.manual;delete el.dataset.auto;}});
+  Object.keys(chk).forEach(p=>{chk[p]=chk[p].map(()=>false);});
+  [ccL,lnL,ciL,coL,colL,isL,pkgL,raL,oeL,mixL].forEach(a=>a.splice(0,a.length));
+  Object.keys(snData).forEach(k=>delete snData[k]);
+  benchInd=''; ['cogs','gm','oh','net'].forEach(k=>{BENCH.custom[k]=[null,null];});
+  setCogsMode('dollar');
+  ohCats=ohDefault(); ohOpen.clear();
+  fillIndSelects(); renderCL(); renderOH(); rCC(); rLn(); rCI(); rCO(); rCol(); rIss(); rPkg(); rRA(); rOE(); rMix();
+  cfCalc(); beCalc(); prCalc(); pxCalc();
+}
 function loadSession(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -1735,6 +1761,7 @@ function loadSession(event){
   reader.onload = function(e){
     try {
       const data = JSON.parse(e.target.result);
+      resetAll();
       const setVal = (id, val) => { const el=document.getElementById(id); if(el && val!==undefined) el.value=val; };
 
       // Client name
@@ -1802,11 +1829,12 @@ function loadSession(event){
       if(data.snP2){ setVal('sn_p2',data.snP2); snData['sn_p2']=data.snP2; }
       // Rebuild snapshot DOM and restore field values
       initSnapshot();
+      attachAllCurrency();
       Object.keys(snData).forEach(function(k){
         var el=document.getElementById(k);
-        if(el&&el.dataset&&el.dataset.snfield) el.value=snData[k]||'';
+        if(el&&el.dataset&&el.dataset.snfield){ var v=snData[k]||''; el.value=(el.dataset.fmtAttached&&num(v)!==null)?fmtNum(v):v; }
       });
-      snCalc();
+      snCalc(); renderBench(); renderDash();
 
       // Notify
       const banner = document.createElement('div');
@@ -1828,23 +1856,15 @@ function exportSummaryExcel(){
   const date = new Date().toISOString().slice(0,10);
   const wb = XLSX.utils.book_new();
 
-  const moOH = ohGetTotal();
-  const annOH = moOH * 12;
-  const rev = g('pr_rev');
-  const cogsRaw = g('pr_cogs_val');
-  const cogs = cogsRaw !== null ? (cogsMode === 'pct' ? (rev||0)*cogsRaw/100 : cogsRaw) : null;
-  const gross = rev && cogs !== null ? rev - cogs : null;
-  const grossPct = gross && rev ? gross/rev*100 : null;
-  const net = gross !== null ? gross - annOH : null;
-  const netPct = net !== null && rev ? net/rev*100 : null;
-  const beOh = g('be_oh'), beGpm = g('be_gpm');
-  const breakEven = beGpm && beGpm < 100 ? (beOh||annOH)/(beGpm/100) : null;
+  const fm = finMetrics();
+  const {moOH, annOH, cogs, gross, grossPct, net, netPct, breakEven} = fm;
+  const rev = fm.rev;
   const tCC = ccL.reduce((a,c)=>a+c.b,0);
   const tLn = lnL.reduce((a,l)=>a+l.b,0);
   const colTot = colL.reduce((a,c)=>a+c.a,0);
   const col90 = colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
-  const openIss = isL.filter(i=>i.st==='Open').length;
-  const hiIss = isL.filter(i=>i.pri==='High').length;
+  const openIss = fm.openIss;
+  const hiIss = fm.hiIss;
   const tIn = ciL.reduce((a,c)=>a+c.a,0);
   const tOut = coL.reduce((a,c)=>a+c.a,0);
   const allCL = Object.values(chk).flat(), doneCL = allCL.filter(Boolean).length;
@@ -2009,11 +2029,11 @@ function exportToExcel(){
   // --- PROJECTIONS ---
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val');
   const moOH=ohGetTotal();
-  const prRows=[['Month','Revenue','COGS','Gross Profit','Overhead','Expense Adj','Net Profit','Net Profit %','Ending Cash']];
+  const prRows=[['Month','Revenue','COGS','Gross Profit','Overhead','Allowance','Owner Pay','Expense Adj','Net Profit','Net Profit %','Ending Cash']];
   const pcx=prCompute();
   if(pcx){
-    pcx.months.forEach(m=>prRows.push([m.label,Math.round(m.rev),Math.round(m.cogs),Math.round(m.gp),Math.round(m.oh),Math.round(m.oeAmt),Math.round(m.net),m.netPct==null?'':(Math.round(m.netPct*10)/10)+'%',Math.round(m.end)]));
-    prRows.push(['Total',Math.round(pcx.tot.rev),'',Math.round(pcx.tot.gp),Math.round(pcx.moOH*12),Math.round(pcx.tot.oe),Math.round(pcx.tot.net),pcx.tot.netPct==null?'':(Math.round(pcx.tot.netPct*10)/10)+'%','']);
+    pcx.months.forEach(m=>prRows.push([m.label,Math.round(m.rev),Math.round(m.cogs),Math.round(m.gp),Math.round(m.oh),Math.round(pcx.moAllow),Math.round(pcx.moDraw),Math.round(m.oeAmt),Math.round(m.net),m.netPct==null?'':Math.round(m.netPct*10)/10,Math.round(m.end)]));
+    prRows.push(['Total',Math.round(pcx.tot.rev),Math.round(pcx.tot.cogs),Math.round(pcx.tot.gp),Math.round(pcx.moOH*12),Math.round(pcx.moAllow*12),Math.round(pcx.moDraw*12),Math.round(pcx.tot.oe),Math.round(pcx.tot.net),pcx.tot.netPct==null?'':Math.round(pcx.tot.netPct*10)/10,'']);
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(prRows)), 'Projections');
 
@@ -2065,21 +2085,20 @@ function exportToExcel(){
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(pxRows)), 'Pricing');
 
   // --- DASHBOARD SUMMARY ---
-  const gross2=rev&&cogsVal!==null?rev-(cogsMode==='pct'?rev*cogsVal/100:cogsVal):null;
-  const annOH2=moOH*12;
-  const net2=gross2!==null?gross2-annOH2:null;
-  const breakEven2=gpm&&gpm<100?(annOH2)/(gpm/100):null;
+  const fm=finMetrics();
+  const gross2=fm.gross,annOH2=fm.annOH,net2=fm.net,breakEven2=fm.breakEven;
   const tCC=ccL.reduce((a,c)=>a+c.b,0),tLn=lnL.reduce((a,l)=>a+l.b,0);
   const colTot=colL.reduce((a,c)=>a+c.a,0),col90=colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
-  const openIss=isL.filter(i=>i.st==='Open').length,hiIss=isL.filter(i=>i.pri==='High').length;
+  const openIss=fm.openIss,hiIss=fm.hiIss;
   const allCL=Object.values(chk).flat(),doneCL=allCL.filter(Boolean).length;
   const sumRows=[['Metric','Value'],
     ['Annual revenue target',rev||''],
+    ['Projected revenue (12 mo)',fm.rev!=null?Math.round(fm.rev):''],
     ['Gross profit',gross2!==null?Math.round(gross2):''],
-    ['Gross margin %',gross2&&rev?Math.round(gross2/rev*1000)/10+'%':''],
+    ['Gross margin %',fm.grossPct!=null?Math.round(fm.grossPct*10)/10+'%':''],
     ['Annual overhead',annOH2||''],
     ['Net profit',net2!==null?Math.round(net2):''],
-    ['Net margin %',net2&&rev?Math.round(net2/rev*1000)/10+'%':''],
+    ['Net margin %',fm.netPct!=null?Math.round(fm.netPct*10)/10+'%':''],
     ['Break-even revenue',breakEven2?Math.round(breakEven2):''],
     ['Cash in bank',g('cf_cash')||''],
     ['Total CC balances',tCC||''],
