@@ -157,6 +157,60 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 .sec{margin-bottom:4px}
 
 .fmt-input { ime-mode: disabled; }
+
+/* ICON BUTTONS */
+.ibtn{background:none;border:none;cursor:pointer;color:var(--gray-500);font-size:14px;padding:3px 4px;border-radius:4px;line-height:1;transition:color .12s,background .12s}
+.ibtn:hover:not(:disabled){color:var(--black);background:var(--gray-200)}
+.ibtn:disabled{opacity:.25;cursor:default}
+
+/* OVERHEAD (editable) */
+.oh-hint{font-size:11px;color:var(--gray-500);margin-bottom:12px}
+.oh-cat{background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:12px 12px 10px;margin-bottom:12px}
+.oh-cat-head{margin-top:0;gap:6px;flex-wrap:wrap}
+.oh-num{font-family:var(--font-display);font-size:15px;color:var(--gray-500)}
+.oh-cat-name{font-family:var(--font-display);font-size:15px;letter-spacing:.08em;color:var(--black);border:1.5px solid transparent;border-radius:4px;background:transparent;padding:2px 6px;flex:1 1 160px;min-width:120px}
+.oh-cat-name:hover{border-color:var(--gray-200)}
+.oh-cat-name:focus{outline:none;border-color:var(--red);background:var(--white)}
+.oh-cattot{font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap}
+.oh-tools{display:flex;gap:1px;align-items:center;flex-shrink:0}
+.oh-line{margin-bottom:5px}
+.oh-row{gap:6px;flex-wrap:wrap;padding:6px 8px;margin-bottom:0}
+.oh-row .oh-lbl{flex:2 1 150px}
+.oh-row .oh-amt{flex:1 1 90px;max-width:140px}
+.oh-row .oh-move{flex:0 0 auto;width:118px;font-size:11px;padding:4px 6px;color:var(--gray-700)}
+.oh-detail{gap:8px;flex-wrap:wrap;background:var(--gray-100);border:1px solid var(--gray-200);border-top:none;border-radius:0 0 6px 6px;padding:8px 10px;margin-top:-3px}
+.oh-detail input{border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)}
+.oh-add-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);background:none;border:1.5px dashed var(--gray-300);border-radius:5px;padding:5px 10px;cursor:pointer;font-family:var(--font-body);margin-top:3px}
+.oh-add-btn:hover{color:var(--black);border-color:var(--black)}
+
+/* EDITABLE TABLE CELLS */
+.dt td input,.dt td select{width:100%;min-width:0;font-size:12px;padding:4px 6px;border:1.5px solid transparent;border-radius:4px;background:transparent;color:var(--black);font-family:var(--font-body)}
+.dt td input:hover,.dt td select:hover{border-color:var(--gray-200);background:var(--white)}
+.dt td input:focus,.dt td select:focus{outline:none;border-color:var(--red);background:var(--white)}
+.dt td select.sel-red{color:var(--red-dark);font-weight:600}
+.dt td select.sel-amber{color:var(--amber);font-weight:600}
+.dt td select.sel-green{color:var(--green);font-weight:600}
+.drag{cursor:grab;color:var(--gray-300);font-size:15px;padding:2px;display:inline-block;min-width:18px;min-height:18px;text-align:center}
+.drag:hover{color:var(--black)}
+tr.drag-over td{border-top:2px solid var(--red)}
+.nowrap{white-space:nowrap}
+
+/* BENCHMARKS */
+.bm-sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bm-sel select{border:1.5px solid var(--gray-200);border-radius:5px;padding:6px 9px;font-size:12px;font-family:var(--font-body);background:var(--white);color:var(--black);flex:1;min-width:180px}
+.dt tr.bm-active td{background:var(--red-light)}
+.bm-note{font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:8px}
+.bm-range-in{width:52px !important;display:inline-block}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.info-item{border:1px solid var(--gray-200);border-radius:6px;padding:10px 12px}
+.info-item b{display:block;font-size:12px;margin-bottom:3px}
+.info-item span{font-size:11px;color:var(--gray-700);line-height:1.5}
+@media (max-width:560px){
+  .content{padding:16px}
+  .ir label{min-width:0;flex-basis:100%}
+  .ir{flex-wrap:wrap}
+  .two-col{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -169,7 +223,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
     <span class="header-title">Financial Health Tracker</span>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-    <div class="header-sub">Checklist · Overhead · Break-even · Projections · Cash Flow · Collections · Issues · Pricing · Dashboard</div>
+    <div class="header-sub">Checklist · Overhead · Break-even · Projections · Cash Flow · Collections · Issues · Pricing · Benchmarks · Dashboard</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button onclick="saveSession()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-device-floppy"></i> Save</button>
       <label style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-folder-open"></i> Load<input type="file" accept=".json" onchange="loadSession(event)" style="display:none"></label>
@@ -184,15 +238,16 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 </div>
 
 <div class="tabs-bar">
-  <button class="tab active" onclick="T('dashboard')">Dashboard</button>
-  <button class="tab" onclick="T('overhead')">Overhead</button>
-  <button class="tab" onclick="T('breakeven')">Break-even</button>
-  <button class="tab" onclick="T('projections')">Projections</button>
-  <button class="tab" onclick="T('cashflow')">Cash Flow</button>
-  <button class="tab" onclick="T('issues')">Issues</button>
-  <button class="tab" onclick="T('pricing')">Pricing</button>
-  <button class="tab" onclick="T('snapshot')">Snapshot</button>
-  <button class="tab" onclick="T('checklist')">Checklist</button>
+  <button class="tab active" data-tab="dashboard" onclick="T('dashboard')">Dashboard</button>
+  <button class="tab" data-tab="overhead" onclick="T('overhead')">Overhead</button>
+  <button class="tab" data-tab="breakeven" onclick="T('breakeven')">Break-even</button>
+  <button class="tab" data-tab="projections" onclick="T('projections')">Projections</button>
+  <button class="tab" data-tab="cashflow" onclick="T('cashflow')">Cash Flow</button>
+  <button class="tab" data-tab="issues" onclick="T('issues')">Issues</button>
+  <button class="tab" data-tab="pricing" onclick="T('pricing')">Pricing</button>
+  <button class="tab" data-tab="snapshot" onclick="T('snapshot')">Snapshot</button>
+  <button class="tab" data-tab="benchmarks" onclick="T('benchmarks')">Benchmarks</button>
+  <button class="tab" data-tab="checklist" onclick="T('checklist')">Checklist</button>
 </div>
 
 <div class="content">
@@ -212,6 +267,7 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 
 <!-- OVERHEAD -->
 <div id="tab-overhead" style="display:none">
+  <div class="oh-hint">Click any section or line name to rename it. Use the arrows to reorder, the dropdown to move a line to another section, and the chevron for payee and notes.</div>
   <div id="oh-categories"></div>
   <div id="oh-summary"></div>
   <div class="br"><button class="btn primary" onclick="T('breakeven')">Break-even <i class="ti ti-arrow-right"></i></button></div>
@@ -249,6 +305,18 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       </div>
     </div>
     <div class="ir"><label>Target net income (optional)</label><input type="number" placeholder="$" id="be_target" oninput="beCalc()"></div>
+    <div class="ir"><label>Industry (for benchmarks)</label><select id="be_ind" class="ind-sel" onchange="setInd(this.value)"></select></div>
+  </div>
+  <div class="sec"><div class="stitle"><span class="stitle-bar"></span>Packages / Service Mix <span style="font-family:var(--font-body);font-size:10px;color:var(--gray-500);letter-spacing:0">optional</span></div>
+    <div style="font-size:11px;color:var(--gray-500);margin-bottom:8px">Add each package, tier, or service with its price and expected customers per month. The tool shows how many of each you need to hit the monthly sales target.</div>
+    <div class="ar">
+      <input type="text" placeholder="Package / service name" id="mx_n" style="flex:1;min-width:140px">
+      <input type="number" placeholder="Price $" id="mx_p" style="width:110px">
+      <input type="number" placeholder="Customers / mo" id="mx_q" data-nofmt="1" style="width:120px">
+      <button class="btn" onclick="addMix()"><i class="ti ti-plus"></i> Add</button>
+      <button class="btn" onclick="importMixFromPricing()" title="Copy packages from the Pricing tab"><i class="ti ti-download"></i> From Pricing</button>
+    </div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Price</th><th>Customers / mo</th><th>Revenue / mo</th><th>Mix %</th><th></th></tr></thead><tbody id="mx-tb"></tbody></table></div>
   </div>
   <div id="be-results"></div>
   <div class="br"><button class="btn primary" onclick="T('projections')">Projections <i class="ti ti-arrow-right"></i></button></div>
@@ -381,7 +449,8 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
       </select>
       <button onclick="document.getElementById('f_area').value='';document.getElementById('f_pri').value='';document.getElementById('f_st').value='';rIss();" style="font-size:11px;padding:4px 10px;border:1.5px solid var(--gray-200);border-radius:5px;background:none;color:var(--gray-500);font-family:var(--font-body);cursor:pointer">Clear filters</button>
     </div>
-    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Area</th><th>Issue</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="is-tb"></tbody></table></div>
+    <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px">Click any cell to edit. Drag <i class="ti ti-grip-vertical"></i> or use the arrows to reorder.</div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th style="width:24px"></th><th style="width:130px">Area</th><th>Issue</th><th style="width:96px">Priority</th><th style="width:116px">Status</th><th style="width:84px"></th></tr></thead><tbody id="is-tb"></tbody></table></div>
   </div>
   <div id="is-summary"></div>
   <div class="br">
@@ -480,6 +549,42 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
     <button class="btn primary" onclick="T('dashboard')">Dashboard <i class="ti ti-arrow-right"></i></button>
     <button class="btn dark" onclick="exportSnapshotExcel()"><i class="ti ti-file-spreadsheet"></i> Export Snapshot</button>
   </div>
+</div>
+
+<!-- BENCHMARKS -->
+<div id="tab-benchmarks" style="display:none">
+  <div class="card">
+    <h3>Client Industry</h3>
+    <div class="bm-sel"><select id="bm_ind" class="ind-sel" onchange="setInd(this.value)"></select></div>
+    <div class="bm-note">Pick the closest match. It drives the benchmark breakdown on the Break-even tab and the comparison below.</div>
+  </div>
+  <div id="bm-compare"></div>
+  <div class="card">
+    <h3>Industry Benchmarks</h3>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Industry</th><th>COGS %</th><th>Gross Margin %</th><th>Overhead %</th><th>Net Profit %</th></tr></thead><tbody id="bm-tb"></tbody></table></div>
+    <div class="bm-note">All figures are % of total sales. Ranges are general starting points for small and mid-sized businesses, not hard rules. Use <b>Custom</b> to set your own ranges for a specific client.</div>
+  </div>
+  <div class="card">
+    <h3>What Each Metric Means</h3>
+    <div class="info-grid">
+      <div class="info-item"><b>COGS %</b><span>Direct cost to deliver the product or service (materials, direct labor, subcontractors) divided by sales. Lower is better.</span></div>
+      <div class="info-item"><b>Gross Margin %</b><span>What is left after COGS (100% minus COGS %). This is what pays for overhead and profit.</span></div>
+      <div class="info-item"><b>Overhead %</b><span>Fixed operating costs (rent, admin payroll, software, insurance, marketing) divided by sales. Lower is better.</span></div>
+      <div class="info-item"><b>Net Profit %</b><span>What the business keeps after all costs, before owner distributions. Gross margin % minus overhead %.</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>General Health Benchmarks</h3>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Metric</th><th>Healthy Range</th><th>Where to Find It</th></tr></thead><tbody>
+      <tr><td style="font-weight:600">Current ratio</td><td>1.5 to 2.0 or higher</td><td>Snapshot tab</td></tr>
+      <tr><td style="font-weight:600">Debt-to-equity</td><td>Under 2.0 (under 1.0 is strong)</td><td>Snapshot tab</td></tr>
+      <tr><td style="font-weight:600">Cash reserve</td><td>3 to 6 months of overhead</td><td>Cash Flow + Overhead tabs</td></tr>
+      <tr><td style="font-weight:600">AR collection</td><td>Most AR under 30 to 45 days; 90+ days under 10% of AR</td><td>Cash Flow tab (AR Aging)</td></tr>
+      <tr><td style="font-weight:600">Owner pay</td><td>Market-rate salary for the role, separate from profit</td><td>Break-even tab</td></tr>
+      <tr><td style="font-weight:600">Unexpected expense allowance</td><td>5 to 10% of annual overhead</td><td>Break-even tab</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="br"><button class="btn primary" onclick="T('checklist')">Checklist <i class="ti ti-arrow-right"></i></button></div>
 </div>
 
 <!-- DASHBOARD -->
@@ -591,18 +696,19 @@ const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[],raL=[],oeL=[];
 function g(id){const el=document.getElementById(id);if(!el)return null;const v=parseFloat(String(el.value).replace(/,/g,''));return isNaN(v)?null:v;}
 function fD(n){if(n===null||n===undefined||isNaN(n))return'—';return'$'+Math.round(n).toLocaleString();}
 function fP(n){if(n===null||isNaN(n))return'—';return(Math.round(n*10)/10)+'%';}
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(v){const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?null:n;}
+function moveIn(arr,from,to){if(to<0||to>=arr.length||from===to)return;const [x]=arr.splice(from,1);arr.splice(to,0,x);}
 
+const TABS=['dashboard','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','benchmarks','checklist'];
 function T(t){
-  ['checklist','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','dashboard'].forEach(id=>{
-    document.getElementById('tab-'+id).style.display=id===t?'block':'none';
-  });
-  document.querySelectorAll('.tab').forEach((el,i)=>{
-    el.classList.toggle('active',['dashboard','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','checklist'][i]===t);
-  });
+  TABS.forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});
+  document.querySelectorAll('.tab').forEach(el=>{el.classList.toggle('active',el.dataset.tab===t);});
   if(t==='overhead')ohCalc();
   if(t==='snapshot'){snCalc();}
   if(t==='breakeven')beCalc();
   if(t==='pricing')calcOHPerJob();
+  if(t==='benchmarks')renderBench();
   if(t==='dashboard')renderDash();
 }
 
@@ -633,163 +739,162 @@ function updateClientLabel(){
 }
 function resetCL(){Object.keys(chk).forEach(p=>{chk[p]=chk[p].map(()=>false);});renderCL();}
 
-// ---- OVERHEAD SYSTEM ----
-const ohCats = [
-  {id:'ops',  label:'1. Operations',         items:[
-    {id:'oh_rent',    label:'Rent'},
-    {id:'oh_util',    label:'Utilities / phone'},
-    {id:'oh_office',  label:'Office expenses'},
-  ]},
-  {id:'staff',label:'2. Staffing',            items:[
-    {id:'oh_payroll', label:'Total payroll (monthly)'},
-    {id:'oh_tax',     label:'Payroll tax (monthly)'},
-    {id:'oh_ins',     label:'Insurance'},
-  ]},
-  {id:'prof', label:'3. Professional Services',items:[
-    {id:'oh_legal',   label:'Legal / accounting'},
-    {id:'oh_bank',    label:'Bank charges / interest'},
-    {id:'oh_pension', label:'Pension / retirement'},
-  ]},
-  {id:'gen',  label:'4. General Business',    items:[
-    {id:'oh_mkt',     label:'Marketing / advertising'},
-    {id:'oh_sw',      label:'Software / subscriptions'},
-    {id:'oh_auto',    label:'Auto / fuel'},
-    {id:'oh_other',   label:'Other recurring'},
-  ]},
-
-];
-
-// extra line items per category: {catId, label, amount, payee, notes}
-const ohExtra = {};
-ohCats.forEach(c=>{ ohExtra[c.id]=[]; });
-
-function ohGetTotal(){
-  let total=0;
-  ohCats.forEach(cat=>{
-    cat.items.forEach(item=>{const v=g(item.id);if(v)total+=v;});
-    ohExtra[cat.id].forEach(x=>{if(x.amount)total+=x.amount;});
-  });
-  return total;
+// ---- OVERHEAD SYSTEM (fully editable: sections + lines) ----
+let ohSeq=0;
+function ohNewId(prefix){return prefix+'_'+Date.now().toString(36)+(ohSeq++);}
+function ohLine(id,label){return {id:id||ohNewId('ohl'),label:label||'',amount:null,payee:'',notes:''};}
+function ohDefault(){
+  return [
+    {id:'ops',  label:'Operations',             items:[ohLine('oh_rent','Rent'),ohLine('oh_util','Utilities / phone'),ohLine('oh_office','Office expenses')]},
+    {id:'staff',label:'Staffing',               items:[ohLine('oh_payroll','Total payroll (monthly)'),ohLine('oh_tax','Payroll tax (monthly)'),ohLine('oh_ins','Insurance')]},
+    {id:'prof', label:'Professional Services',  items:[ohLine('oh_legal','Legal / accounting'),ohLine('oh_bank','Bank charges / interest'),ohLine('oh_pension','Pension / retirement')]},
+    {id:'gen',  label:'General Business',       items:[ohLine('oh_mkt','Marketing / advertising'),ohLine('oh_sw','Software / subscriptions'),ohLine('oh_auto','Auto / fuel'),ohLine('oh_other','Other recurring')]},
+  ];
 }
+let ohCats=ohDefault();
+const ohOpen=new Set(); // line ids with payee/notes expanded
 
-function ohCatTotal(cat){
-  let t=0;
-  cat.items.forEach(item=>{const v=g(item.id);if(v)t+=v;});
-  ohExtra[cat.id].forEach(x=>{if(x.amount)t+=x.amount;});
-  return t;
+function ohCatTotal(cat){return cat.items.reduce((t,it)=>t+(it.amount||0),0);}
+function ohGetTotal(){return ohCats.reduce((t,c)=>t+ohCatTotal(c),0);}
+function ohFind(itemId){
+  for(const cat of ohCats){const i=cat.items.findIndex(it=>it.id===itemId);if(i>-1)return {cat,i,item:cat.items[i]};}
+  return null;
 }
 
 function renderOH(){
-  var wrap = document.getElementById('oh-categories');
-  var html = '';
-  ohCats.forEach(function(cat){
-    var cid = cat.id;
-    html += '<div class="sec">';
-    html += '<div class="stitle"><span class="stitle-bar"></span>' + cat.label + '<span id="cattot_' + cid + '" style="margin-left:auto;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gray-700)"></span></div>';
-    cat.items.forEach(function(item){
-      var iid = item.id;
-      html += '<div style="margin-bottom:5px">';
-      html += '<div class="ir oh-main-row" style="cursor:pointer" data-toggle="' + iid + '">';
-      html += '<label style="cursor:pointer;pointer-events:none">' + item.label + '</label>';
-      html += '<input type="number" placeholder="$/mo" id="' + iid + '" data-nopropagate="1" style="flex:1;min-width:0;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
-      html += '<span style="font-size:11px;color:var(--gray-500);cursor:pointer;padding:0 4px;flex-shrink:0;pointer-events:none"><i class="ti ti-chevron-down" id="chev_' + iid + '"></i></span>';
-      html += '</div>';
-      html += '<div id="detail_' + iid + '" style="display:none;background:var(--gray-100);border:1px solid var(--gray-200);border-top:none;border-radius:0 0 6px 6px;padding:8px 10px;margin-top:-3px">';
-      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-      html += '<input type="text" placeholder="Payee / vendor" id="payee_' + iid + '" style="flex:1;min-width:120px;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)">';
-      html += '<input type="text" placeholder="Notes" id="notes_' + iid + '" style="flex:2;min-width:160px;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)">';
-      html += '</div></div></div>';
+  const wrap=document.getElementById('oh-categories');
+  let h='';
+  ohCats.forEach((cat,ci)=>{
+    h+=`<div class="oh-cat" data-cat="${cat.id}">
+      <div class="stitle oh-cat-head"><span class="stitle-bar"></span><span class="oh-num">${ci+1}.</span>
+        <input type="text" class="oh-cat-name" data-act="catname" value="${esc(cat.label)}" placeholder="Section name" title="Rename section">
+        <span class="oh-cattot" id="cattot_${cat.id}"></span>
+        <span class="oh-tools">
+          <button class="ibtn" data-act="catup" title="Move section up" ${ci===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
+          <button class="ibtn" data-act="catdown" title="Move section down" ${ci===ohCats.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
+          <button class="ibtn" data-act="catdel" title="Delete section"><i class="ti ti-trash"></i></button>
+        </span>
+      </div>`;
+    cat.items.forEach((it,ii)=>{
+      const open=ohOpen.has(it.id);
+      const opts=ohCats.map(c=>`<option value="${c.id}"${c.id===cat.id?' selected':''}>${esc(c.label||'(unnamed)')}</option>`).join('');
+      h+=`<div class="oh-line" data-item="${it.id}">
+        <div class="ir oh-row">
+          <input type="text" class="oh-lbl" data-act="lbl" value="${esc(it.label)}" placeholder="Line item name">
+          <input type="number" class="oh-amt" data-act="amt" value="${it.amount!=null?it.amount:''}" placeholder="$/mo">
+          <span class="oh-tools">
+            <button class="ibtn" data-act="toggle" title="Payee & notes"><i class="ti ti-chevron-${open?'up':'down'}"></i></button>
+            <button class="ibtn" data-act="up" title="Move up" ${ii===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
+            <button class="ibtn" data-act="down" title="Move down" ${ii===cat.items.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
+          </span>
+          <select class="oh-move" data-act="move" title="Move to another section">${opts}</select>
+          <button class="delb" data-act="del" title="Remove line"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="oh-detail" style="display:${open?'flex':'none'}">
+          <input type="text" data-act="payee" value="${esc(it.payee)}" placeholder="Payee / vendor" style="flex:1;min-width:120px">
+          <input type="text" data-act="notes" value="${esc(it.notes)}" placeholder="Notes" style="flex:2;min-width:160px">
+        </div>
+      </div>`;
     });
-    html += '<div id="oh_extra_' + cid + '"></div>';
-    html += '<button class="oh-add-btn" data-cat="' + cid + '" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);background:none;border:1.5px dashed var(--gray-300);border-radius:5px;padding:5px 10px;cursor:pointer;font-family:var(--font-body);margin-top:3px"><i class="ti ti-plus"></i> Add line</button>';
-    html += '</div>';
+    h+=`<button class="oh-add-btn" data-act="addline"><i class="ti ti-plus"></i> Add line</button></div>`;
   });
-  wrap.innerHTML = html;
-
-  renderOHExtras();
-  ohCalc();
-}
-function ohToggleDetail(id){
-  const d=document.getElementById('detail_'+id);
-  const chev=document.getElementById('chev_'+id);
-  if(d.style.display==='none'){d.style.display='block';chev.className='ti ti-chevron-up';}
-  else{d.style.display='none';chev.className='ti ti-chevron-down';}
-}
-
-function ohAddLine(catId){
-  ohExtra[catId].push({label:'',amount:null,payee:'',notes:''});
-  renderOHExtras();
-}
-
-function ohRemoveLine(catId,idx){
-  ohExtra[catId].splice(idx,1);
-  renderOHExtras();
+  h+=`<button class="btn" data-act="addcat" style="margin-top:2px"><i class="ti ti-plus"></i> Add section</button>`;
+  wrap.innerHTML=h;
+  attachAllCurrency();
+  wrap.querySelectorAll('.oh-amt').forEach(el=>{if(el.value)el.value=fmtNum(el.value);});
   ohCalc();
 }
 
-function ohExtraChange(catId,idx,field,val){
-  ohExtra[catId][idx][field]=field==='amount'?(parseFloat(String(val).replace(/,/g,''))||null):val;
-  ohCalc();
-}
-
-function renderOHExtras(){
-  ohCats.forEach(function(cat){
-    var wrap = document.getElementById('oh_extra_' + cat.id);
-    if(!wrap) return;
-    var cid = cat.id;
-    var html = '';
-    ohExtra[cat.id].forEach(function(x, i){
-      html += '<div style="margin-bottom:5px">';
-      html += '<div class="ir" style="gap:6px">';
-      html += '<input type="text" placeholder="Line item label" value="' + (x.label||'').replace(/"/g,'&quot;') + '" data-cat="' + cid + '" data-idx="' + i + '" data-field="label" data-extra="1" style="min-width:120px;flex:1;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
-      html += '<input type="number" placeholder="$/mo" value="' + (x.amount||'') + '" data-cat="' + cid + '" data-idx="' + i + '" data-field="amount" data-extra="1" style="width:100px;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:12px;font-family:var(--font-body);background:var(--gray-100);color:var(--black)">';
-      html += '<span class="oh-xtoggle" data-cat="' + cid + '" data-idx="' + i + '" style="font-size:11px;color:var(--gray-500);cursor:pointer;padding:0 2px"><i class="ti ti-chevron-down" id="xchev_' + cid + '_' + i + '"></i></span>';
-      html += '<button class="delb oh-del-btn" data-cat="' + cid + '" data-idx="' + i + '"><i class="ti ti-trash"></i></button>';
-      html += '</div>';
-      html += '<div id="xdetail_' + cid + '_' + i + '" style="display:none;background:var(--gray-100);border:1px solid var(--gray-200);border-top:none;border-radius:0 0 6px 6px;padding:8px 10px;margin-top:-3px">';
-      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-      html += '<input type="text" placeholder="Payee / vendor" value="' + (x.payee||'').replace(/"/g,'&quot;') + '" data-cat="' + cid + '" data-idx="' + i + '" data-field="payee" data-extra="1" style="flex:1;min-width:120px;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)">';
-      html += '<input type="text" placeholder="Notes" value="' + (x.notes||'').replace(/"/g,'&quot;') + '" data-cat="' + cid + '" data-idx="' + i + '" data-field="notes" data-extra="1" style="flex:2;min-width:160px;border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)">';
-      html += '</div></div></div>';
-    });
-    wrap.innerHTML = html;
-
-    // Event delegation for extra inputs
-    wrap.addEventListener('input', function(e){
-      if(e.target.dataset.extra){
-        var cat = e.target.dataset.cat;
-        var idx = parseInt(e.target.dataset.idx);
-        var field = e.target.dataset.field;
-        ohExtraChange(cat, idx, field, e.target.value);
-      }
-    });
+function ohInitEvents(){
+  const wrap=document.getElementById('oh-categories');
+  const ctx=e=>{
+    const catEl=e.target.closest('[data-cat]'),lineEl=e.target.closest('[data-item]');
+    const cat=catEl?ohCats.find(c=>c.id===catEl.dataset.cat):null;
+    const found=lineEl?ohFind(lineEl.dataset.item):null;
+    return {cat,found};
+  };
+  wrap.addEventListener('input',e=>{
+    const act=e.target.dataset.act;if(!act)return;
+    const {cat,found}=ctx(e);
+    if(act==='catname'&&cat){
+      cat.label=e.target.value;
+      wrap.querySelectorAll(`.oh-move option[value="${cat.id}"]`).forEach(o=>{o.textContent=cat.label||'(unnamed)';});
+      ohCalc();return;
+    }
+    if(!found)return;
+    if(act==='lbl')found.item.label=e.target.value;
+    if(act==='payee')found.item.payee=e.target.value;
+    if(act==='notes')found.item.notes=e.target.value;
+    if(act==='amt'){found.item.amount=num(e.target.value);ohCalc();}
   });
-}
-function ohToggleExtraDetail(catId,idx){
-  const d=document.getElementById('xdetail_'+catId+'_'+idx);
-  const chev=document.getElementById('xchev_'+catId+'_'+idx);
-  if(d.style.display==='none'){d.style.display='block';chev.className='ti ti-chevron-up';}
-  else{d.style.display='none';chev.className='ti ti-chevron-down';}
+  wrap.addEventListener('change',e=>{
+    if(e.target.dataset.act!=='move')return;
+    const {found}=ctx(e);const dest=ohCats.find(c=>c.id===e.target.value);
+    if(!found||!dest||dest===found.cat)return;
+    found.cat.items.splice(found.i,1);dest.items.push(found.item);renderOH();
+  });
+  wrap.addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-act]');if(!btn||btn.disabled)return;
+    const act=btn.dataset.act;const {cat,found}=ctx(e);
+    if(act==='addcat'){
+      const c={id:ohNewId('ohc'),label:'New section',items:[ohLine()]};ohCats.push(c);renderOH();
+      const el=wrap.querySelector(`[data-cat="${c.id}"] .oh-cat-name`);if(el){el.focus();el.select();}
+      return;
+    }
+    if(act==='catup'||act==='catdown'){const ci=ohCats.indexOf(cat);moveIn(ohCats,ci,ci+(act==='catup'?-1:1));renderOH();return;}
+    if(act==='catdel'){
+      const amt=ohCatTotal(cat);
+      if(cat.items.length&&!confirm('Delete "'+(cat.label||'this section')+'" and its '+cat.items.length+' line(s)'+(amt?' ('+fD(amt)+'/mo)':'')+'?'))return;
+      ohCats.splice(ohCats.indexOf(cat),1);renderOH();return;
+    }
+    if(act==='addline'){
+      const l=ohLine();cat.items.push(l);renderOH();
+      const el=wrap.querySelector(`[data-item="${l.id}"] .oh-lbl`);if(el)el.focus();
+      return;
+    }
+    if(!found)return;
+    if(act==='toggle'){ohOpen.has(found.item.id)?ohOpen.delete(found.item.id):ohOpen.add(found.item.id);renderOH();return;}
+    if(act==='up'||act==='down'){moveIn(found.cat.items,found.i,found.i+(act==='up'?-1:1));renderOH();return;}
+    if(act==='del'){found.cat.items.splice(found.i,1);ohOpen.delete(found.item.id);renderOH();return;}
+  });
 }
 
 function ohCalc(){
   const total=ohGetTotal();
-  // update category subtotals in headers
-  // Update category subtotals
-  ohCats.forEach(function(cat){
+  ohCats.forEach(cat=>{
     const el=document.getElementById('cattot_'+cat.id);
-    if(el) el.textContent=ohCatTotal(cat)?fD(ohCatTotal(cat)):'';
+    if(el){const t=ohCatTotal(cat);el.textContent=t?fD(t)+'/mo':'';}
   });
   if(!total){document.getElementById('oh-summary').innerHTML='';
     const beEl=document.getElementById('be_oh');if(beEl){beEl.value='';beCalc();}return;}
-  const catTotals=ohCats.map(cat=>ohCatTotal(cat));
   document.getElementById('oh-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Overhead Summary</h3>
-    ${ohCats.map((cat,i)=>`<div class="kv"><span class="kk">${cat.label}</span><span class="kv2">${fD(catTotals[i])}</span></div>`).join('')}
+    ${ohCats.map((cat,i)=>`<div class="kv"><span class="kk">${i+1}. ${esc(cat.label||'(unnamed)')}</span><span class="kv2">${fD(ohCatTotal(cat))}</span></div>`).join('')}
     <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Total monthly overhead</span><span class="kv2" style="font-size:16px">${fD(total)}</span></div>
     <div class="kv"><span class="kk">Annual overhead</span><span class="kv2">${fD(total*12)}</span></div>
   </div>`;
   const beEl=document.getElementById('be_oh');
-  if(beEl){beEl.value=Math.round(total*12);beCalc();}
+  if(beEl){beEl.value=fmtNum(Math.round(total*12));beCalc();}
+}
+
+// Session load: accepts new format (cats) and the old fixed-field format
+function ohLoad(o){
+  if(Array.isArray(o.cats)){
+    ohCats=o.cats.map(c=>({id:c.id||ohNewId('ohc'),label:c.label||'',items:(c.items||[]).map(it=>({id:it.id||ohNewId('ohl'),label:it.label||'',amount:num(it.amount),payee:it.payee||'',notes:it.notes||''}))}));
+  } else {
+    ohCats=ohDefault();
+    ohCats.forEach(cat=>{
+      cat.label=cat.label.replace(/^\d+\.\s*/,'');
+      cat.items.forEach(it=>{
+        if(o.fields&&o.fields[it.id]!==undefined)it.amount=num(o.fields[it.id]);
+        if(o.details&&o.details[it.id]){it.payee=o.details[it.id].payee||'';it.notes=o.details[it.id].notes||'';}
+      });
+      if(o.extra&&Array.isArray(o.extra[cat.id])){
+        o.extra[cat.id].forEach(x=>{const l=ohLine(null,x.label);l.amount=num(x.amount);l.payee=x.payee||'';l.notes=x.notes||'';cat.items.push(l);});
+      }
+    });
+  }
+  ohOpen.clear();
+  renderOH();
 }
 
 function calcAvgSale(){
@@ -817,21 +922,192 @@ function calcGPM(){
   }
   beCalc();
 }
-function beCalc(){
+// ---- BENCHMARKS ----
+const BENCH={
+  prof:  {name:'Professional services',      ex:'Consulting, accounting, agencies, IT services',          cogs:[30,50],gm:[50,70],oh:[25,40],net:[10,20]},
+  trades:{name:'Trades & home services',     ex:'HVAC, plumbing, electrical, landscaping, cleaning',      cogs:[50,65],gm:[35,50],oh:[25,35],net:[5,15]},
+  constr:{name:'Construction / contracting', ex:'General contractors, remodelers, specialty subs',        cogs:[75,85],gm:[15,25],oh:[10,18],net:[3,8]},
+  mfg:   {name:'Manufacturing',              ex:'Fabrication, production, light manufacturing',           cogs:[60,75],gm:[25,40],oh:[15,25],net:[5,12]},
+  dist:  {name:'Wholesale / distribution',   ex:'Distributors, wholesalers, suppliers',                   cogs:[70,85],gm:[15,30],oh:[10,20],net:[2,6]},
+  retail:{name:'Retail / e-commerce',        ex:'Stores, online shops',                                   cogs:[50,70],gm:[30,50],oh:[20,35],net:[3,8]},
+  food:  {name:'Restaurant / food service',  ex:'Restaurants, catering, bakeries (labor in overhead)',     cogs:[28,35],gm:[65,72],oh:[55,65],net:[3,6]},
+  health:{name:'Health & wellness practices',ex:'Clinics, therapy, dental, fitness',                      cogs:[25,40],gm:[60,75],oh:[40,55],net:[10,20]},
+  custom:{name:'Custom',                     ex:'Your own ranges for this client',                        cogs:[null,null],gm:[null,null],oh:[null,null],net:[null,null]},
+};
+const BM_METRICS=[
+  {k:'cogs',label:'COGS %',better:'low'},
+  {k:'gm',label:'Gross margin %',better:'high'},
+  {k:'oh',label:'Overhead %',better:'low'},
+  {k:'net',label:'Net profit %',better:'high'},
+];
+let benchInd='';
+function bmRange(r){return (r&&r[0]!=null&&r[1]!=null)?r[0]+'–'+r[1]+'%':'—';}
+function bmStatus(v,r,better){
+  if(v==null||isNaN(v)||!r||r[0]==null||r[1]==null)return '<span class="pill gray">—</span>';
+  const [lo,hi]=r;
+  if(v>=lo&&v<=hi)return '<span class="pill green">Within range</span>';
+  const good=better==='low'?v<lo:v>hi;
+  if(good)return '<span class="pill green">Better than range</span>';
+  const gap=better==='low'?v-hi:lo-v;
+  return `<span class="pill ${gap<=3?'amber':'red'}">${better==='low'?'Above':'Below'} range</span>`;
+}
+function fillIndSelects(){
+  document.querySelectorAll('.ind-sel').forEach(sel=>{
+    sel.innerHTML='<option value="">Select industry...</option>'+Object.keys(BENCH).map(k=>`<option value="${k}">${BENCH[k].name}</option>`).join('');
+    sel.value=benchInd;
+  });
+}
+function setInd(v){
+  benchInd=v||'';
+  document.querySelectorAll('.ind-sel').forEach(sel=>{sel.value=benchInd;});
+  beCalc();renderBench();
+}
+function setCustomBench(k,idx,v){BENCH.custom[k][idx]=num(v);beCalc();renderBenchCompare();}
+
+// Snapshot actuals (latest period that has sales)
+function snActuals(){
+  for(const per of ['p2','p1']){
+    const d=snCalcDerived(per);
+    if(d.income){
+      const label=(document.getElementById('sn_'+per)||{}).value||(per==='p2'?'Period 2':'Period 1');
+      return {label,cogs:d.cogs/d.income*100,gm:d.gp/d.income*100,oh:d.totexp/d.income*100,net:d.net/d.income*100};
+    }
+  }
+  return null;
+}
+function renderBench(){
+  const tb=document.getElementById('bm-tb');if(!tb)return;
+  tb.innerHTML=Object.keys(BENCH).map(k=>{
+    const b=BENCH[k],act=k===benchInd?' class="bm-active"':'';
+    const cell=m=>k==='custom'
+      ?`<span class="nowrap"><input class="bm-range-in" type="text" inputmode="decimal" value="${b[m][0]??''}" placeholder="lo" oninput="setCustomBench('${m}',0,this.value)"> – <input class="bm-range-in" type="text" inputmode="decimal" value="${b[m][1]??''}" placeholder="hi" oninput="setCustomBench('${m}',1,this.value)"></span>`
+      :bmRange(b[m]);
+    return `<tr${act} style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT')setInd('${k}')"><td><div style="font-weight:600">${b.name}</div><div style="font-size:10px;color:var(--gray-500)">${b.ex}</div></td>${['cogs','gm','oh','net'].map(m=>`<td>${cell(m)}</td>`).join('')}</tr>`;
+  }).join('');
+  renderBenchCompare();
+}
+function renderBenchCompare(){
+  const wrap=document.getElementById('bm-compare');if(!wrap)return;
+  if(!benchInd){wrap.innerHTML='';return;}
+  const b=BENCH[benchInd],act=snActuals(),plan=beCompute();
+  const planV=plan?{cogs:plan.cogsPct,gm:plan.gpm,oh:plan.ohPct,net:plan.netPct}:null;
+  wrap.innerHTML=`<div class="card"><h3>Client vs ${b.name}</h3>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Metric</th><th>Benchmark</th><th>Actual${act?' ('+esc(act.label)+')':''}</th><th>Plan (Break-even)</th></tr></thead><tbody>
+    ${BM_METRICS.map(m=>`<tr><td style="font-weight:600">${m.label}</td><td>${bmRange(b[m.k])}</td>
+      <td>${act?fP(act[m.k])+' '+bmStatus(act[m.k],b[m.k],m.better):'<span style="color:var(--gray-500)">—</span>'}</td>
+      <td>${planV&&planV[m.k]!=null?fP(planV[m.k])+' '+bmStatus(planV[m.k],b[m.k],m.better):'<span style="color:var(--gray-500)">—</span>'}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="bm-note">Actual comes from the Snapshot tab P&L. Plan comes from the Break-even tab inputs.${!act?' Add a P&L on the Snapshot tab to see actuals.':''}</div>
+  </div>`;
+}
+
+// ---- PACKAGE / SERVICE MIX (Break-even) ----
+const mixL=[];
+function addMix(){
+  const n=document.getElementById('mx_n').value.trim(),p=num(document.getElementById('mx_p').value),q=num(document.getElementById('mx_q').value);
+  if(!n||p==null)return;
+  mixL.push({n,p,q:q||0});
+  ['mx_n','mx_p','mx_q'].forEach(id=>document.getElementById(id).value='');
+  rMix();beCalc();
+}
+function importMixFromPricing(){
+  if(!pkgL.length){alert('No packages on the Pricing tab yet.');return;}
+  pkgL.forEach(pk=>{if(!mixL.some(m=>m.n===pk.n))mixL.push({n:pk.n,p:pk.p,q:0});});
+  rMix();beCalc();
+}
+function mixTotals(){
+  const rev=mixL.reduce((a,m)=>a+(m.p||0)*(m.q||0),0),cust=mixL.reduce((a,m)=>a+(m.q||0),0);
+  return {rev,cust,avg:cust?rev/cust:null};
+}
+function mixEdit(i,f,v){
+  if(!mixL[i])return;
+  mixL[i][f]=f==='n'?v:(num(v)||0);
+  const t=mixTotals();
+  // update calculated cells without re-rendering (keeps cursor in place)
+  document.querySelectorAll('#mx-tb tr[data-i]').forEach(tr=>{
+    const m=mixL[+tr.dataset.i],r=(m.p||0)*(m.q||0);
+    tr.querySelector('.mx-rev').textContent=fD(r);
+    tr.querySelector('.mx-pct').textContent=t.rev?fP(r/t.rev*100):'—';
+  });
+  const tot=document.getElementById('mx-tot');if(tot)tot.innerHTML=mixTotRow(t);
+  beCalc();
+}
+function mixTotRow(t){return `<td style="font-weight:700">Total</td><td style="color:var(--gray-500);font-size:11px">avg ${fD(t.avg)}</td><td style="font-weight:700;padding-left:14px">${t.cust||0}</td><td style="font-weight:700">${fD(t.rev)}</td><td></td><td></td>`;}
+function rMix(){
+  const tb=document.getElementById('mx-tb');if(!tb)return;
+  if(!mixL.length){tb.innerHTML='<tr class="er"><td colspan="6">No packages added yet. Leave empty to use the single average sale above.</td></tr>';return;}
+  const t=mixTotals();
+  tb.innerHTML=mixL.map((m,i)=>{const r=(m.p||0)*(m.q||0);return `<tr data-i="${i}">
+    <td><input type="text" value="${esc(m.n)}" oninput="mixEdit(${i},'n',this.value)"></td>
+    <td><input type="text" inputmode="decimal" value="${fmtNum(m.p)}" oninput="mixEdit(${i},'p',this.value)" style="max-width:110px"></td>
+    <td><input type="text" inputmode="decimal" value="${m.q||''}" placeholder="0" oninput="mixEdit(${i},'q',this.value)" style="max-width:90px"></td>
+    <td class="mx-rev">${fD(r)}</td>
+    <td class="mx-pct">${t.rev?fP(r/t.rev*100):'—'}</td>
+    <td class="nowrap"><button class="ibtn" title="Move up" ${i===0?'disabled':''} onclick="moveIn(mixL,${i},${i-1});rMix();beCalc()"><i class="ti ti-arrow-up"></i></button><button class="ibtn" title="Move down" ${i===mixL.length-1?'disabled':''} onclick="moveIn(mixL,${i},${i+1});rMix();beCalc()"><i class="ti ti-arrow-down"></i></button><button class="delb" onclick="mixL.splice(${i},1);rMix();beCalc()"><i class="ti ti-trash"></i></button></td>
+  </tr>`;}).join('')+`<tr id="mx-tot" style="background:var(--gray-100)">${mixTotRow(t)}</tr>`;
+}
+
+// ---- BREAK-EVEN ----
+function beCompute(){
   const oh=g('be_oh'),allow=g('be_allow')||0,draw=g('be_draw')||0,gpm=g('be_gpm'),avgSale=g('be_avg_sale'),target=g('be_target')||0;
-  if(!oh||!gpm){document.getElementById('be-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual overhead and gross margin % to calculate.</div>';return;}
-  const annOH=oh+allow;
-  const annTotal=annOH+draw;
-  const totalBase=annTotal+target;
-  const gpmDec=gpm/100;
-  const annSalesReq=gpmDec>0?totalBase/gpmDec:null;
-  const moSalesReq=annSalesReq?annSalesReq/12:null;
-  const netProfitPct=(target&&annSalesReq)?Math.round((target/annSalesReq)*100*10)/10:null;
-  // Auto-fill projections revenue target if target net income was set
+  if(!oh||!gpm||gpm<=0)return null;
+  const annOH=oh+allow,annTotal=annOH+draw,totalBase=annTotal+target;
+  const annSalesReq=totalBase/(gpm/100),moSalesReq=annSalesReq/12;
+  return {oh,allow,draw,gpm,avgSale,target,annOH,annTotal,annSalesReq,moSalesReq,
+    cogsPct:100-gpm,ohPct:annOH/annSalesReq*100,drawPct:draw/annSalesReq*100,netPct:target/annSalesReq*100,
+    clientsNeeded:(avgSale&&avgSale>0)?moSalesReq/avgSale:null};
+}
+function beMixBreakdown(c){
+  const t=mixTotals();
+  if(!mixL.length||!c)return null;
+  const factor=t.rev?c.moSalesReq/t.rev:null;
+  const rows=mixL.map(m=>{
+    const planned=m.q||0,need=factor?Math.ceil(planned*factor):null;
+    return {n:m.n,p:m.p,planned,plannedRev:(m.p||0)*planned,need,needRev:need!=null?need*(m.p||0):null};
+  });
+  return {t,factor,rows,needCust:rows.reduce((a,r)=>a+(r.need||0),0),needRev:rows.reduce((a,r)=>a+(r.needRev||0),0),gap:t.rev-c.moSalesReq};
+}
+function beCalc(){
+  const c=beCompute();
+  // keep Benchmarks tab comparison current
+  renderBenchCompare();
+  if(!c){document.getElementById('be-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual overhead and gross margin % to calculate.</div>';return;}
+  const {annOH,annTotal,annSalesReq,moSalesReq,gpm,target,avgSale,clientsNeeded}=c;
+  const netProfitPct=target?Math.round(c.netPct*10)/10:null;
   const prRevEl=document.getElementById('pr_rev');
-  if(annSalesReq&&target&&prRevEl&&!prRevEl.dataset.manual){prRevEl.value=Math.round(annSalesReq);prCalc();}
-  const clientsNeeded=(moSalesReq&&avgSale&&avgSale>0)?moSalesReq/avgSale:null;
+  if(target&&prRevEl&&!prRevEl.dataset.manual){prRevEl.value=fmtNum(Math.round(annSalesReq));prCalc();}
   const hasTarget=target>0;
+  const mx=beMixBreakdown(c);
+  let mixHtml='';
+  if(mx){
+    mixHtml=`<div class="card"><h3>Package Breakdown</h3>
+      ${mx.t.cust?`<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Package</th><th>Price</th><th>Planned / mo</th><th>Needed / mo</th><th>Revenue at Target</th></tr></thead><tbody>
+        ${mx.rows.map(r=>`<tr><td style="font-weight:600">${esc(r.n)}</td><td>${fD(r.p)}</td><td>${r.planned}</td><td style="font-weight:700;color:var(--green)">${r.need!=null?r.need:'—'}</td><td>${fD(r.needRev)}</td></tr>`).join('')}
+        <tr style="background:var(--gray-100)"><td style="font-weight:700">Total</td><td></td><td style="font-weight:700">${mx.t.cust}</td><td style="font-weight:700;color:var(--green)">${mx.needCust}</td><td style="font-weight:700">${fD(mx.needRev)}</td></tr>
+      </tbody></table></div>
+      <div class="kv" style="margin-top:6px"><span class="kk">Planned monthly revenue from mix</span><span class="kv2">${fD(mx.t.rev)}</span></div>
+      <div class="kv"><span class="kk">Monthly sales target</span><span class="kv2">${fD(moSalesReq)}</span></div>
+      <div class="kv"><span class="kk">${mx.gap>=0?'Surplus':'Shortfall'} vs target</span><span class="kv2 ${mx.gap>=0?'good':'bad'}">${mx.gap>=0?'+':'-'}${fD(Math.abs(mx.gap))}</span></div>
+      <div class="kv"><span class="kk">Weighted average sale</span><span class="kv2">${fD(mx.t.avg)}</span></div>
+      <div class="bm-note">"Needed / mo" keeps the same mix as your plan and scales it to hit the target (rounded up).</div>`
+      :'<div style="font-size:12px;color:var(--gray-500)">Enter customers per month for each package to see the breakdown.</div>'}
+    </div>`;
+  }
+  let bmHtml='';
+  if(benchInd){
+    const b=BENCH[benchInd];
+    const vals={cogs:c.cogsPct,gm:gpm,oh:c.ohPct,net:hasTarget?c.netPct:null};
+    bmHtml=`<div class="card"><h3>Benchmark Breakdown</h3>
+      <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px">${b.name}, as % of the annual sales required</div>
+      <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Metric</th><th>Client</th><th>Benchmark</th><th>Status</th></tr></thead><tbody>
+      ${BM_METRICS.map(m=>`<tr><td style="font-weight:600">${m.label}</td><td>${vals[m.k]!=null?fP(vals[m.k]):'—'}</td><td>${bmRange(b[m.k])}</td><td>${m.k==='net'&&!hasTarget?'<span style="font-size:11px;color:var(--gray-500)">Add a target net income</span>':bmStatus(vals[m.k],b[m.k],m.better)}</td></tr>`).join('')}
+      <tr><td style="font-weight:600">Owner distribution %</td><td>${c.draw?fP(c.drawPct):'—'}</td><td style="color:var(--gray-500)">Info only</td><td></td></tr>
+      </tbody></table></div>
+      <div class="bm-note">See the Benchmarks tab for all industries and what each metric means.</div>
+    </div>`;
+  } else {
+    bmHtml=`<div class="card"><h3>Benchmark Breakdown</h3><div style="font-size:12px;color:var(--gray-500)">Select an industry above to compare this plan to industry benchmarks.</div></div>`;
+  }
   document.getElementById('be-results').innerHTML=`
     <div class="grid4" style="margin-top:14px">
       <div class="met"><div class="ml">Annual Overhead</div><div class="mv">${fD(annOH)}</div><div class="ms">incl. allowance</div></div>
@@ -848,7 +1124,9 @@ function beCalc(){
       <div class="kv"><span class="kk">Average sale per client</span><span class="kv2">${fD(avgSale)}</span></div>
       <div class="kv"><span class="kk">Clients / jobs needed per month</span><span class="kv2 good">${Math.ceil(clientsNeeded)}</span></div>
       ${hasTarget?`<div class="kv"><span class="kk">Target net income included</span><span class="kv2">${fD(target)}</span></div>`:''}
-    </div>`:''}`;
+    </div>`:''}
+    ${mixHtml}
+    ${bmHtml}`;
 }
 
 let cogsMode='dollar';
@@ -866,16 +1144,14 @@ function rRA(){const tb=document.getElementById('ra-tb');if(!raL.length){tb.inne
 function addOE(){const mo=document.getElementById('oe_mo').value,type=document.getElementById('oe_type').value,lbl=document.getElementById('oe_lbl').value.trim(),amt=parseFloat(String(document.getElementById('oe_amt').value).replace(/,/g,''));if(!lbl||isNaN(amt))return;oeL.push({mo,type,lbl,amt});document.getElementById('oe_lbl').value='';document.getElementById('oe_amt').value='';rOE();prCalc();}
 function rOE(){const tb=document.getElementById('oe-tb');if(!oeL.length){tb.innerHTML='<tr class="er"><td colspan="5">No expense adjustments added yet</td></tr>';return;}tb.innerHTML=oeL.map((o,i)=>`<tr><td style="font-weight:600">${o.mo}</td><td><span class="pill ${o.type==='ongoing'?'blue':'amber'}">${o.type==='ongoing'?'Ongoing':'One month'}</span></td><td style="font-size:12px">${o.lbl}</td><td style="color:var(--red);font-weight:600">${fD(o.amt)}</td><td><button class="delb" onclick="oeL.splice(${i},1);rOE();prCalc()"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
 
-function prCalc(){
+function prCompute(){
   const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
+  if(!rev)return null;
   const moOH=ohGetTotal();
-  if(!rev){document.getElementById('proj-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual revenue target to generate projections.</div>';return;}
   const baseMonthly=rev/12;
   let cogsRate=0;
   if(cogsVal!==null){cogsRate=cogsMode==='pct'?cogsVal/100:(cogsVal/rev);}
-  const labels=['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
   const months=Array.from({length:12},(_,i)=>{
-    const moLabel=labels[i];
     const moIndex=i+1;
     const raAdj=raL.reduce((a,r)=>{
       const rIdx=parseInt(r.mo.replace('M',''));
@@ -893,36 +1169,48 @@ function prCalc(){
     const moCogs=moRev*cogsRate;
     const moGP=moRev-moCogs;
     const moNet=moGP-moOH-oeAmt;
-    const hasAdj=raAdj!==0||oeAmt>0;
-    return{rev:moRev,cogs:moCogs,gp:moGP,net:moNet,oeAmt,raAdj,hasAdj};
+    return{label:'M'+moIndex,rev:moRev,cogs:moCogs,gp:moGP,oh:moOH,net:moNet,netPct:moRev?moNet/moRev*100:null,oeAmt,raAdj,hasAdj:raAdj!==0||oeAmt>0};
   });
   let cash=startCash;
-  const cashFlow=months.map(m=>{const end=cash+m.net;const r={start:cash,net:m.net,end};cash=end;return r;});
+  months.forEach(m=>{m.start=cash;m.end=cash+m.net;cash=m.end;});
+  const tot={rev:0,gp:0,net:0,oe:0};
+  months.forEach(m=>{tot.rev+=m.rev;tot.gp+=m.gp;tot.net+=m.net;tot.oe+=m.oeAmt;});
+  tot.netPct=tot.rev?tot.net/tot.rev*100:null;
+  tot.gpPct=tot.rev?tot.gp/tot.rev*100:null;
+  return {months,tot,moOH};
+}
+function prCalc(){
+  const pc=prCompute();
+  if(!pc){document.getElementById('proj-results').innerHTML='<div style="font-size:12px;color:var(--gray-500);padding:10px 0">Enter annual revenue target to generate projections.</div>';return;}
+  const {months,tot,moOH}=pc;
   const gc=v=>v>=0?'var(--green)':'var(--red)';
-  const hasOE=oeL.length>0;
-  const hasRA=raL.length>0;
-  const hasAnyAdj=hasOE||hasRA;
+  const hasOE=oeL.length>0,hasRA=raL.length>0;
+  const npc=v=>v==null?'':(v>=15?'green':v>=5?'amber':'red');
   document.getElementById('proj-results').innerHTML=`
     <div class="card" style="margin-top:14px"><h3>12-Month Projection</h3>
       <div style="overflow-x:auto">
-      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th>${hasOE?'<th>Exp Adj</th>':''}${hasRA?'<th>Rev Adj</th>':''}<th>Net Profit</th><th>Ending Cash</th></tr></thead>
-      <tbody>${months.map((m,i)=>`<tr${m.hasAdj?' style="background:var(--gray-100)"':''}>
-        <td style="font-weight:600">${labels[i]}</td>
+      <table class="dt"><thead><tr><th>Month</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Overhead</th>${hasOE?'<th>Exp Adj</th>':''}${hasRA?'<th>Rev Adj</th>':''}<th>Net Profit</th><th>Net %</th><th>Ending Cash</th></tr></thead>
+      <tbody>${months.map(m=>`<tr${m.hasAdj?' style="background:var(--gray-100)"':''}>
+        <td style="font-weight:600">${m.label}</td>
         <td>${fD(m.rev)}</td>
         <td style="color:var(--red)">${fD(m.cogs)}</td>
         <td style="color:${gc(m.gp)};font-weight:600">${fD(m.gp)}</td>
         <td style="color:var(--gray-700)">${fD(moOH)}</td>
         ${hasOE?`<td style="color:var(--red)">${m.oeAmt>0?fD(m.oeAmt):'—'}</td>`:''}
-        ${hasRA?`<td style="color:${m.raAdj>=0?'var(--green)':'var(--red)'}">${m.raAdj!==0?(m.raAdj>0?'+':'')+fD(Math.abs(m.raAdj)):'—'}</td>`:''}
+        ${hasRA?`<td style="color:${m.raAdj>=0?'var(--green)':'var(--red)'}">${m.raAdj!==0?(m.raAdj>0?'+':'-')+fD(Math.abs(m.raAdj)):'—'}</td>`:''}
         <td style="color:${gc(m.net)};font-weight:600">${fD(m.net)}</td>
-        <td style="color:${gc(cashFlow[i].end)};font-weight:600">${fD(cashFlow[i].end)}</td>
-      </tr>`).join('')}</tbody></table></div></div>
+        <td><span class="pill ${npc(m.netPct)}">${fP(m.netPct)}</span></td>
+        <td style="color:${gc(m.end)};font-weight:600">${fD(m.end)}</td>
+      </tr>`).join('')}
+      <tr style="background:var(--gray-100)"><td style="font-weight:700">Total</td><td style="font-weight:700">${fD(tot.rev)}</td><td></td><td style="font-weight:700">${fD(tot.gp)}</td><td style="font-weight:700">${fD(moOH*12)}</td>${hasOE?`<td style="font-weight:700">${fD(tot.oe)}</td>`:''}${hasRA?'<td></td>':''}<td style="font-weight:700;color:${gc(tot.net)}">${fD(tot.net)}</td><td><span class="pill ${npc(tot.netPct)}">${fP(tot.netPct)}</span></td><td></td></tr>
+      </tbody></table></div></div>
     <div class="grid4">
-      <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(months.reduce((a,m)=>a+m.rev,0))}</div></div>
-      <div class="met ${months.reduce((a,m)=>a+m.gp,0)>=0?'good':'bad'}"><div class="ml">Total Gross Profit</div><div class="mv">${fD(months.reduce((a,m)=>a+m.gp,0))}</div></div>
-      ${hasOE?`<div class="met bad"><div class="ml">Total Expense Adjustments</div><div class="mv">${fD(months.reduce((a,m)=>a+m.oeAmt,0))}</div></div>`:''}
-      <div class="met ${months.reduce((a,m)=>a+m.net,0)>=0?'good':'bad'}"><div class="ml">Total Net Profit</div><div class="mv">${fD(months.reduce((a,m)=>a+m.net,0))}</div></div>
-      <div class="met ${cashFlow[11].end>=0?'good':'bad'}"><div class="ml">Year-End Cash</div><div class="mv">${fD(cashFlow[11].end)}</div></div>
+      <div class="met good"><div class="ml">Total Projected Revenue</div><div class="mv">${fD(tot.rev)}</div></div>
+      <div class="met ${tot.gp>=0?'good':'bad'}"><div class="ml">Total Gross Profit</div><div class="mv">${fD(tot.gp)}</div><div class="ms">${fP(tot.gpPct)} of revenue</div></div>
+      ${hasOE?`<div class="met bad"><div class="ml">Total Expense Adjustments</div><div class="mv">${fD(tot.oe)}</div></div>`:''}
+      <div class="met ${tot.net>=0?'good':'bad'}"><div class="ml">Total Net Profit</div><div class="mv">${fD(tot.net)}</div></div>
+      <div class="met ${tot.netPct==null?'':tot.netPct>=15?'good':tot.netPct>=5?'warn':'bad'}"><div class="ml">Net Profit %</div><div class="mv">${fP(tot.netPct)}</div><div class="ms">of total revenue</div></div>
+      <div class="met ${months[11].end>=0?'good':'bad'}"><div class="ml">Year-End Cash</div><div class="mv">${fD(months[11].end)}</div></div>
     </div>`;
 }
 
@@ -960,26 +1248,38 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
     <div class="kv"><span class="kk">Accounts tracked</span><span class="kv2">${colL.length}</span></div>
   </div>`;}
 
+const IS_AREAS=['Banking','Balance sheet','P&L - sales','P&L - expenses','COGS','AR','AP','Chart of accounts','Payroll','Other'];
+const IS_PRI=['High','Medium','Low'],IS_ST=['Open','In progress','Fixed'];
 function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});document.getElementById('is_desc').value='';rIss();}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
-function rIss(){
-  const tb=document.getElementById('is-tb');
+function stC2(s){return s==='Fixed'?'green':s==='In progress'?'amber':'red';}
+function issOpts(list,cur){const l=list.includes(cur)?list:list.concat([cur]);return l.map(o=>`<option${o===cur?' selected':''}>${esc(o)}</option>`).join('');}
+function issVisible(){
   const fArea=(document.getElementById('f_area')||{}).value||'';
   const fPri=(document.getElementById('f_pri')||{}).value||'';
   const fSt=(document.getElementById('f_st')||{}).value||'';
-  const filtered=isL.filter((s,i)=>(!fArea||s.area===fArea)&&(!fPri||s.pri===fPri)&&(!fSt||s.st===fSt));
-  if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues logged yet</td></tr>';}
-  else if(!filtered.length){tb.innerHTML='<tr class="er"><td colspan="5">No issues match the current filters</td></tr>';}
-  else{tb.innerHTML=filtered.map((s)=>{const i=isL.indexOf(s);return`<tr>
-    <td><span class="pill blue">${s.area}</span></td>
-    <td style="max-width:200px;font-size:12px">${s.desc}</td>
-    <td><span class="pill ${priC(s.pri)}">${s.pri}</span></td>
-    <td><select onchange="isL[${i}].st=this.value;rIss()" style="font-size:11px;padding:3px 6px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body);cursor:pointer">
-      <option${s.st==='Open'?' selected':''}>Open</option>
-      <option${s.st==='In progress'?' selected':''}>In progress</option>
-      <option${s.st==='Fixed'?' selected':''}>Fixed</option>
-    </select></td>
-    <td><button class="delb" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
+  return isL.filter(s=>(!fArea||s.area===fArea)&&(!fPri||s.pri===fPri)&&(!fSt||s.st===fSt));
+}
+// Move issue up/down among the currently visible (filtered) rows
+function moveIss(i,dir){
+  const vis=issVisible(),k=vis.indexOf(isL[i]),other=vis[k+dir];
+  if(!other)return;
+  moveIn(isL,i,isL.indexOf(other));rIss();
+}
+function editIss(i,f,v){if(!isL[i])return;isL[i][f]=v;if(f!=='desc')rIss();}
+let issDrag=null;
+function rIss(){
+  const tb=document.getElementById('is-tb');
+  const filtered=issVisible();
+  if(!isL.length){tb.innerHTML='<tr class="er"><td colspan="6">No issues logged yet</td></tr>';}
+  else if(!filtered.length){tb.innerHTML='<tr class="er"><td colspan="6">No issues match the current filters</td></tr>';}
+  else{tb.innerHTML=filtered.map((s,k)=>{const i=isL.indexOf(s);return`<tr data-i="${i}">
+    <td><span class="drag" draggable="true" title="Drag to reorder"><i class="ti ti-grip-vertical"></i></span></td>
+    <td><select onchange="editIss(${i},'area',this.value)">${issOpts(IS_AREAS,s.area)}</select></td>
+    <td><input type="text" value="${esc(s.desc)}" oninput="editIss(${i},'desc',this.value)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';}" style="min-width:160px"></td>
+    <td><select class="sel-${priC(s.pri)}" onchange="editIss(${i},'pri',this.value)">${issOpts(IS_PRI,s.pri)}</select></td>
+    <td><select class="sel-${stC2(s.st)}" onchange="editIss(${i},'st',this.value)">${issOpts(IS_ST,s.st)}</select></td>
+    <td class="nowrap"><button class="ibtn" title="Move up" ${k===0?'disabled':''} onclick="moveIss(${i},-1)"><i class="ti ti-arrow-up"></i></button><button class="ibtn" title="Move down" ${k===filtered.length-1?'disabled':''} onclick="moveIss(${i},1)"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" onclick="isL.splice(${i},1);rIss()"><i class="ti ti-trash"></i></button></td>
   </tr>`;}).join('');}
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
@@ -988,6 +1288,27 @@ function rIss(){
     <div class="kv"><span class="kk">High priority</span><span class="kv2 ${hi>0?'bad':''}">${hi}</span></div>
     <div class="kv"><span class="kk">Fixed</span><span class="kv2 good">${fixed}</span></div>
   </div>`;
+}
+function issInitDrag(){
+  const tb=document.getElementById('is-tb');
+  tb.addEventListener('dragstart',e=>{
+    const h=e.target.closest&&e.target.closest('.drag');if(!h){e.preventDefault();return;}
+    const tr=h.closest('tr');issDrag=+tr.dataset.i;
+    e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(issDrag));
+    try{e.dataTransfer.setDragImage(tr,10,10);}catch(_){}
+  });
+  tb.addEventListener('dragover',e=>{
+    if(issDrag===null)return;const tr=e.target.closest('tr[data-i]');if(!tr)return;
+    e.preventDefault();tb.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));tr.classList.add('drag-over');
+  });
+  tb.addEventListener('dragleave',e=>{const tr=e.target.closest('tr');if(tr&&!tr.contains(e.relatedTarget))tr.classList.remove('drag-over');});
+  tb.addEventListener('drop',e=>{
+    const tr=e.target.closest('tr[data-i]');if(issDrag===null||!tr)return;
+    e.preventDefault();const to=+tr.dataset.i;
+    if(to!==issDrag)moveIn(isL,issDrag,to);
+    issDrag=null;rIss();
+  });
+  tb.addEventListener('dragend',()=>{issDrag=null;tb.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));});
 }
 
 function calcOHPerJob(){
@@ -1363,40 +1684,22 @@ function exportSnapshotExcel(){
 function saveSession(){
   const clientName = document.getElementById('client_name').value.trim() || 'Client';
 
-  // Collect all overhead field values
-  const ohFields = {};
-  ['oh_rent','oh_util','oh_office','oh_payroll','oh_tax','oh_ins','oh_legal','oh_bank','oh_pension','oh_mkt','oh_sw','oh_auto','oh_other'].forEach(id=>{
-    const el = document.getElementById(id);
-    ohFields[id] = el ? el.value : '';
-  });
-  // Collect payee/notes for each overhead item
-  const ohDetails = {};
-  ohCats.forEach(cat=>{
-    cat.items.forEach(item=>{
-      const payeeEl = document.getElementById('payee_'+item.id);
-      const notesEl = document.getElementById('notes_'+item.id);
-      ohDetails[item.id] = {
-        payee: payeeEl ? payeeEl.value : '',
-        notes: notesEl ? notesEl.value : ''
-      };
-    });
-  });
-
   const getVal = id => { const el=document.getElementById(id); return el?el.value:''; };
 
   const data = {
-    version: 1,
+    version: 2,
     snData: Object.assign({}, snData),
     snP1: getVal('sn_p1'), snP2: getVal('sn_p2'),
     savedAt: new Date().toISOString(),
     clientName,
     checklist: chk,
-    overhead: { fields: ohFields, details: ohDetails, extra: ohExtra },
+    overhead: { cats: ohCats },
+    benchmarks: { industry: benchInd, custom: BENCH.custom },
     breakeven: {
       be_oh: getVal('be_oh'), be_allow: getVal('be_allow'), be_draw: getVal('be_draw'),
       be_cogs_pct: getVal('be_cogs_pct'), be_gpm: getVal('be_gpm'),
       be_total_sales: getVal('be_total_sales'), be_num_clients: getVal('be_num_clients'),
-      be_avg_sale: getVal('be_avg_sale'), be_target: getVal('be_target')
+      be_avg_sale: getVal('be_avg_sale'), be_target: getVal('be_target'), mixL
     },
     projections: {
       pr_rev: getVal('pr_rev'), pr_cogs_val: getVal('pr_cogs_val'),
@@ -1441,23 +1744,22 @@ function loadSession(event){
       // Checklist
       if(data.checklist){ Object.keys(data.checklist).forEach(p=>{ if(chk[p]) chk[p]=data.checklist[p]; }); renderCL(); }
 
-      // Overhead fields
-      if(data.overhead){
-        if(data.overhead.extra){ Object.keys(data.overhead.extra).forEach(k=>{ if(ohExtra[k]!==undefined) ohExtra[k]=data.overhead.extra[k]; }); }
-        renderOH();
-        // Set field values after renderOH rebuilds DOM
-        if(data.overhead.fields){ Object.keys(data.overhead.fields).forEach(id=>setVal(id, data.overhead.fields[id])); }
-        if(data.overhead.details){
-          Object.keys(data.overhead.details).forEach(id=>{
-            setVal('payee_'+id, data.overhead.details[id].payee);
-            setVal('notes_'+id, data.overhead.details[id].notes);
-          });
-        }
-        ohCalc();
+      // Overhead (new editable format or legacy fixed fields)
+      if(data.overhead){ ohLoad(data.overhead); }
+
+      // Benchmarks
+      if(data.benchmarks){
+        if(data.benchmarks.custom) ['cogs','gm','oh','net'].forEach(k=>{ if(Array.isArray(data.benchmarks.custom[k])) BENCH.custom[k]=data.benchmarks.custom[k].map(num); });
+        benchInd = BENCH[data.benchmarks.industry] ? data.benchmarks.industry : '';
+        fillIndSelects(); renderBench();
       }
 
       // Break-even
-      if(data.breakeven){ Object.keys(data.breakeven).forEach(id=>setVal(id, data.breakeven[id])); beCalc(); }
+      if(data.breakeven){
+        Object.keys(data.breakeven).forEach(id=>{ if(id!=='mixL') setVal(id, data.breakeven[id]); });
+        mixL.splice(0, mixL.length, ...(data.breakeven.mixL||[]));
+        rMix(); beCalc();
+      }
 
       // Projections
       if(data.projections){
@@ -1633,14 +1935,9 @@ function exportSummaryExcel(){
     ['Category','Line Item','Monthly ($)','Annual ($)','Payee / Vendor','Notes']
   ];
   ohCats.forEach(cat=>{
-    cat.items.forEach(item=>{
-      const v = g(item.id)||0;
-      const payee = (document.getElementById('payee_'+item.id)||{}).value||'';
-      const notes = (document.getElementById('notes_'+item.id)||{}).value||'';
-      if(v||payee) ohRows.push([cat.label, item.label, v||'', v?v*12:'', payee, notes]);
-    });
-    ohExtra[cat.id].forEach(x=>{
-      if(x.amount||x.label) ohRows.push([cat.label, x.label||'(unlabeled)', x.amount||0, (x.amount||0)*12, x.payee||'', x.notes||'']);
+    cat.items.forEach(it=>{
+      const v = it.amount||0;
+      if(v||it.payee) ohRows.push([cat.label, it.label||'(unlabeled)', v||'', v?v*12:'', it.payee||'', it.notes||'']);
     });
   });
   ohRows.push(['','','','','','']);
@@ -1669,59 +1966,54 @@ function exportToExcel(){
   const ohRows=[['Category','Line Item','Monthly ($)','Annual ($)','Payee / Vendor','Notes']];
   let ohTotal=0;
   ohCats.forEach(cat=>{
-    cat.items.forEach(item=>{
-      const v=g(item.id)||0;
-      const payee=(document.getElementById('payee_'+item.id)||{}).value||'';
-      const notes=(document.getElementById('notes_'+item.id)||{}).value||'';
-      ohRows.push([cat.label,item.label,v||'',v?v*12:'',payee,notes]);
+    cat.items.forEach(it=>{
+      const v=it.amount||0;
+      ohRows.push([cat.label,it.label||'(unlabeled)',v||'',v?v*12:'',it.payee||'',it.notes||'']);
       ohTotal+=v;
     });
-    ohExtra[cat.id].forEach(x=>{
-      if(x.amount||x.label){
-        ohRows.push([cat.label,x.label||'(unlabeled)',x.amount||0,(x.amount||0)*12,x.payee||'',x.notes||'']);
-        ohTotal+=x.amount||0;
-      }
-    });
+    ohRows.push([cat.label+' subtotal','',ohCatTotal(cat),ohCatTotal(cat)*12,'','']);
     ohRows.push(['','','','','','']);
   });
   ohRows.push(['TOTAL MONTHLY OVERHEAD','',ohTotal,ohTotal*12,'','']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(ohRows)), 'Overhead');
 
   // --- BREAK-EVEN ---
-  const oh=g('be_oh')||0,allow=g('be_allow')||0,draw=g('be_draw')||0,gpm=g('be_gpm'),avgSale=g('be_avg_sale'),target=g('be_target')||0;
-  const moTotal=oh+allow,annTotal=moTotal*12+draw,totalBase=annTotal+target;
-  const annSalesReq=gpm&&gpm<100?totalBase/(gpm/100):null;
-  const moSalesReq=annSalesReq?annSalesReq/12:null;
-  const clientsNeeded=moSalesReq&&avgSale?moSalesReq/avgSale:null;
+  const bc=beCompute();
+  const gpm=g('be_gpm');
+  const r0=v=>v==null||isNaN(v)?'':Math.round(v);
+  const pc1=v=>v==null||isNaN(v)?'':(Math.round(v*10)/10)+'%';
   const beRows=[['Item','Value'],
-    ['Annual overhead (incl. allowance)',annOH||''],
-    ['Annual base needed (overhead + draw)',annTotal||''],
+    ['Annual overhead (incl. allowance)',bc?r0(bc.annOH):''],
+    ['Annual base needed (overhead + draw)',bc?r0(bc.annTotal):''],
     ['Gross profit margin %',gpm||''],
-    ['Annual sales required',annSalesReq||''],
-    ['Monthly sales target',moSalesReq||''],
-    ['Average sale per client',avgSale||''],
-    ['Clients / jobs needed per month',clientsNeeded?Math.ceil(clientsNeeded):''],
-    ['Target net income',target||'']
+    ['Annual sales required',bc?r0(bc.annSalesReq):''],
+    ['Monthly sales target',bc?r0(bc.moSalesReq):''],
+    ['Average sale per client',bc&&bc.avgSale?bc.avgSale:''],
+    ['Clients / jobs needed per month',bc&&bc.clientsNeeded?Math.ceil(bc.clientsNeeded):''],
+    ['Target net income',bc&&bc.target?bc.target:''],
+    ['Net profit % of sales',bc&&bc.target?pc1(bc.netPct):'']
   ];
+  const mx=beMixBreakdown(bc);
+  if(mixL.length){
+    beRows.push([],['PACKAGE / SERVICE MIX','Price','Planned / mo','Needed / mo','Revenue at target']);
+    mixL.forEach((m,i)=>{const r=mx&&mx.rows[i];beRows.push([m.n,m.p||'',m.q||0,r&&r.need!=null?r.need:'',r&&r.needRev!=null?r0(r.needRev):'']);});
+  }
+  if(benchInd&&bc){
+    const b=BENCH[benchInd];
+    const vals={cogs:bc.cogsPct,gm:bc.gpm,oh:bc.ohPct,net:bc.target?bc.netPct:null};
+    beRows.push([],['BENCHMARKS: '+b.name,'Client','Benchmark']);
+    BM_METRICS.forEach(m=>beRows.push([m.label,pc1(vals[m.k]),bmRange(b[m.k])]));
+  }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(beRows)), 'Break-even');
 
   // --- PROJECTIONS ---
-  const rev=g('pr_rev'),cogsVal=g('pr_cogs_val'),growth=g('pr_growth')||0,startCash=g('pr_cash')||0;
+  const rev=g('pr_rev'),cogsVal=g('pr_cogs_val');
   const moOH=ohGetTotal();
-  const prRows=[['Month','Revenue','COGS','Gross Profit','Overhead','Net Profit','Ending Cash']];
-  if(rev){
-    const cogsRate=cogsVal!==null?(cogsMode==='pct'?cogsVal/100:cogsVal/rev):0;
-    const baseMonthly=rev/12;
-    let cash=startCash;
-    Array.from({length:12},(_,i)=>{
-      const moRev=baseMonthly*Math.pow(1+growth/100,i);
-      const moCogs=moRev*cogsRate;
-      const moGP=moRev-moCogs;
-      const moNet=moGP-moOH;
-      const end=cash+moNet;
-      prRows.push(['M'+(i+1),Math.round(moRev),Math.round(moCogs),Math.round(moGP),Math.round(moOH),Math.round(moNet),Math.round(end)]);
-      cash=end;
-    });
+  const prRows=[['Month','Revenue','COGS','Gross Profit','Overhead','Expense Adj','Net Profit','Net Profit %','Ending Cash']];
+  const pcx=prCompute();
+  if(pcx){
+    pcx.months.forEach(m=>prRows.push([m.label,Math.round(m.rev),Math.round(m.cogs),Math.round(m.gp),Math.round(m.oh),Math.round(m.oeAmt),Math.round(m.net),m.netPct==null?'':(Math.round(m.netPct*10)/10)+'%',Math.round(m.end)]));
+    prRows.push(['Total',Math.round(pcx.tot.rev),'',Math.round(pcx.tot.gp),Math.round(pcx.moOH*12),Math.round(pcx.tot.oe),Math.round(pcx.tot.net),pcx.tot.netPct==null?'':(Math.round(pcx.tot.netPct*10)/10)+'%','']);
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(prRows)), 'Projections');
 
@@ -1804,11 +2096,12 @@ function exportToExcel(){
   XLSX.writeFile(wb, 'PivotYes_'+clientName.replace(/\s+/g,'_')+'_Financial_'+date+'.xlsx');
 }
 
-renderCL();renderOH();initSnapshot();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();rRA();rOE();renderDash();
+fillIndSelects();
+renderCL();initSnapshot();ohInitEvents();renderOH();issInitDrag();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();rRA();rOE();rMix();renderBench();renderDash();
 attachAllCurrency();
 
-// Re-attach after dynamic rows are added
-const _origRCC=rCC,_origRLn=rLn,_origRCI=rCI,_origRCO=rCO,_origRCol=rCol,_origRIss=rIss,_origRPkg=rPkg,_origRenderOHExtras=renderOHExtras;
+// Re-attach currency formatting after dynamic rows are added
+const _origRCC=rCC,_origRLn=rLn,_origRCI=rCI,_origRCO=rCO,_origRCol=rCol,_origRIss=rIss,_origRPkg=rPkg;
 rCC=function(){_origRCC();attachAllCurrency();};
 rLn=function(){_origRLn();attachAllCurrency();};
 rCI=function(){_origRCI();attachAllCurrency();};
@@ -1816,32 +2109,6 @@ rCO=function(){_origRCO();attachAllCurrency();};
 rCol=function(){_origRCol();attachAllCurrency();};
 rIss=function(){_origRIss();attachAllCurrency();};
 rPkg=function(){_origRPkg();attachAllCurrency();};
-renderOHExtras=function(){_origRenderOHExtras();attachAllCurrency();};
-
-// Overhead event delegation — attached once after renderOH builds the DOM
-(function(){
-  var ohWrap = document.getElementById('oh-categories');
-  if(!ohWrap) return;
-  ohWrap.addEventListener('input', function(e){
-    ohCalc();
-  });
-  ohWrap.addEventListener('click', function(e){
-    // number input click — don't toggle
-    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    // chevron / row toggle
-    var row = e.target.closest('[data-toggle]');
-    if(row){ ohToggleDetail(row.dataset.toggle); return; }
-    // Add line button
-    var addBtn = e.target.closest('.oh-add-btn');
-    if(addBtn){ ohAddLine(addBtn.dataset.cat); return; }
-    // Extra delete
-    var delBtn = e.target.closest('.oh-del-btn');
-    if(delBtn){ ohRemoveLine(delBtn.dataset.cat, parseInt(delBtn.dataset.idx)); return; }
-    // Extra toggle
-    var xToggle = e.target.closest('.oh-xtoggle');
-    if(xToggle){ ohToggleExtraDetail(xToggle.dataset.cat, parseInt(xToggle.dataset.idx)); return; }
-  });
-})();
 </script>
 </body>
 </html>
