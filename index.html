@@ -195,6 +195,13 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 tr.drag-over td{border-top:2px solid var(--red)}
 .nowrap{white-space:nowrap}
 .is-table{min-width:620px}
+.is-table td{vertical-align:top}
+.is-table td select{margin-top:2px}
+.is-desc-new{display:block;width:100%;min-height:64px;resize:vertical;border:1.5px solid var(--gray-200);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.45;font-family:var(--font-body);background:var(--white);color:var(--black);margin-bottom:6px;overflow:hidden}
+.is-desc-new:focus{outline:none;border-color:var(--red)}
+.dt td textarea.is-desc{display:block;width:100%;min-width:220px;resize:none;overflow:hidden;font-size:12px;line-height:1.45;padding:4px 6px;border:1.5px solid transparent;border-radius:4px;background:transparent;color:var(--black);font-family:var(--font-body);white-space:pre-wrap;word-break:break-word}
+.dt td textarea.is-desc:hover{border-color:var(--gray-200);background:var(--white)}
+.dt td textarea.is-desc:focus{outline:none;border-color:var(--red);background:var(--white)}
 .mx-table{min-width:520px}
 
 /* BENCHMARKS */
@@ -429,12 +436,12 @@ tr.drag-over td{border-top:2px solid var(--red)}
 <!-- ISSUES -->
 <div id="tab-issues" style="display:none">
   <div class="sec"><div class="stitle"><span class="stitle-bar"></span>QB & Financial Issues</div>
+    <textarea id="is_desc" class="is-desc-new" rows="3" placeholder="Describe the issue (Enter for a new line, Ctrl+Enter to add)" oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();addIss();}"></textarea>
     <div class="ar">
       <select id="is_area" style="width:140px"><option>Banking</option><option>Balance sheet</option><option>P&L - sales</option><option>P&L - expenses</option><option>COGS</option><option>AR</option><option>AP</option><option>Chart of accounts</option><option>Payroll</option><option>Other</option></select>
-      <input type="text" placeholder="Describe the issue" id="is_desc" style="flex:1;min-width:140px">
       <select id="is_pri" style="width:90px"><option>High</option><option>Medium</option><option>Low</option></select>
       <select id="is_st" style="width:110px"><option>Open</option><option>In progress</option><option>Fixed</option></select>
-      <button class="btn" onclick="addIss()"><i class="ti ti-plus"></i> Add</button>
+      <button class="btn primary" onclick="addIss()"><i class="ti ti-plus"></i> Add issue</button>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px">
       <select id="f_area" onchange="rIss()" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);color:var(--black);font-family:var(--font-body)">
@@ -710,6 +717,7 @@ function T(t){
   if(t==='snapshot'){snCalc();}
   if(t==='breakeven')beCalc();
   if(t==='projections')prCalc();
+  if(t==='issues')growIssues();
   if(t==='pricing'){calcOHPerJob();pxCalc();}
   if(t==='benchmarks')renderBench();
   if(t==='dashboard')renderDash();
@@ -1259,7 +1267,9 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
 
 const IS_AREAS=['Banking','Balance sheet','P&L - sales','P&L - expenses','COGS','AR','AP','Chart of accounts','Payroll','Other'];
 const IS_PRI=['High','Medium','Low'],IS_ST=['Open','In progress','Fixed'];
-function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});document.getElementById('is_desc').value='';rIss();}
+function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});const d=document.getElementById('is_desc');d.value='';autoGrow(d);d.focus();rIss();}
+function autoGrow(el){if(!el||!el.offsetParent)return;el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+function growIssues(){document.querySelectorAll('#tab-issues textarea').forEach(autoGrow);}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
 function stC2(s){return s==='Fixed'?'green':s==='In progress'?'amber':'red';}
 function issOpts(list,cur){const l=list.includes(cur)?list:list.concat([cur]);return l.map(o=>`<option${o===cur?' selected':''}>${esc(o)}</option>`).join('');}
@@ -1285,11 +1295,12 @@ function rIss(){
   else{tb.innerHTML=filtered.map((s,k)=>{const i=isL.indexOf(s);return`<tr data-i="${i}">
     <td><span class="drag" draggable="true" title="Drag to reorder"><i class="ti ti-grip-vertical"></i></span></td>
     <td><select onchange="editIss(${i},'area',this.value)">${issOpts(IS_AREAS,s.area)}</select></td>
-    <td><input type="text" value="${esc(s.desc)}" oninput="editIss(${i},'desc',this.value)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';}" style="min-width:160px"></td>
+    <td><textarea class="is-desc" rows="1" oninput="editIss(${i},'desc',this.value);autoGrow(this)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';autoGrow(this);}">${esc(s.desc)}</textarea></td>
     <td><select class="sel-${priC(s.pri)}" onchange="editIss(${i},'pri',this.value)">${issOpts(IS_PRI,s.pri)}</select></td>
     <td><select class="sel-${stC2(s.st)}" onchange="editIss(${i},'st',this.value)">${issOpts(IS_ST,s.st)}</select></td>
     <td class="nowrap"><button type="button" class="ibtn" title="Move up" ${k===0?'disabled':''} onclick="moveIss(${i},-1)"><i class="ti ti-arrow-up"></i></button><button type="button" class="ibtn" title="Move down" ${k===filtered.length-1?'disabled':''} onclick="moveIss(${i},1)"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" aria-label="Delete" onclick="if(confirm('Delete this issue?')){isL.splice(${i},1);rIss()}"><i class="ti ti-trash"></i></button></td>
   </tr>`;}).join('');}
+  growIssues();
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
     <div class="kv"><span class="kk">Total issues</span><span class="kv2">${isL.length}</span></div>
@@ -1743,7 +1754,7 @@ function saveSession(){
 
 // Clear everything so a loaded client file never inherits the previous client's data
 function resetAll(){
-  document.querySelectorAll('.content input').forEach(el=>{ if(el.type!=='file') el.value=''; });
+  document.querySelectorAll('.content input, .content textarea').forEach(el=>{ if(el.type!=='file') el.value=''; });
   ['pr_rev','be_oh'].forEach(id=>{const el=document.getElementById(id);if(el){delete el.dataset.manual;delete el.dataset.auto;}});
   Object.keys(chk).forEach(p=>{chk[p]=chk[p].map(()=>false);});
   [ccL,lnL,ciL,coL,colL,isL,pkgL,raL,oeL,mixL].forEach(a=>a.splice(0,a.length));
