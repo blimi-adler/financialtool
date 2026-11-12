@@ -530,6 +530,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
   <!-- P&L -->
   <div class="sec">
     <div class="stitle"><span class="stitle-bar"></span>Profit & Loss</div>
+    <div style="font-size:11px;color:var(--gray-500);margin:-4px 0 8px">Tip: you can add or subtract in any box, e.g. <b>12,500 + 3,200 - 800</b>. Click the box again to see or edit the math.</div>
     <div id="sn-pl-table">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;padding:0 4px">
         <span style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em">Line Item</span>
@@ -618,26 +619,44 @@ function unFmt(s){
   if(s===null||s===undefined) return '';
   return String(s).replace(/,/g,'');
 }
+// Simple +/- math in a box, e.g. "1,000 + 500 - 200" -> 1300. Returns null if not a valid sum.
+function calcExpr(v){
+  const t=String(v==null?'':v).replace(/[,$\s]/g,'');
+  if(!t)return null;
+  if(!/^[+-]?(\d+\.?\d*|\.\d+)([+-](\d+\.?\d*|\.\d+))*$/.test(t))return null;
+  return (t.match(/[+-]?(\d+\.?\d*|\.\d+)/g)||[]).reduce((a,x)=>a+parseFloat(x),0);
+}
+function isExpr(v){return /\d\s*[+-]\s*[\d.]/.test(String(v||'').replace(/,/g,''));}
+const snFormulas={};
 function attachCurrencyFormat(el){
   if(!el||el.dataset.fmtAttached) return;
   el.dataset.fmtAttached='1';
   // Convert to text input — avoids browser number quirks
   el.type='text';
   el.inputMode='decimal';
+  var mathOK=!!el.dataset.snfield; // Snapshot boxes accept + and - math
   el.addEventListener('focus',function(){
-    // Strip formatting so user can type freely
-    this.value=unFmt(this.value);
+    // Show the original formula (if any) so it can be edited, else strip formatting
+    if(mathOK&&snFormulas[this.id]) this.value=snFormulas[this.id];
+    else this.value=unFmt(this.value);
   });
   el.addEventListener('blur',function(){
-    // Re-format on exit
-    var v=parseFloat(unFmt(this.value));
-    this.value=isNaN(v)?'':fmtNum(v);
+    // Re-format on exit (Snapshot boxes: work out any + / - first)
+    var raw=this.value, v;
+    if(mathOK){
+      v=calcExpr(raw);
+      if(v!==null&&isExpr(raw)) snFormulas[this.id]=raw.replace(/\s+/g,'');
+      else delete snFormulas[this.id];
+      if(v===null) v=parseFloat(unFmt(raw));
+    } else v=parseFloat(unFmt(raw));
+    this.value=(v===null||isNaN(v))?'':fmtNum(Math.round(v*100)/100);
+    this.title=snFormulas[this.id]?('= '+snFormulas[this.id]):'';
     // Trigger any oninput handler manually
     this.dispatchEvent(new Event('input',{bubbles:true}));
   });
   el.addEventListener('keypress',function(e){
     // Allow digits, dot, minus, backspace, delete, arrows, tab
-    if(!/[\d.\-]/.test(e.key)&&!['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
+    if(!(mathOK?/[\d.\-+ ,]/:/[\d.\-]/).test(e.key)&&!['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
       e.preventDefault();
     }
   });
@@ -1647,7 +1666,8 @@ function initSnapshot(){
     tab.dataset.snl='1';
     tab.addEventListener('input',function(e){
       if(e.target.dataset.snfield){
-        snData[e.target.id]=e.target.value;
+        var cv=calcExpr(e.target.value);
+        snData[e.target.id]=cv!==null?String(cv):e.target.value;
         snCalc();
       }
     });
@@ -1717,6 +1737,7 @@ function saveSession(){
   const data = {
     version: 2,
     snData: Object.assign({}, snData),
+    snFormulas: Object.assign({}, snFormulas),
     snP1: getVal('sn_p1'), snP2: getVal('sn_p2'),
     savedAt: new Date().toISOString(),
     clientName,
@@ -1763,6 +1784,7 @@ function resetAll(){
   Object.keys(chk).forEach(p=>{chk[p]=chk[p].map(()=>false);});
   [ccL,lnL,ciL,coL,colL,isL,pkgL,raL,oeL,mixL].forEach(a=>a.splice(0,a.length));
   Object.keys(snData).forEach(k=>delete snData[k]);
+  Object.keys(snFormulas).forEach(k=>delete snFormulas[k]);
   benchInd=''; ['cogs','gm','oh','net'].forEach(k=>{BENCH.custom[k]=[null,null];});
   setCogsMode('dollar');
   ohCats=ohDefault(); ohOpen.clear();
@@ -1840,6 +1862,7 @@ function loadSession(event){
 
       // Snapshot
       if(data.snData){ Object.keys(data.snData).forEach(k=>{ snData[k]=data.snData[k]; }); }
+      if(data.snFormulas){ Object.keys(data.snFormulas).forEach(k=>{ snFormulas[k]=data.snFormulas[k]; }); }
       if(data.snP1){ setVal('sn_p1',data.snP1); snData['sn_p1']=data.snP1; }
       if(data.snP2){ setVal('sn_p2',data.snP2); snData['sn_p2']=data.snP2; }
       // Rebuild snapshot DOM and restore field values
@@ -1847,7 +1870,7 @@ function loadSession(event){
       attachAllCurrency();
       Object.keys(snData).forEach(function(k){
         var el=document.getElementById(k);
-        if(el&&el.dataset&&el.dataset.snfield){ var v=snData[k]||''; el.value=(el.dataset.fmtAttached&&num(v)!==null)?fmtNum(v):v; }
+        if(el&&el.dataset&&el.dataset.snfield){ var v=snData[k]||''; el.value=(el.dataset.fmtAttached&&num(v)!==null)?fmtNum(v):v; el.title=snFormulas[k]?('= '+snFormulas[k]):''; }
       });
       snCalc(); renderBench(); renderDash();
 
