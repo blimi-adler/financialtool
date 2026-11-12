@@ -1484,10 +1484,13 @@ const snBS = [
   {id:'sn_cash',     label:'Cash in Bank',                bold:false},
   {id:'sn_currasset',label:'Current Assets',              bold:false},
   {id:'sn_ar',       label:'Accounts Receivable',         bold:false},
+  {id:'sn_fixedasset',label:'Other / Fixed Assets',       bold:false},
   {id:'sn_totassets',label:'Total Assets',                bold:true, calc:true},
   {id:'sn_ap',       label:'Accounts Payable',            bold:false},
+  {id:'sn_ccliab',   label:'Credit Cards',                bold:false},
   {id:'sn_currliab', label:'Current Liabilities',         bold:false},
-  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true},
+  {id:'sn_ltliab',   label:'Long-Term Liabilities',       bold:false},
+  {id:'sn_totliab',  label:'Total Liabilities / Debt',    bold:true, calc:true},
   {id:'sn_draw',     label:"Owner's Draw",               bold:false},
   {id:'sn_equity',   label:'Equity (Capital & Reserves)', bold:true},
 ];
@@ -1509,8 +1512,12 @@ function snG(id,per){
   return (el&&el.value!=='') ? num(el.value) : null;
 }
 
-// Total Assets = Cash in Bank + Current Assets + Accounts Receivable
-function snTotAssets(per){return (snG('sn_cash',per)||0)+(snG('sn_currasset',per)||0)+(snG('sn_ar',per)||0);}
+// Total Assets = Cash + Current Assets + AR + Other/Fixed Assets
+function snTotAssets(per){return (snG('sn_cash',per)||0)+(snG('sn_currasset',per)||0)+(snG('sn_ar',per)||0)+(snG('sn_fixedasset',per)||0);}
+// Total Liabilities = AP + Credit Cards + Current Liabilities + Long-Term Liabilities
+function snTotLiab(per){var parts=['sn_ap','sn_ccliab','sn_currliab','sn_ltliab'].map(function(k){return snG(k,per);});
+  if(parts.every(function(v){return v===null;})){var old=snData['sn_totliab_'+per];if(old!==undefined&&old!=='')return num(old);} // older files typed the total
+  return parts.reduce(function(a,v){return a+(v||0);},0);}
 function snCalcDerived(per){
   var income  = snG('sn_income',per)||0;
   var cogs    = snG('sn_cogs',per)||0;
@@ -1531,7 +1538,7 @@ function snCalc(){
   ['sn_lbl_p1_pl','sn_lbl_p1_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p1;});
   ['sn_lbl_p2_pl','sn_lbl_p2_bs'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=p2;});
   var d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
-  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net],sn_totassets:[snTotAssets('p1'),snTotAssets('p2')]};
+  var calcMap={sn_gp:[d1.gp,d2.gp],sn_totexp:[d1.totexp,d2.totexp],sn_netprofit:[d1.net,d2.net],sn_totassets:[snTotAssets('p1'),snTotAssets('p2')],sn_totliab:[snTotLiab('p1'),snTotLiab('p2')]};
   Object.keys(calcMap).forEach(function(id){
     ['p1','p2'].forEach(function(per,pi){
       var el=document.getElementById('sncalc_'+id+'_'+per);
@@ -1554,7 +1561,7 @@ function snUpdateRatios(){
   var ar1=snG('sn_ar','p1'),ar2=snG('sn_ar','p2');
   var ca1=snG('sn_currasset','p1'),ca2=snG('sn_currasset','p2');
   var cl1=snG('sn_currliab','p1'),cl2=snG('sn_currliab','p2');
-  var tl1=snG('sn_totliab','p1'),tl2=snG('sn_totliab','p2');
+  var tl1=snTotLiab('p1'),tl2=snTotLiab('p2');
   var eq1=snG('sn_equity','p1'),eq2=snG('sn_equity','p2');
   var emp1=snG('sn_employees','p1'),emp2=snG('sn_employees','p2');
   var cust1=snG('sn_customers','p1'),cust2=snG('sn_customers','p2');
@@ -1611,10 +1618,13 @@ function initSnapshot(){
     {id:'sn_cash',label:'Cash in Bank',bold:false},
     {id:'sn_currasset',label:'Current Assets',bold:false},
     {id:'sn_ar',label:'Accounts Receivable',bold:false},
+    {id:'sn_fixedasset',label:'Other / Fixed Assets',bold:false},
     {id:'sn_totassets',label:'Total Assets',bold:true,calc:true},
     {id:'sn_ap',label:'Accounts Payable',bold:false},
+    {id:'sn_ccliab',label:'Credit Cards',bold:false},
     {id:'sn_currliab',label:'Current Liabilities',bold:false},
-    {id:'sn_totliab',label:'Total Liabilities / Debt',bold:true},
+    {id:'sn_ltliab',label:'Long-Term Liabilities',bold:false},
+    {id:'sn_totliab',label:'Total Liabilities / Debt',bold:true,calc:true},
     {id:'sn_draw',label:"Owner's Draw",bold:false},
     {id:'sn_equity',label:'Equity (Capital & Reserves)',bold:true},
   ];
@@ -1686,7 +1696,7 @@ function exportSnapshotExcel(){
   const ar1=snG('sn_ar','p1'), ar2=snG('sn_ar','p2');
   const ca1=snG('sn_currasset','p1'), ca2=snG('sn_currasset','p2');
   const cl1=snG('sn_currliab','p1'), cl2=snG('sn_currliab','p2');
-  const tl1=snG('sn_totliab','p1'), tl2=snG('sn_totliab','p2');
+  const tl1=snTotLiab('p1'), tl2=snTotLiab('p2');
   const eq1=snG('sn_equity','p1'), eq2=snG('sn_equity','p2');
   const emp1=snG('sn_employees','p1'), emp2=snG('sn_employees','p2');
   const cust1=snG('sn_customers','p1'), cust2=snG('sn_customers','p2');
@@ -1707,7 +1717,7 @@ function exportSnapshotExcel(){
     [],
     ['BALANCE SHEET','',p1,p2],
   ];
-  snBS.forEach(function(item){ if(item.id==='sn_totassets'){ rows.push([item.label,'',snTotAssets('p1')||'',snTotAssets('p2')||'']); return; } rows.push([item.label,'',snG(item.id,'p1')||'',snG(item.id,'p2')||'']); });
+  snBS.forEach(function(item){ if(item.id==='sn_totassets'){ rows.push([item.label,'',snTotAssets('p1')||'',snTotAssets('p2')||'']); return; } if(item.id==='sn_totliab'){ rows.push([item.label,'',snTotLiab('p1')||'',snTotLiab('p2')||'']); return; } rows.push([item.label,'',snG(item.id,'p1')||'',snG(item.id,'p2')||'']); });
   rows.push([]);
   rows.push(['ANALYSIS','',p1,p2]);
   rows.push(['COGS to Sales %','',snPct(d1.cogs,i1),snPct(d2.cogs,i2)]);
