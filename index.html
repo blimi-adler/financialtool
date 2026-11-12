@@ -220,6 +220,63 @@ tr.drag-over td{border-top:2px solid var(--red)}
   .ir{flex-wrap:wrap}
   .two-col{grid-template-columns:1fr}
 }
+
+/* QB REPORTS */
+.rp-up{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--gray-300);border-radius:8px;padding:22px 16px;background:var(--white);cursor:pointer;text-align:center;transition:border-color .12s,background .12s}
+.rp-up:hover,.rp-up.drag{border-color:var(--red);background:var(--red-light)}
+.rp-up i{font-size:26px;color:var(--gray-500)}
+.rp-up b{font-size:13px}
+.rp-up span{font-size:11px;color:var(--gray-500)}
+.rp-card{background:var(--white);border:1px solid var(--gray-200);border-radius:8px;margin:14px 0;overflow:hidden}
+.rp-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px;background:var(--gray-100);border-bottom:1px solid var(--gray-200)}
+.rp-bar label{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-700);cursor:pointer;margin-right:6px}
+.rp-bar .sp{flex:1}
+.rp-bar .btn{padding:5px 10px;font-size:11px}
+.rp-doc{padding:22px 24px 18px}
+.rp-co{font-family:var(--font-display);font-size:13px;letter-spacing:.12em;color:var(--red);text-align:center}
+.rp-title{display:block;width:100%;text-align:center;font-family:var(--font-display);font-size:26px;letter-spacing:.06em;border:1.5px solid transparent;border-radius:4px;background:transparent;color:var(--black);padding:0 4px}
+.rp-title:hover{border-color:var(--gray-200)}
+.rp-title:focus{outline:none;border-color:var(--red)}
+.rp-period{text-align:center;font-size:12px;color:var(--gray-500);margin-bottom:16px}
+.rp-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.rp-t th{font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:6px 8px;border-bottom:2px solid var(--black);white-space:nowrap}
+.rp-t th:first-child{text-align:left}
+.rp-t td{padding:5px 8px;border-bottom:1px solid var(--gray-100);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp-t td:first-child{text-align:left;white-space:normal}
+.rp-t td.pc{color:var(--gray-500);font-size:11px}
+.rp-t th.pc{color:var(--gray-300)}
+.rp-t .neg{color:var(--red)}
+.rp-t tr.h td{font-weight:700;padding-top:12px;border-bottom:none}
+.rp-t tr.h0 td:first-child{text-transform:uppercase;letter-spacing:.06em;font-size:11.5px}
+.rp-t tr.tot td{font-weight:700;border-top:1px solid var(--gray-500);border-bottom:none}
+.rp-t tr.key td{font-weight:700;font-size:13.5px;background:var(--gray-100);border-top:2px solid var(--black);border-bottom:2px solid var(--black)}
+.rp-t tr.key.final td{background:var(--black);color:var(--white)}
+.rp-t tr.key.final td.neg{color:#ff9c9c}
+.rp-t tr.key.final td.pc{color:var(--gray-300)}
+.rp-notes-l{font-family:var(--font-display);font-size:15px;letter-spacing:.06em;margin:18px 0 6px;display:flex;align-items:center;gap:8px}
+.rp-notes-l::before{content:'';width:3px;height:15px;background:var(--red);border-radius:1px}
+.rp-notes{width:100%;min-height:60px;resize:vertical;border:1.5px solid var(--gray-200);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.5;font-family:var(--font-body);color:var(--black);background:var(--white);overflow:hidden}
+.rp-notes:focus{outline:none;border-color:var(--red)}
+.rp-notes-v{white-space:pre-wrap;font-size:14px;line-height:1.6}
+.rp-foot{font-size:10px;color:var(--gray-500);margin-top:14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rp-present{position:fixed;inset:0;z-index:1000;background:var(--white);overflow:auto;display:none}
+.rp-present.on{display:block}
+.rp-ptools{position:sticky;top:0;display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:10px 16px;background:rgba(255,255,255,.95);border-bottom:1px solid var(--gray-200);z-index:2}
+.rp-ptools span{flex:1;font-size:11px;color:var(--gray-500)}
+.rp-pbody{max-width:980px;margin:0 auto;padding:20px 24px 60px}
+.rp-pbody .rp-doc{padding:10px 0}
+.rp-pbody .rp-t{font-size:15px}
+.rp-pbody .rp-t th{font-size:11px}
+.rp-pbody .rp-t tr.key td{font-size:16px}
+.rp-pbody .rp-title{font-size:34px}
+#rp-print{display:none}
+@media print{
+  body.rp-printing .wrapper,body.rp-printing .rp-present{display:none !important}
+  body.rp-printing{background:#fff}
+  body.rp-printing #rp-print{display:block}
+  #rp-print .rp-t tr.key td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #rp-print .rp-t tr{page-break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -232,7 +289,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
     <span class="header-title">Financial Health Tracker</span>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-    <div class="header-sub">Dashboard · Overhead · Break-even · Projections · Cash Flow · Issues · Pricing · Snapshot · Benchmarks · Checklist</div>
+    <div class="header-sub">Dashboard · Overhead · Break-even · Projections · Cash Flow · Issues · Pricing · Snapshot · QB Reports · Benchmarks · Checklist</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button onclick="saveSession()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-device-floppy"></i> Save</button>
       <label style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-body);background:var(--black);border:1.5px solid var(--gray-700);color:var(--white);cursor:pointer;white-space:nowrap"><i class="ti ti-folder-open"></i> Load<input type="file" accept=".json" onchange="loadSession(event)" style="display:none"></label>
@@ -255,6 +312,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
   <button class="tab" data-tab="issues" onclick="T('issues')">Issues</button>
   <button class="tab" data-tab="pricing" onclick="T('pricing')">Pricing</button>
   <button class="tab" data-tab="snapshot" onclick="T('snapshot')">Snapshot</button>
+  <button class="tab" data-tab="reports" onclick="T('reports')">QB Reports</button>
   <button class="tab" data-tab="benchmarks" onclick="T('benchmarks')">Benchmarks</button>
   <button class="tab" data-tab="checklist" onclick="T('checklist')">Checklist</button>
 </div>
@@ -556,9 +614,30 @@ tr.drag-over td{border-top:2px solid var(--red)}
   <div id="sn-analysis"></div>
 
   <div class="br">
-    <button class="btn primary" onclick="T('benchmarks')">Benchmarks <i class="ti ti-arrow-right"></i></button>
+    <button class="btn primary" onclick="T('reports')">QB Reports <i class="ti ti-arrow-right"></i></button>
     <button class="btn dark" onclick="exportSnapshotExcel()"><i class="ti ti-file-spreadsheet"></i> Export Snapshot</button>
   </div>
+</div>
+
+<!-- QB REPORTS -->
+<div id="tab-reports" style="display:none">
+  <label class="rp-up" id="rp-drop">
+    <i class="ti ti-file-upload"></i>
+    <b>Upload QuickBooks reports</b>
+    <span>Click or drop files here. In QuickBooks, open the report and choose Export to Excel (.xlsx) or CSV.<br>Works with P&amp;L, Balance Sheet, Cash Flow, AR/AP Aging and most other reports.</span>
+    <input type="file" id="rp_file" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="rpFiles(this.files);this.value=''">
+  </label>
+  <div id="rp-list"></div>
+  <div class="br"><button class="btn primary" onclick="T('benchmarks')">Benchmarks <i class="ti ti-arrow-right"></i></button></div>
+</div>
+<div class="rp-present" id="rp-present">
+  <div class="rp-ptools"><span id="rp-pinfo"></span>
+    <button class="btn" onclick="rpPresentStep(-1)" title="Previous report"><i class="ti ti-chevron-left"></i> Prev</button>
+    <button class="btn" onclick="rpPresentStep(1)" title="Next report">Next <i class="ti ti-chevron-right"></i></button>
+    <button class="btn" onclick="rpPrint(rpPresIdx)"><i class="ti ti-printer"></i> Print / PDF</button>
+    <button class="btn dark" onclick="rpPresentClose()"><i class="ti ti-x"></i> Close</button>
+  </div>
+  <div class="rp-pbody" id="rp-pbody"></div>
 </div>
 
 <!-- BENCHMARKS -->
@@ -605,6 +684,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
 </div>
 </div>
 
+<div id="rp-print"></div>
 <script>
 const snData={};
 
@@ -728,7 +808,7 @@ function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'
 function num(v){const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?null:n;}
 function moveIn(arr,from,to){if(to<0||to>=arr.length||from===to)return;const [x]=arr.splice(from,1);arr.splice(to,0,x);}
 
-const TABS=['dashboard','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','benchmarks','checklist'];
+const TABS=['dashboard','overhead','breakeven','projections','cashflow','issues','pricing','snapshot','reports','benchmarks','checklist'];
 function T(t){
   TABS.forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});
   document.querySelectorAll('.tab').forEach(el=>{el.classList.toggle('active',el.dataset.tab===t);});
@@ -739,6 +819,7 @@ function T(t){
   if(t==='issues')growIssues();
   if(t==='pricing'){calcOHPerJob();pxCalc();}
   if(t==='benchmarks')renderBench();
+  if(t==='reports')rpGrowNotes();
   if(t==='dashboard')renderDash();
 }
 
@@ -953,6 +1034,202 @@ function calcGPM(){
   }
   beCalc();
 }
+
+// ---- QB REPORTS (uploaded QuickBooks exports, formatted for presenting) ----
+const repL=[];
+let rpPresIdx=-1;
+const RP_KEY=/^(gross profit|net income|net operating income|net other income|net profit|total assets|total liabilities (and|&) (equity|shareholders'? equity)|net cash (increase|decrease)|cash at end of period|net change in cash)/i;
+const RP_FINAL=/^(net income|net profit|total liabilities (and|&) (equity|shareholders'? equity)|cash at end of period)/i;
+function rpNum(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number')return isFinite(v)?v:null;
+  let t=String(v).trim();if(!t)return null;
+  let neg=false;
+  if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1);}
+  t=t.replace(/[$,\s]/g,'');
+  if(/-$/.test(t)){neg=!neg;t=t.slice(0,-1);}
+  if(!/^-?\d*\.?\d+$/.test(t))return null;
+  const n=parseFloat(t);return neg?-n:n;
+}
+function rpParse(aoa,fileName){
+  const rows=aoa.map(r=>(r||[]).map(c=>c===null||c===undefined?'':(typeof c==='string'?c.replace(/\s+$/,''):c)));
+  const width=Math.max(0,...rows.map(r=>r.length));
+  // numeric columns = columns with at least 2 numbers
+  const numCount=Array(width).fill(0);
+  rows.forEach(r=>r.forEach((c,i)=>{if(rpNum(c)!==null&&!(typeof c==='string'&&/^\d{4}$/.test(c.trim())))numCount[i]++;}));
+  let numCols=numCount.map((n,i)=>n>=2?i:-1).filter(i=>i>=0);
+  if(!numCols.length)throw new Error('No numbers found in this file.');
+  const firstNum=numCols[0];
+  numCols=numCols.filter(i=>i>=firstNum);
+  // first data row = first row with a number in a numeric column
+  const isYear=c=>/^\s*(19|20)\d{2}\s*$/.test(String(c));
+  const firstData=rows.findIndex(r=>numCols.some(i=>rpNum(r[i])!==null&&!isYear(r[i])));
+  // header row: last row before data with text in numeric columns
+  let hdrIdx=-1;
+  for(let k=firstData-1;k>=0;k--){if(numCols.some(i=>String(rows[k][i]||'').trim()!=='')){hdrIdx=k;break;}}
+  const cols=numCols.map(i=>hdrIdx>=0?String(rows[hdrIdx][i]||'').trim():'');
+  // preamble: company / title / period
+  const pre=[];
+  for(let k=0;k<(hdrIdx>=0?hdrIdx:firstData);k++){const t=rows[k].find(c=>String(c).trim()!=='');if(t!==undefined&&String(t).trim())pre.push(String(t).trim());}
+  let title='',company='',period='';
+  pre.forEach(t=>{
+    if(!title&&/(profit|loss|balance sheet|cash flow|aging|ledger|statement|summary|detail|report|budget|journal|register|list)/i.test(t))title=t;
+    else if(!period&&/(\d{4}|as of|through|january|february|march|april|may|june|july|august|september|october|november|december|this |last |year|month|quarter)/i.test(t))period=t;
+    else if(!company)company=t;
+  });
+  if(!title)title=(fileName||'Report').replace(/\.(xlsx|xls|csv)$/i,'');
+  // body
+  const body=[];
+  const labelColsUsed=new Set();
+  const start=(hdrIdx>=0?hdrIdx:firstData-1)+1;
+  for(let k=start;k<rows.length;k++){
+    const r=rows[k];
+    let li=-1,label='';
+    for(let i=0;i<firstNum;i++){if(String(r[i]).trim()!==''){li=i;label=String(r[i]);break;}}
+    const vals=numCols.map(i=>rpNum(r[i]));
+    const hasVal=vals.some(v=>v!==null);
+    if(li<0&&!hasVal)continue;
+    if(li<0&&hasVal){li=0;label='';}
+    const lead=(label.match(/^\s*/)||[''])[0].length;
+    label=label.trim();
+    // footer lines like "Accrual Basis Monday, ..." after the table
+    if(!hasVal&&/(cash|accrual) basis|^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),/i.test(label))continue;
+    labelColsUsed.add(li);
+    body.push({label,vals,li,lead,hasVal});
+  }
+  // depth: from label column (QB Desktop), leading spaces, or section/total pairing (QB Online)
+  const useCol=labelColsUsed.size>1, useLead=!useCol&&body.some(b=>b.lead>0);
+  const stack=[];
+  const out=body.map(b=>{
+    const isTotal=/^total\b/i.test(b.label);
+    const isKey=RP_KEY.test(b.label);
+    let kind=!b.hasVal?'h':isKey?'key':isTotal?'tot':'line';
+    let depth;
+    if(useCol)depth=b.li;
+    else if(useLead)depth=Math.round(b.lead/2);
+    else{
+      if(kind==='h'){depth=stack.length;stack.push(b.label.toLowerCase());}
+      else if(kind==='tot'){
+        const nm=b.label.replace(/^total\s+(for\s+)?/i,'').toLowerCase();
+        let at=stack.lastIndexOf(nm);
+        if(at<0)at=stack.length-1;
+        if(at>=0)stack.length=at;
+        depth=stack.length;
+      } else depth=stack.length;
+    }
+    return {label:b.label,vals:b.vals,kind,depth};
+  });
+  // tidy: key lines only at top level (e.g. Net Income inside Equity is a normal line); no skipped indent levels
+  const hs=[];
+  out.forEach(x=>{
+    if(x.kind==='key'&&x.depth>0)x.kind='line';
+    if(x.kind==='h'){while(hs.length&&hs[hs.length-1]>=x.depth)hs.pop();x.depth=hs.length?Math.min(x.depth,hs[hs.length-1]+1):0;hs.push(x.depth);}
+    else if(x.kind==='tot'){while(hs.length&&hs[hs.length-1]>x.depth)hs.pop();if(hs.length)x.depth=hs.pop();}
+    else if(x.kind==='line'){x.depth=hs.length?hs[hs.length-1]+1:0;}
+    else if(x.kind==='key'){hs.length=0;}
+    x.final=x.kind==='key'&&RP_FINAL.test(x.label);
+  });
+  // a lone row named like a total with values but no "Total" (e.g. account with no sub-accounts) stays a line
+  const isPL=/profit|loss|income statement/i.test(title)||out.some(r=>/^total (income|revenue)/i.test(r.label));
+  return {id:'rp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,company,period,cols,rows:out,notes:'',showPct:isPL,summary:false,fileName:fileName||'',isPL,added:new Date().toISOString().slice(0,10)};
+}
+function rpFiles(files){
+  if(typeof XLSX==='undefined'){alert('The Excel reader did not load. Check your internet connection and refresh.');return;}
+  const list=Array.from(files||[]);let done=0,bad=[];const got=[];
+  list.forEach((file,fi)=>{
+    const rd=new FileReader();
+    rd.onload=e=>{
+      try{
+        const isCSV=/\.csv$/i.test(file.name);
+        // CSV: keep text as-is (so "Jul 2026" stays a heading); Excel: use the displayed values
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',raw:isCSV});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:false});
+        got[fi]=rpParse(aoa,file.name);
+      }catch(err){bad.push(file.name+(err&&err.message?' ('+err.message+')':''));}
+      if(++done===list.length){got.forEach(r=>{if(r)repL.push(r);});rRep();if(bad.length)alert('Could not read:\n'+bad.join('\n')+'\n\nExport the report from QuickBooks as Excel or CSV and try again.');}
+    };
+    rd.readAsArrayBuffer(file);
+  });
+}
+function rpFmt(n){if(n===null||n===undefined)return '';const a=Math.abs(n),s='$'+Math.round(a).toLocaleString();return n<0?'('+s+')':s;}
+function rpBase(r){
+  const row=r.rows.find(x=>/^total (income|revenue|sales)\b/i.test(x.label))||r.rows.find(x=>/^(income|revenue|sales)$/i.test(x.label)&&x.vals.some(v=>v!==null));
+  return row?row.vals:null;
+}
+function rpDocHTML(r,i,editable){
+  const base=r.showPct?rpBase(r):null;
+  const pc=!!base;
+  const head='<tr><th></th>'+r.cols.map(c=>'<th>'+esc(c||'Total')+'</th>'+(pc?'<th class="pc">%</th>':'')).join('')+'</tr>';
+  const rows=r.rows.filter(x=>!r.summary||x.kind==='key'||x.kind==='tot'||(x.kind==='line'&&x.depth===0)||(x.kind==='h'&&x.depth===0)).map(x=>{
+    const pad=8+(r.summary?Math.min(x.depth,1):x.depth)*16;
+    const cls=x.kind==='h'?('h'+(x.depth===0?' h0':'')):x.kind==='tot'?'tot':x.kind==='key'?('key'+(x.final?' final':'')):'';
+    const cells=x.vals.map((v,ci)=>'<td class="'+(v<0?'neg':'')+'">'+(x.kind==='h'?'':rpFmt(v))+'</td>'+(pc?'<td class="pc">'+(x.kind!=='h'&&v!==null&&base[ci]?fP(v/base[ci]*100):'')+'</td>':'')).join('');
+    return '<tr class="'+cls+'"><td style="padding-left:'+pad+'px">'+esc(x.label)+'</td>'+cells+'</tr>';
+  }).join('');
+  const client=(document.getElementById('client_name')||{}).value||'';
+  const company=r.company||client;
+  const notes=editable
+    ?'<div class="rp-notes-l">Key Takeaways</div><textarea class="rp-notes" placeholder="What should the client notice? (optional, shows when presenting)" oninput="repL['+i+'].notes=this.value;autoGrow(this)">'+esc(r.notes)+'</textarea>'
+    :(r.notes.trim()?'<div class="rp-notes-l">Key Takeaways</div><div class="rp-notes-v">'+esc(r.notes)+'</div>':'');
+  return '<div class="rp-doc">'
+    +(company?'<div class="rp-co">'+esc(company)+'</div>':'')
+    +(editable?'<input class="rp-title" value="'+esc(r.title)+'" oninput="repL['+i+'].title=this.value" title="Click to rename">':'<div class="rp-title">'+esc(r.title)+'</div>')
+    +'<div class="rp-period">'+esc(r.period||'')+'</div>'
+    +'<div style="overflow-x:auto"><table class="rp-t">'+head+rows+'</table></div>'
+    +notes
+    +'<div class="rp-foot"><span>Prepared by PivotYes</span><span>Source: QuickBooks'+(r.fileName?' ('+esc(r.fileName)+')':'')+'</span></div>'
+    +'</div>';
+}
+function rRep(){
+  const w=document.getElementById('rp-list');if(!w)return;
+  if(!repL.length){w.innerHTML='<div class="empty-state"><i class="ti ti-report"></i><p>No reports yet. Upload a QuickBooks export above.</p></div>';return;}
+  w.innerHTML=repL.map((r,i)=>'<div class="rp-card">'
+    +'<div class="rp-bar">'
+      +(r.isPL||rpBase(r)?'<label><input type="checkbox" '+(r.showPct?'checked':'')+' onchange="repL['+i+'].showPct=this.checked;rRep()"> % of income</label>':'')
+      +'<label><input type="checkbox" '+(r.summary?'checked':'')+' onchange="repL['+i+'].summary=this.checked;rRep()"> Summary view</label>'
+      +'<span class="sp"></span>'
+      +'<button type="button" class="ibtn" title="Move up" '+(i===0?'disabled':'')+' onclick="moveIn(repL,'+i+','+(i-1)+');rRep()"><i class="ti ti-arrow-up"></i></button>'
+      +'<button type="button" class="ibtn" title="Move down" '+(i===repL.length-1?'disabled':'')+' onclick="moveIn(repL,'+i+','+(i+1)+');rRep()"><i class="ti ti-arrow-down"></i></button>'
+      +'<button class="btn" onclick="rpPresent('+i+')"><i class="ti ti-presentation"></i> Present</button>'
+      +'<button class="btn" onclick="rpPrint('+i+')"><i class="ti ti-printer"></i> Print / PDF</button>'
+      +'<button class="delb" title="Remove report" aria-label="Remove report" onclick="if(confirm(\'Remove this report?\')){repL.splice('+i+',1);rRep()}"><i class="ti ti-trash"></i></button>'
+    +'</div>'
+    +rpDocHTML(r,i,true)
+  +'</div>').join('');
+  rpGrowNotes();
+}
+function rpGrowNotes(){document.querySelectorAll('#rp-list .rp-notes').forEach(autoGrow);}
+function rpPresent(i){
+  if(!repL[i])return;rpPresIdx=i;
+  document.getElementById('rp-pbody').innerHTML=rpDocHTML(repL[i],i,false);
+  document.getElementById('rp-pinfo').textContent='Report '+(i+1)+' of '+repL.length+'  ·  Esc to close, arrow keys to move';
+  document.getElementById('rp-present').classList.add('on');document.body.style.overflow='hidden';
+}
+function rpPresentStep(d){const n=rpPresIdx+d;if(n>=0&&n<repL.length)rpPresent(n);}
+function rpPresentClose(){document.getElementById('rp-present').classList.remove('on');document.body.style.overflow='';rpPresIdx=-1;}
+function rpPrint(i){
+  if(!repL[i])return;
+  const pa=document.getElementById('rp-print');pa.innerHTML=rpDocHTML(repL[i],i,false);
+  document.body.classList.add('rp-printing');
+  const done=()=>{document.body.classList.remove('rp-printing');pa.innerHTML='';window.removeEventListener('afterprint',done);};
+  window.addEventListener('afterprint',done);
+  window.print();
+  setTimeout(()=>{if(!window.matchMedia('print').matches)done();},1000);
+}
+document.addEventListener('keydown',e=>{
+  if(rpPresIdx<0)return;
+  if(e.key==='Escape')rpPresentClose();
+  else if(e.key==='ArrowRight'||e.key==='PageDown')rpPresentStep(1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')rpPresentStep(-1);
+});
+(function(){
+  const d=document.getElementById('rp-drop');if(!d)return;
+  ['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('drag');}));
+  d.addEventListener('drop',e=>rpFiles(e.dataTransfer.files));
+})();
+
 // ---- BENCHMARKS ----
 const BENCH={
   prof:  {name:'Professional services',      ex:'Consulting, accounting, agencies, IT services',          cogs:[30,50],gm:[50,70],oh:[25,40],net:[10,20]},
@@ -1769,6 +2046,7 @@ function saveSession(){
     },
     collections: colL,
     issues: isL,
+    reports: repL,
     pricing: {
       px_labor: getVal('px_labor'), px_mat: getVal('px_mat'), px_oh: getVal('px_oh'),
       px_jobs: getVal('px_jobs'), px_jobs_yr: getVal('px_jobs_yr'),
@@ -1792,7 +2070,8 @@ function resetAll(){
   document.querySelectorAll('.content input, .content textarea').forEach(el=>{ if(el.type!=='file') el.value=''; });
   ['pr_rev','be_oh'].forEach(id=>{const el=document.getElementById(id);if(el){delete el.dataset.manual;delete el.dataset.auto;}});
   Object.keys(chk).forEach(p=>{chk[p]=chk[p].map(()=>false);});
-  [ccL,lnL,ciL,coL,colL,isL,pkgL,raL,oeL,mixL].forEach(a=>a.splice(0,a.length));
+  [ccL,lnL,ciL,coL,colL,isL,pkgL,raL,oeL,mixL,repL].forEach(a=>a.splice(0,a.length));
+  rRep();
   Object.keys(snData).forEach(k=>delete snData[k]);
   Object.keys(snFormulas).forEach(k=>delete snFormulas[k]);
   benchInd=''; ['cogs','gm','oh','net'].forEach(k=>{BENCH.custom[k]=[null,null];});
@@ -1862,6 +2141,7 @@ function loadSession(event){
 
       // Issues
       if(data.issues){ isL.splice(0,isL.length,...data.issues); rIss(); }
+      if(Array.isArray(data.reports)){ repL.splice(0,repL.length,...data.reports); rRep(); }
 
       // Pricing
       if(data.pricing){
@@ -2164,7 +2444,7 @@ function exportToExcel(){
 }
 
 fillIndSelects();
-renderCL();initSnapshot();ohInitEvents();renderOH();issInitDrag();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();rRA();rOE();rMix();renderBench();renderDash();
+renderCL();initSnapshot();ohInitEvents();renderOH();issInitDrag();rCC();rLn();rCI();rCO();rCol();rIss();rPkg();rRA();rOE();rMix();rRep();renderBench();renderDash();
 attachAllCurrency();
 
 // Re-attach currency formatting after dynamic rows are added
