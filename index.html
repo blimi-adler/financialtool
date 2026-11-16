@@ -232,6 +232,13 @@ tr.drag-over td{border-top:2px solid var(--red)}
 .rp-bar label{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-700);cursor:pointer;margin-right:6px}
 .rp-bar .sp{flex:1}
 .rp-bar .btn{padding:5px 10px;font-size:11px}
+.rp-fill{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 12px;background:var(--white);border-bottom:1px solid var(--gray-200);font-size:11px;color:var(--gray-700)}
+.rp-fill b{font-weight:600;color:var(--black)}
+.rp-fill select{font-size:11px;padding:4px 6px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--gray-100);font-family:var(--font-body);color:var(--black);max-width:150px}
+.rp-fill .btn{padding:5px 10px;font-size:11px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);max-width:min(560px,calc(100vw - 32px));background:var(--black);color:var(--white);padding:10px 14px;border-radius:6px;font-size:12px;line-height:1.5;font-family:var(--font-body);z-index:9999;border-left:3px solid var(--red);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast button{margin-left:8px;background:var(--red);color:var(--white);border:none;border-radius:4px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.toast .x{background:transparent;color:var(--gray-300)}
 .rp-doc{padding:22px 24px 18px}
 .rp-co{font-family:var(--font-display);font-size:13px;letter-spacing:.12em;color:var(--red);text-align:center}
 .rp-title{display:block;width:100%;text-align:center;font-family:var(--font-display);font-size:26px;letter-spacing:.06em;border:1.5px solid transparent;border-radius:4px;background:transparent;color:var(--black);padding:0 4px}
@@ -1109,7 +1116,7 @@ function rpParse(aoa,fileName){
     else if(useLead)depth=Math.round(b.lead/2);
     else{
       if(kind==='h'){depth=stack.length;stack.push(b.label.toLowerCase());}
-      else if(kind==='tot'){
+      else if(kind==='tot'||(kind==='key'&&/^total\b/i.test(b.label))){
         const nm=b.label.replace(/^total\s+(for\s+)?/i,'').toLowerCase();
         let at=stack.lastIndexOf(nm);
         if(at<0)at=stack.length-1;
@@ -1195,10 +1202,140 @@ function rRep(){
       +'<button class="btn" onclick="rpPrint('+i+')"><i class="ti ti-printer"></i> Print / PDF</button>'
       +'<button class="delb" title="Remove report" aria-label="Remove report" onclick="if(confirm(\'Remove this report?\')){repL.splice('+i+',1);rRep()}"><i class="ti ti-trash"></i></button>'
     +'</div>'
+    +rpFillBar(r,i)
     +rpDocHTML(r,i,true)
   +'</div>').join('');
   rpGrowNotes();
 }
+
+// ---- QB REPORT -> SNAPSHOT AUTO-FILL ----
+function rpType(r){
+  if(/balance sheet|statement of financial position/i.test(r.title)||r.rows.some(x=>/^total assets$/i.test(x.label)))return 'bs';
+  if(r.isPL||/profit|loss|income statement/i.test(r.title)||r.rows.some(x=>/^(net income|gross profit)$/i.test(x.label)))return 'pl';
+  return '';
+}
+function rpFillBar(r,i){
+  const t=rpType(r);if(!t)return '';
+  const def=r.cols.length-1;
+  const colSel=r.cols.length>1?' from <select id="rpcol_'+i+'">'+r.cols.map((c,ci)=>'<option value="'+ci+'"'+(ci===def?' selected':'')+'>'+esc(c||'Total')+'</option>').join('')+'</select>':'';
+  return '<div class="rp-fill"><i class="ti ti-arrow-bar-to-right"></i><b>Fill Snapshot</b> '+(t==='pl'?'P&amp;L':'Balance Sheet')+' into <select id="rpper_'+i+'"><option value="p1">Period 1</option><option value="p2">Period 2</option></select>'+colSel+' <button class="btn dark" onclick="rpFillSnapshot('+i+')"><i class="ti ti-check"></i> Fill</button></div>';
+}
+// tag each row with its top-level section (e.g. "expenses", "assets")
+function rpSections(r){let sec='';return r.rows.map(x=>{if(x.depth===0&&(x.kind==='h'))sec=x.label.toLowerCase();if(x.depth===0&&x.kind==='key')sec='';return sec;});}
+// find the value of the first row whose label matches; totals first, then plain lines
+function rpVal(r,ci,re,secRe){
+  const secs=rpSections(r);
+  for(const kinds of [['tot','key'],['line']]){
+    for(let k=0;k<r.rows.length;k++){
+      const x=r.rows[k];
+      if(!kinds.includes(x.kind)||!re.test(x.label))continue;
+      if(secRe&&!secRe.test(secs[k]))continue;
+      const v=x.vals[ci];if(v!==null&&v!==undefined)return v;
+    }
+  }
+  return null;
+}
+function rpSumLines(r,ci,re,secRe){
+  const secs=rpSections(r);let t=null;
+  r.rows.forEach((x,k)=>{if(x.kind==='line'&&re.test(x.label)&&(!secRe||secRe.test(secs[k]))&&x.vals[ci]!=null)t=(t||0)+x.vals[ci];});
+  return t;
+}
+function rpMapPL(r,ci){
+  const EXP=/^(expenses|operating expenses|expense)/;
+  const income=rpVal(r,ci,/^total (income|revenue|sales)\b/i)??rpVal(r,ci,/^(income|revenue|sales)$/i);
+  const cogs=rpVal(r,ci,/^total (cost of (goods sold|sales|revenue)|cogs)\b/i)??0;
+  const totExp=rpVal(r,ci,/^total (operating )?expenses?$/i);
+  const payroll=rpVal(r,ci,/^total (payroll|wages|salaries)/i,EXP)??rpSumLines(r,ci,/(payroll|wages|salar)/i,EXP);
+  const ins=rpVal(r,ci,/^total insurance/i,EXP)??rpSumLines(r,ci,/insurance/i,EXP);
+  const office=rpVal(r,ci,/^total office/i,EXP)??rpSumLines(r,ci,/^office/i,EXP);
+  const othExp=rpVal(r,ci,/^total other expenses?$/i)??0;
+  const othInc=rpVal(r,ci,/^total other income$/i)??0;
+  const out={sn_income:income,sn_cogs:cogs};
+  if(payroll!=null)out.sn_payroll=payroll;
+  if(ins!=null)out.sn_ins=ins;
+  if(office!=null)out.sn_office=office;
+  if(totExp!=null)out.sn_remoh=totExp-(payroll||0)-(ins||0)-(office||0);
+  // other income is netted here so Snapshot Net Profit ties to QuickBooks Net Income
+  if(othExp||othInc)out.sn_otherexp=othExp-othInc;
+  const check=rpVal(r,ci,/^net (income|profit)$/i);
+  return {vals:out,check:check!=null?{label:'Net Profit',qb:check,id:'net'}:null,missing:[income==null&&'Total Income',totExp==null&&'Total Expenses'].filter(Boolean)};
+}
+function rpMapBS(r,ci){
+  const cash=rpVal(r,ci,/^total (bank accounts|checking\/savings|cash and cash equivalents|cash)\b/i)??rpVal(r,ci,/^(cash|cash and cash equivalents)$/i);
+  const ar=rpVal(r,ci,/^total (accounts receivable|a\/r)\b/i)??rpVal(r,ci,/^accounts receivable\b/i);
+  const tca=rpVal(r,ci,/^total current assets$/i);
+  const fixed=rpVal(r,ci,/^total (fixed|long[- ]term|property)/i);
+  const otherA=rpVal(r,ci,/^total other assets$/i);
+  const ap=rpVal(r,ci,/^total (accounts payable|a\/p)\b/i)??rpVal(r,ci,/^accounts payable\b/i);
+  const cc=rpVal(r,ci,/^total credit cards?$/i);
+  const tcl=rpVal(r,ci,/^total current liabilities$/i);
+  const lt=rpVal(r,ci,/^total long[- ]term liabilities$/i);
+  const eq=rpVal(r,ci,/^total (equity|stockholders|shareholders|owner|partner|capital)/i);
+  const draw=rpSumLines(r,ci,/(draw|distribution)/i,/equity/i);
+  const out={};
+  if(cash!=null)out.sn_cash=cash;
+  if(ar!=null)out.sn_ar=ar;
+  // Snapshot adds Cash + Current Assets + AR, so "Current Assets" gets only the other current assets
+  if(tca!=null)out.sn_currasset=tca-(cash||0)-(ar||0);
+  if(fixed!=null||otherA!=null)out.sn_fixedasset=(fixed||0)+(otherA||0);
+  if(ap!=null)out.sn_ap=ap;
+  if(cc!=null)out.sn_ccliab=cc;
+  if(tcl!=null)out.sn_currliab=tcl-(ap||0)-(cc||0);
+  if(lt!=null)out.sn_ltliab=lt;
+  if(eq!=null)out.sn_equity=eq;
+  if(draw!=null)out.sn_draw=Math.abs(draw);
+  const ta=rpVal(r,ci,/^total assets$/i),tl=rpVal(r,ci,/^total liabilities$/i);
+  // reports without a "Total Current ..." line: put the remainder in the "other" line so totals still tie to QuickBooks
+  if(tca==null&&ta!=null)out.sn_currasset=ta-(cash||0)-(ar||0)-(out.sn_fixedasset||0);
+  if(tcl==null&&tl!=null)out.sn_currliab=tl-(ap||0)-(cc||0)-(lt||0);
+  return {vals:out,check:ta!=null?{label:'Total Assets',qb:ta,id:'ta'}:null,check2:tl!=null?{label:'Total Liabilities',qb:tl,id:'tl'}:null,
+    missing:[cash==null&&'Cash / Bank Accounts',eq==null&&'Total Equity'].filter(Boolean),
+    note:(tca==null&&ta!=null?'Assets not split by QuickBooks went to Current Assets. ':'')+(tcl==null&&tl!=null?'Liabilities not split by QuickBooks went to Current Liabilities.':'')};
+}
+function toast(html,ms){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div');t.className='toast';t.innerHTML=html+' <button class="x" onclick="this.parentNode.remove()">✕</button>';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),ms||9000);
+}
+function rpFillSnapshot(i){
+  const r=repL[i];if(!r)return;
+  const per=(document.getElementById('rpper_'+i)||{}).value||'p1';
+  const ci=r.cols.length>1?+((document.getElementById('rpcol_'+i)||{}).value||r.cols.length-1):0;
+  const type=rpType(r);
+  const m=type==='bs'?rpMapBS(r,ci):rpMapPL(r,ci);
+  const ids=Object.keys(m.vals).filter(k=>m.vals[k]!=null&&!isNaN(m.vals[k]));
+  if(!ids.length){alert('Could not find the totals needed in this report. Make sure it is a standard QuickBooks '+(type==='bs'?'Balance Sheet':'Profit and Loss')+' export.');return;}
+  const perName=per==='p1'?'Period 1':'Period 2';
+  const has=ids.some(k=>{const v=snData[k+'_'+per];return v!==undefined&&v!=='';});
+  if(has&&!confirm('Replace the '+(type==='bs'?'balance sheet':'P&L')+' numbers already in Snapshot '+perName+'?'))return;
+  // clear the whole section for that period first so old numbers don't linger
+  const sec=type==='bs'?['sn_cash','sn_currasset','sn_ar','sn_fixedasset','sn_ap','sn_ccliab','sn_currliab','sn_ltliab','sn_draw','sn_equity','sn_totliab']:['sn_income','sn_cogs','sn_payroll','sn_ins','sn_office','sn_remoh','sn_otherexp'];
+  sec.forEach(k=>{const key=k+'_'+per;delete snData[key];delete snFormulas[key];const el=document.getElementById(key);if(el){el.value='';el.title='';}});
+  ids.forEach(k=>{
+    const key=k+'_'+per,v=Math.round(m.vals[k]*100)/100;
+    snData[key]=String(v);
+    const el=document.getElementById(key);if(el){el.value=fmtNum(v);el.title='From QuickBooks: '+r.title;}
+  });
+  // period label
+  const lblEl=document.getElementById('sn_'+per);
+  if(lblEl&&!lblEl.value.trim()){
+    const c=(r.cols[ci]||'').trim();
+    const lbl=(c&&!/^total$/i.test(c))?c:(r.period||r.title);
+    lblEl.value=lbl;snData['sn_'+per]=lbl;
+  }
+  snCalc();
+  // tie-out check vs QuickBooks
+  const checks=[];
+  const chk=(c,mine)=>{if(!c)return;const okk=Math.abs(mine-c.qb)<1;checks.push((okk?'✓ ':'⚠ ')+c.label+' '+fD(mine)+(okk?' matches QuickBooks':' vs QuickBooks '+fD(c.qb)));};
+  if(type==='pl')chk(m.check,snCalcDerived(per).net);
+  else{chk(m.check,snTotAssets(per));chk(m.check2,snTotLiab(per));}
+  toast('Filled Snapshot '+perName+' with '+ids.length+' lines from <b>'+esc(r.title)+'</b>.'
+    +(checks.length?'<br>'+checks.join('<br>'):'')
+    +(m.missing.length?'<br>Not found: '+esc(m.missing.join(', '))+'.':'')
+    +(m.note?'<br>'+esc(m.note):'')
+    +' <button onclick="this.parentNode.remove();T(\'snapshot\')">View Snapshot</button>',12000);
+}
+
 function rpGrowNotes(){document.querySelectorAll('#rp-list .rp-notes').forEach(autoGrow);}
 function rpPresent(i){
   if(!repL[i])return;rpPresIdx=i;
