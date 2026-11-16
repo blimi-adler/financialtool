@@ -189,6 +189,9 @@ body{background:var(--gray-100);font-family:var(--font-body);color:var(--black);
 .oh-detail input{border:1.5px solid var(--gray-200);border-radius:5px;padding:5px 9px;font-size:11px;font-family:var(--font-body);background:var(--white);color:var(--black)}
 .oh-add-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);background:none;border:1.5px dashed var(--gray-300);border-radius:5px;padding:5px 10px;cursor:pointer;font-family:var(--font-body);margin-top:3px}
 .oh-add-btn:hover{color:var(--black);border-color:var(--black)}
+.oh-collapse{font-size:16px;margin-left:-4px;color:var(--black)}
+.oh-collapsed-note{font-size:11px;color:var(--gray-500);padding:0 0 0 30px}
+.oh-cat:has(.oh-body[style*="none"]) .oh-cat-head{margin-bottom:2px}
 
 /* EDITABLE TABLE CELLS */
 .dt td input,.dt td select{width:100%;min-width:0;font-size:12px;padding:4px 6px;border:1.5px solid transparent;border-radius:4px;background:transparent;color:var(--black);font-family:var(--font-body)}
@@ -352,7 +355,7 @@ tr.drag-over td{border-top:2px solid var(--red)}
 
 <!-- OVERHEAD -->
 <div id="tab-overhead" style="display:none">
-  <div class="oh-hint">Click any section or line name to rename it. Use the arrows to reorder, the dropdown to move a line to another section, and the chevron for payee and notes.</div>
+  <div class="oh-hint"><span style="float:right;white-space:nowrap;margin-left:10px"><button type="button" class="oh-add-btn" style="margin:0" onclick="ohCats.forEach(c=>c.collapsed=true);renderOH()"><i class="ti ti-chevrons-up"></i> Hide all</button> <button type="button" class="oh-add-btn" style="margin:0" onclick="ohCats.forEach(c=>c.collapsed=false);renderOH()"><i class="ti ti-chevrons-down"></i> Show all</button></span>Use the arrow next to a section to hide or show its lines. Click any section or line name to rename it. Use the arrows to reorder, the dropdown to move a line to another section, and the chevron for payee and notes.</div>
   <div id="oh-categories"></div>
   <div id="oh-summary"></div>
   <div class="br"><button class="btn primary" onclick="T('breakeven')">Break-even <i class="ti ti-arrow-right"></i></button></div>
@@ -712,7 +715,9 @@ function fmtNum(n){
   if(n===null||n===undefined||n==='') return '';
   var v=parseFloat(String(n).replace(/,/g,''));
   if(isNaN(v)) return '';
-  return v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+  // whole dollars stay whole (1,500); amounts with cents always show two decimals (1,500.50)
+  var hasCents=Math.round(v*100)%100!==0;
+  return v.toLocaleString('en-US',{minimumFractionDigits:hasCents?2:0,maximumFractionDigits:2});
 }
 function unFmt(s){
   if(s===null||s===undefined) return '';
@@ -822,6 +827,7 @@ const ccL=[],lnL=[],ciL=[],coL=[],colL=[],isL=[],pkgL=[],raL=[],oeL=[];
 
 function g(id){const el=document.getElementById(id);if(!el)return null;const v=parseFloat(String(el.value).replace(/,/g,''));return isNaN(v)?null:v;}
 function fD(n){if(n===null||n===undefined||isNaN(n))return'—';const r=Math.round(n);return(r<0?'-':'')+'$'+Math.abs(r).toLocaleString();}
+function fDc(n){if(n===null||n===undefined||isNaN(n))return'—';const r=Math.round(n*100)/100;return(r<0?'-':'')+'$'+Math.abs(r).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fP(n){if(n===null||isNaN(n))return'—';return(Math.round(n*10)/10)+'%';}
 function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function num(v){const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?null:n;}
@@ -896,7 +902,7 @@ function renderOH(){
   let h='';
   ohCats.forEach((cat,ci)=>{
     h+=`<div class="oh-cat" data-cat="${cat.id}">
-      <div class="stitle oh-cat-head"><span class="stitle-bar"></span><span class="oh-num">${ci+1}.</span>
+      <div class="stitle oh-cat-head"><button type="button" class="ibtn oh-collapse" data-act="catcollapse" title="${cat.collapsed?'Show':'Hide'} lines" aria-expanded="${!cat.collapsed}"><i class="ti ti-chevron-${cat.collapsed?'right':'down'}"></i></button><span class="stitle-bar"></span><span class="oh-num">${ci+1}.</span>
         <input type="text" class="oh-cat-name" data-act="catname" value="${esc(cat.label)}" placeholder="Section name" title="Rename section">
         <span class="oh-cattot" id="cattot_${cat.id}"></span>
         <span class="oh-tools">
@@ -904,7 +910,8 @@ function renderOH(){
           <button type="button" class="ibtn" data-act="catdown" title="Move section down" ${ci===ohCats.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
           <button type="button" class="ibtn" data-act="catdel" title="Delete section"><i class="ti ti-trash"></i></button>
         </span>
-      </div>`;
+      </div>
+      <div class="oh-body"${cat.collapsed?' style="display:none"':''}>`;
     cat.items.forEach((it,ii)=>{
       const open=ohOpen.has(it.id);
       const opts=ohCats.map(c=>`<option value="${c.id}"${c.id===cat.id?' selected':''}>${esc(c.label||'(unnamed)')}</option>`).join('');
@@ -927,6 +934,8 @@ function renderOH(){
       </div>`;
     });
     h+=`<button class="oh-add-btn" data-act="addline"><i class="ti ti-plus"></i> Add line</button></div>`;
+    if(cat.collapsed)h+=`<div class="oh-collapsed-note">${cat.items.length} line${cat.items.length===1?'':'s'} hidden</div>`;
+    h+=`</div>`;
   });
   h+=`<button class="btn" data-act="addcat" style="margin-top:2px"><i class="ti ti-plus"></i> Add section</button>`;
   wrap.innerHTML=h;
@@ -961,7 +970,7 @@ function ohInitEvents(){
     if(e.target.dataset.act!=='move')return;
     const {found}=ctx(e);const dest=ohCats.find(c=>c.id===e.target.value);
     if(!found||!dest||dest===found.cat)return;
-    found.cat.items.splice(found.i,1);dest.items.push(found.item);renderOH();
+    found.cat.items.splice(found.i,1);dest.items.push(found.item);dest.collapsed=false;renderOH();
   });
   wrap.addEventListener('click',e=>{
     const btn=e.target.closest('button[data-act]');if(!btn||btn.disabled)return;
@@ -971,6 +980,7 @@ function ohInitEvents(){
       const el=wrap.querySelector(`[data-cat="${c.id}"] .oh-cat-name`);if(el){el.focus();el.select();}
       return;
     }
+    if(act==='catcollapse'){cat.collapsed=!cat.collapsed;renderOH();return;}
     if(act==='catup'||act==='catdown'){const ci=ohCats.indexOf(cat);moveIn(ohCats,ci,ci+(act==='catup'?-1:1));renderOH();return;}
     if(act==='catdel'){
       const amt=ohCatTotal(cat);
@@ -993,15 +1003,15 @@ function ohCalc(){
   const total=ohGetTotal();
   ohCats.forEach(cat=>{
     const el=document.getElementById('cattot_'+cat.id);
-    if(el){const t=ohCatTotal(cat);el.textContent=t?fD(t)+'/mo':'';}
+    if(el){const t=ohCatTotal(cat);el.textContent=t?fDc(t)+'/mo':'';}
   });
   if(!total){document.getElementById('oh-summary').innerHTML='';
     const beEl=document.getElementById('be_oh');if(beEl&&beEl.dataset.auto){beEl.value='';delete beEl.dataset.auto;beCalc();}
     prCalc();calcOHPerJob();pxCalc();return;}
   document.getElementById('oh-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Overhead Summary</h3>
-    ${ohCats.map((cat,i)=>`<div class="kv"><span class="kk">${i+1}. ${esc(cat.label||'(unnamed)')}</span><span class="kv2">${fD(ohCatTotal(cat))}</span></div>`).join('')}
-    <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Total monthly overhead</span><span class="kv2" style="font-size:16px">${fD(total)}</span></div>
-    <div class="kv"><span class="kk">Annual overhead</span><span class="kv2">${fD(total*12)}</span></div>
+    ${ohCats.map((cat,i)=>`<div class="kv"><span class="kk">${i+1}. ${esc(cat.label||'(unnamed)')}</span><span class="kv2">${fDc(ohCatTotal(cat))}</span></div>`).join('')}
+    <div class="kv"><span class="kk" style="font-weight:600;color:var(--black)">Total monthly overhead</span><span class="kv2" style="font-size:16px">${fDc(total)}</span></div>
+    <div class="kv"><span class="kk">Annual overhead</span><span class="kv2">${fDc(total*12)}</span></div>
   </div>`;
   const beEl=document.getElementById('be_oh');
   if(beEl){beEl.value=fmtNum(Math.round(total*12));beEl.dataset.auto='1';beCalc();}
@@ -1011,7 +1021,7 @@ function ohCalc(){
 // Session load: accepts new format (cats) and the old fixed-field format
 function ohLoad(o){
   if(Array.isArray(o.cats)){
-    ohCats=o.cats.map(c=>({id:c.id||ohNewId('ohc'),label:c.label||'',items:(c.items||[]).map(it=>({id:it.id||ohNewId('ohl'),label:it.label||'',amount:num(it.amount),payee:it.payee||'',notes:it.notes||''}))}));
+    ohCats=o.cats.map(c=>({id:c.id||ohNewId('ohc'),label:c.label||'',collapsed:!!c.collapsed,items:(c.items||[]).map(it=>({id:it.id||ohNewId('ohl'),label:it.label||'',amount:num(it.amount),payee:it.payee||'',notes:it.notes||''}))}));
   } else {
     ohCats=ohDefault();
     ohCats.forEach(cat=>{
