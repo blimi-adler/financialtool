@@ -303,6 +303,27 @@ tr.drag-over td{border-top:2px solid var(--red)}
 .rp-brand{height:14px;width:auto;vertical-align:middle;opacity:.9}
 .app-foot{text-align:center;font-size:11px;color:var(--gray-500);padding:18px 0 0}
 
+/* issue links + collapsible reports */
+.lk-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px 6px}
+.lk-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;font-size:11.5px;font-weight:500;color:var(--ink);background:var(--sand);border:none;border-radius:999px;padding:3px 6px 3px 10px;cursor:pointer;font-family:var(--font-body)}
+.lk-chip:hover{background:var(--cardb)}
+.lk-chip.gone{background:transparent;border:1px dashed var(--cardb);color:var(--stone);cursor:default}
+.lk-chip .lk-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.lk-chip .lk-x{border:none;background:transparent;color:var(--stone);cursor:pointer;font-size:13px;line-height:1;padding:0 2px}
+.lk-chip .lk-x:hover{color:var(--ink)}
+select.lk-add{width:auto!important;font-size:11.5px!important;color:var(--stone)!important;border:1px dashed var(--cardb)!important;border-radius:999px!important;padding:3px 8px!important;background:transparent!important;cursor:pointer;max-width:170px}
+.iss-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink);background:var(--sand);border:none;border-radius:999px;padding:2px 9px;cursor:pointer;white-space:nowrap;font-family:var(--font-body);flex-shrink:0}
+.iss-badge.done{background:transparent;border:1px solid var(--cardb);color:var(--stone)}
+.iss-badge:hover{background:var(--cardb)}
+@keyframes lkflash{0%,40%{box-shadow:0 0 0 3px var(--ink)}100%{box-shadow:0 0 0 0 transparent}}
+.lk-flash{animation:lkflash 1.8s var(--ease,ease) 1;border-radius:10px}
+tr.lk-flash td{background:var(--sand)!important}
+.rp-card.collapsed .rp-doc,.rp-card.collapsed .rp-fill{display:none}
+.rp-ctitle{display:none;font-weight:600;font-size:14px;color:var(--ink);letter-spacing:-.01em;margin-right:6px}
+.rp-card.collapsed .rp-ctitle{display:inline}
+.rp-card.collapsed .rp-bar{border-bottom:none}
+.rp-card.collapsed .rp-bar label{display:none}
+.rp-allbar{display:flex;justify-content:flex-end;gap:6px;margin:12px 0 -4px}
 /* ===== Structure brand system (Brand identity v1, Nov 2026) =====
    Cream leads (60%), Ink carries the words (30%), Red shows up once (10%).
    DM Sans 400/500/600. Cards white, 1px #DDD5C6, radius 18, 1 soft shadow.
@@ -627,6 +648,7 @@ tr.drag-over td{border-top:2px solid var(--ink)}
       <select id="is_area" style="width:140px"><option>Banking</option><option>Balance sheet</option><option>P&L - sales</option><option>P&L - expenses</option><option>COGS</option><option>AR</option><option>AP</option><option>Chart of accounts</option><option>Payroll</option><option>Other</option></select>
       <select id="is_pri" style="width:90px"><option>High</option><option>Medium</option><option>Low</option></select>
       <select id="is_st" style="width:110px"><option>Open</option><option>In progress</option><option>Fixed</option></select>
+      <select id="is_link" style="width:190px" aria-label="Link to (optional)"></select>
       <button class="btn primary" onclick="addIss()"><i class="ti ti-plus"></i> Add issue</button>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px">
@@ -944,14 +966,14 @@ const TABS=['dashboard','overhead','breakeven','projections','cashflow','issues'
 function T(t){
   TABS.forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});
   document.querySelectorAll('.tab').forEach(el=>{el.classList.toggle('active',el.dataset.tab===t);});
-  if(t==='overhead')ohCalc();
-  if(t==='snapshot'){snCalc();}
+  if(t==='overhead')renderOH();
+  if(t==='snapshot'){snCalc();snMarkIssues();}
   if(t==='breakeven')beCalc();
   if(t==='projections')prCalc();
-  if(t==='issues')growIssues();
+  if(t==='issues')rIss();
   if(t==='pricing'){calcOHPerJob();pxCalc();}
   if(t==='benchmarks')renderBench();
-  if(t==='reports')rpGrowNotes();
+  if(t==='reports')rRep();
   if(t==='dashboard')renderDash();
 }
 
@@ -1026,6 +1048,7 @@ function renderOH(){
         <div class="ir oh-row">
           <input type="text" class="oh-lbl" data-act="lbl" value="${esc(it.label)}" placeholder="Line item name">
           <input type="number" class="oh-amt" data-act="amt" value="${it.amount!=null?it.amount:''}" placeholder="$/mo">
+          ${issBadge('oh',it.id)}
           <span class="oh-tools">
             <button type="button" class="ibtn" data-act="toggle" title="Payee & notes"><i class="ti ti-chevron-${open?'up':'down'}"></i></button>
             <button type="button" class="ibtn" data-act="up" title="Move up" ${ii===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
@@ -1297,11 +1320,11 @@ function rpDocHTML(r,i,editable){
   const base=r.showPct?rpBase(r):null;
   const pc=!!base;
   const head='<tr><th></th>'+r.cols.map(c=>'<th>'+esc(c||'Total')+'</th>'+(pc?'<th class="pc">%</th>':'')).join('')+'</tr>';
-  const rows=r.rows.filter(x=>!r.summary||x.kind==='key'||x.kind==='tot'||(x.kind==='line'&&x.depth===0)||(x.kind==='h'&&x.depth===0)).map(x=>{
+  const rows=r.rows.map((x,ri)=>({x,ri})).filter(({x})=>!r.summary||x.kind==='key'||x.kind==='tot'||(x.kind==='line'&&x.depth===0)||(x.kind==='h'&&x.depth===0)).map(({x,ri})=>{
     const pad=8+(r.summary?Math.min(x.depth,1):x.depth)*16;
     const cls=x.kind==='h'?('h'+(x.depth===0?' h0':'')):x.kind==='tot'?'tot':x.kind==='key'?('key'+(x.final?' final':'')):'';
     const cells=x.vals.map((v,ci)=>'<td class="'+(v<0?'neg':'')+'">'+(x.kind==='h'?'':rpFmt(v))+'</td>'+(pc?'<td class="pc">'+(x.kind!=='h'&&v!==null&&base[ci]?fP(v/base[ci]*100):'')+'</td>':'')).join('');
-    return '<tr class="'+cls+'"><td style="padding-left:'+pad+'px">'+esc(x.label)+'</td>'+cells+'</tr>';
+    return '<tr class="'+cls+'" data-rp="'+esc(r.id)+'" data-row="'+ri+'"><td style="padding-left:'+pad+'px">'+esc(x.label)+(editable?' '+issBadge('rp',r.id,ri):'')+'</td>'+cells+'</tr>';
   }).join('');
   const client=(document.getElementById('client_name')||{}).value||'';
   const company=r.company||client;
@@ -1320,8 +1343,11 @@ function rpDocHTML(r,i,editable){
 function rRep(){
   const w=document.getElementById('rp-list');if(!w)return;
   if(!repL.length){w.innerHTML='<div class="empty-state"><i class="ti ti-report"></i><p>No reports yet. Upload a QuickBooks export above.</p></div>';return;}
-  w.innerHTML=repL.map((r,i)=>'<div class="rp-card">'
+  w.innerHTML=(repL.length>1?'<div class="rp-allbar"><button type="button" class="oh-add-btn" style="margin:0" onclick="repL.forEach(r=>r.collapsed=true);rRep()"><i class="ti ti-chevrons-up"></i> Hide all</button><button type="button" class="oh-add-btn" style="margin:0" onclick="repL.forEach(r=>r.collapsed=false);rRep()"><i class="ti ti-chevrons-down"></i> Show all</button></div>':'')
+  +repL.map((r,i)=>'<div class="rp-card'+(r.collapsed?' collapsed':'')+'">'
     +'<div class="rp-bar">'
+      +'<button type="button" class="ibtn oh-collapse" title="'+(r.collapsed?'Open':'Minimize')+' report" aria-expanded="'+!r.collapsed+'" onclick="repL['+i+'].collapsed=!repL['+i+'].collapsed;rRep()"><i class="ti ti-chevron-'+(r.collapsed?'right':'down')+'"></i></button>'
+      +'<span class="rp-ctitle">'+esc(r.title)+(r.period?' <span style="font-weight:400;color:var(--stone)">· '+esc(r.period)+'</span>':'')+' '+(()=>{const n=r.rows.reduce((a,x,ri)=>a+issuesFor('rp',r.id,ri).filter(s=>s.st!=='Fixed').length,0);return n?'<span class="iss-badge" style="cursor:default"><i class="ti ti-flag"></i>'+n+' open</span>':'';})()+'</span>'
       +(r.isPL||rpBase(r)?'<label><input type="checkbox" '+(r.showPct?'checked':'')+' onchange="repL['+i+'].showPct=this.checked;rRep()"> % of income</label>':'')
       +'<label><input type="checkbox" '+(r.summary?'checked':'')+' onchange="repL['+i+'].summary=this.checked;rRep()"> Summary view</label>'
       +'<span class="sp"></span>'
@@ -1829,7 +1855,7 @@ function rCol(){const tb=document.getElementById('col-tb');if(!colL.length){tb.i
 
 const IS_AREAS=['Banking','Balance sheet','P&L - sales','P&L - expenses','COGS','AR','AP','Chart of accounts','Payroll','Other'];
 const IS_PRI=['High','Medium','Low'],IS_ST=['Open','In progress','Fixed'];
-function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;isL.push({area,desc,pri,st});const d=document.getElementById('is_desc');d.value='';autoGrow(d);d.focus();rIss();}
+function addIss(){const area=document.getElementById('is_area').value,desc=document.getElementById('is_desc').value.trim(),pri=document.getElementById('is_pri').value,st=document.getElementById('is_st').value;if(!desc)return;const lk=parseLink((document.getElementById('is_link')||{}).value);const links=[];if(lk){lk.label=linkInfo(lk).label;links.push(lk);}isL.push({area,desc,pri,st,links});const lsel=document.getElementById('is_link');if(lsel)lsel.value='';const d=document.getElementById('is_desc');d.value='';autoGrow(d);d.focus();rIss();}
 function autoGrow(el){if(!el||!el.offsetParent)return;el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
 function growIssues(){document.querySelectorAll('#tab-issues textarea').forEach(autoGrow);}
 function priC(p){return p==='High'?'red':p==='Medium'?'amber':'green';}
@@ -1849,6 +1875,74 @@ function moveIss(i,dir){
 }
 function editIss(i,f,v){if(!isL[i])return;isL[i][f]=v;if(f!=='desc')rIss();}
 let issDrag=null;
+// ---- ISSUE LINKS (overhead lines, Snapshot lines, QB report rows) ----
+function snFieldLabel(id){const f=[...snPL,...snBS,...snExt].find(x=>x.id===id);return f?f.label:null;}
+function linkInfo(l){
+  if(l.type==='oh'){const f=ohFind(l.id);return f?{label:'Overhead · '+(f.cat.label||'Section')+' › '+(f.item.label||'(unnamed line)'),ok:true}:{label:l.label||'Overhead line',ok:false};}
+  if(l.type==='sn'){const lb=snFieldLabel(l.id);return lb?{label:'Snapshot · '+lb,ok:true}:{label:l.label||'Snapshot line',ok:false};}
+  if(l.type==='rp'){const r=repL.find(x=>x.id===l.id);const row=r&&r.rows[l.row];return row?{label:(r.title||'Report')+' › '+(row.label||'Total'),ok:true}:{label:l.label||'QB report line',ok:false};}
+  return {label:'?',ok:false};
+}
+function linkKey(l){return l.type+':'+l.id+(l.type==='rp'?':'+l.row:'');}
+function linkOptionsHTML(){
+  let h='<option value="">+ Link to…</option>';
+  if(ohCats.some(c=>c.items.length)){
+    ohCats.forEach(c=>{if(!c.items.length)return;h+='<optgroup label="Overhead · '+esc(c.label||'Section')+'">'+c.items.map(it=>'<option value="oh:'+esc(it.id)+'">'+esc(it.label||'(unnamed line)')+'</option>').join('')+'</optgroup>';});
+  }
+  h+='<optgroup label="Snapshot · P&amp;L">'+snPL.map(f=>'<option value="sn:'+f.id+'">'+esc(f.label)+'</option>').join('')+'</optgroup>';
+  h+='<optgroup label="Snapshot · Balance sheet">'+snBS.map(f=>'<option value="sn:'+f.id+'">'+esc(f.label)+'</option>').join('')+'</optgroup>';
+  repL.forEach(r=>{
+    const rows=r.rows.map((x,ri)=>({x,ri})).filter(o=>o.x.kind!=='h');
+    if(rows.length)h+='<optgroup label="QB · '+esc(r.title||'Report')+'">'+rows.map(o=>'<option value="rp:'+esc(r.id)+':'+o.ri+'">'+'\u00a0'.repeat(Math.min(o.x.depth,3)*2)+esc(o.x.label||'Total')+'</option>').join('')+'</optgroup>';
+  });
+  return h;
+}
+function parseLink(v){
+  if(!v)return null;const p=v.split(':');
+  if(p[0]==='rp')return {type:'rp',id:p[1],row:+p[2]};
+  return {type:p[0],id:p.slice(1).join(':')};
+}
+function addIssLink(i,v){
+  const l=parseLink(v);if(!l||!isL[i])return;
+  isL[i].links=isL[i].links||[];
+  if(isL[i].links.some(x=>linkKey(x)===linkKey(l)))return rIss();
+  l.label=linkInfo(l).label; // remembered in case the item is removed later
+  isL[i].links.push(l);rIss();
+}
+function removeIssLink(i,k){if(isL[i]&&isL[i].links){isL[i].links.splice(k,1);rIss();}}
+function linkChipsHTML(s,i){
+  const ls=s.links||[];
+  return '<div class="lk-chips">'+ls.map((l,k)=>{const inf=linkInfo(l);
+    return '<span class="lk-chip'+(inf.ok?'':' gone')+'" '+(inf.ok?'role="button" tabindex="0" title="Go to this item" onclick="if(!event.target.closest(\'.lk-x\'))goLink(isL['+i+'].links['+k+'])" onkeydown="if(event.key===\'Enter\')goLink(isL['+i+'].links['+k+'])"':'title="This item no longer exists"')+'><i class="ti ti-link"></i><span class="lk-t">'+esc(inf.label)+(inf.ok?'':' (removed)')+'</span><button type="button" class="lk-x" title="Remove link" aria-label="Remove link" onclick="removeIssLink('+i+','+k+')">×</button></span>';
+  }).join('')+'<select class="lk-add" aria-label="Link this issue" onchange="addIssLink('+i+',this.value)">'+linkOptionsHTML()+'</select></div>';
+}
+// issues linked to an item (for the markers on overhead / snapshot / report rows)
+function issuesFor(type,id,row){return isL.filter(s=>(s.links||[]).some(l=>l.type===type&&l.id===id&&(type!=='rp'||l.row===row)));}
+function issBadge(type,id,row){
+  const list=issuesFor(type,id,row);if(!list.length)return '';
+  const open=list.filter(s=>s.st!=='Fixed').length;
+  const txt=open?(open+' open issue'+(open>1?'s':'')):(list.length+' fixed issue'+(list.length>1?'s':''));
+  return '<button type="button" class="iss-badge'+(open?'':' done')+'" title="Show linked issues" onclick="event.stopPropagation();goIssues(\''+type+'\',\''+esc(id)+'\','+(row==null?'null':row)+')"><i class="ti ti-flag"></i>'+txt+'</button>';
+}
+function flash(el){if(!el)return;el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});el.classList.remove('lk-flash');void el.offsetWidth;el.classList.add('lk-flash');setTimeout(()=>el.classList.remove('lk-flash'),2000);}
+function goLink(l){
+  if(!l)return;
+  if(l.type==='oh'){const f=ohFind(l.id);if(!f)return;f.cat.collapsed=false;T('overhead');flash(document.querySelector('[data-item="'+CSS.escape(l.id)+'"] .oh-row'));}
+  else if(l.type==='sn'){T('snapshot');flash(document.getElementById('snlbl_'+l.id));}
+  else if(l.type==='rp'){const r=repL.find(x=>x.id===l.id);if(!r)return;r.collapsed=false;r.summary=false;T('reports');flash(document.querySelector('tr[data-rp="'+CSS.escape(l.id)+'"][data-row="'+l.row+'"]'));}
+}
+function goIssues(type,id,row){
+  ['f_area','f_pri','f_st'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  T('issues');
+  const ids=issuesFor(type,id,row).map(s=>isL.indexOf(s));
+  ids.forEach((i,n)=>{const tr=document.querySelector('#is-tb tr[data-i="'+i+'"]');if(tr){if(n===0)flash(tr);else{tr.classList.add('lk-flash');setTimeout(()=>tr.classList.remove('lk-flash'),2000);}}});
+}
+function snMarkIssues(){
+  document.querySelectorAll('[id^="snlbl_"]').forEach(el=>{
+    const id=el.id.slice(6);const b=el.querySelector('.iss-badge');if(b)b.remove();
+    const h=issBadge('sn',id);if(h)el.insertAdjacentHTML('beforeend',' '+h);
+  });
+}
 function rIss(){
   const tb=document.getElementById('is-tb');
   const filtered=issVisible();
@@ -1857,12 +1951,13 @@ function rIss(){
   else{tb.innerHTML=filtered.map((s,k)=>{const i=isL.indexOf(s);return`<tr data-i="${i}">
     <td><span class="drag" draggable="true" title="Drag to reorder"><i class="ti ti-grip-vertical"></i></span></td>
     <td><select onchange="editIss(${i},'area',this.value)">${issOpts(IS_AREAS,s.area)}</select></td>
-    <td><textarea class="is-desc" rows="1" oninput="editIss(${i},'desc',this.value);autoGrow(this)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';autoGrow(this);}">${esc(s.desc)}</textarea></td>
+    <td><textarea class="is-desc" rows="1" oninput="editIss(${i},'desc',this.value);autoGrow(this)" onblur="if(!this.value.trim()){this.value=isL[${i}].desc='(no description)';autoGrow(this);}">${esc(s.desc)}</textarea>${linkChipsHTML(s,i)}</td>
     <td><select class="sel-${priC(s.pri)}" onchange="editIss(${i},'pri',this.value)">${issOpts(IS_PRI,s.pri)}</select></td>
     <td><select class="sel-${stC2(s.st)}" onchange="editIss(${i},'st',this.value)">${issOpts(IS_ST,s.st)}</select></td>
     <td class="nowrap"><button type="button" class="ibtn" title="Move up" ${k===0?'disabled':''} onclick="moveIss(${i},-1)"><i class="ti ti-arrow-up"></i></button><button type="button" class="ibtn" title="Move down" ${k===filtered.length-1?'disabled':''} onclick="moveIss(${i},1)"><i class="ti ti-arrow-down"></i></button><button class="delb" title="Delete" aria-label="Delete" onclick="if(confirm('Delete this issue?')){isL.splice(${i},1);rIss()}"><i class="ti ti-trash"></i></button></td>
   </tr>`;}).join('');}
   growIssues();
+  const lsel=document.getElementById('is_link');if(lsel){const v=lsel.value;lsel.innerHTML=linkOptionsHTML().replace('+ Link to…','Link to (optional)');lsel.value=v;}
   const open=isL.filter(i=>i.st==='Open').length,hi=isL.filter(i=>i.pri==='High').length,fixed=isL.filter(i=>i.st==='Fixed').length;
   document.getElementById('is-summary').innerHTML=`<div class="card" style="margin-top:14px"><h3>Issues Summary</h3>
     <div class="kv"><span class="kk">Total issues</span><span class="kv2">${isL.length}</span></div>
@@ -2187,7 +2282,7 @@ function initSnapshot(){
       var fg=item.bold?'var(--white)':'var(--black)';
       var fw=item.bold?'700':'400';
       h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">';
-      h+='<div style="padding:6px 8px;background:'+bg+';border-radius:4px;font-size:12px;font-weight:'+fw+';color:'+fg+'">'+item.label+'</div>';
+      h+='<div id="snlbl_'+item.id+'" style="padding:6px 8px;background:'+bg+';border-radius:4px;font-size:12px;font-weight:'+fw+';color:'+fg+'">'+item.label+'</div>';
       if(item.calc){
         h+='<div id="sncalc_'+item.id+'_p1" style="padding:6px 8px;background:var(--gray-100);border-radius:4px;font-size:12px;font-weight:600;color:var(--green)">—</div>';
         h+='<div id="sncalc_'+item.id+'_p2" style="padding:6px 8px;background:var(--gray-100);border-radius:4px;font-size:12px;font-weight:600;color:var(--green)">—</div>';
@@ -2522,9 +2617,9 @@ function exportSummaryExcel(){
   const issRows = [
     [clientName + ' · Open QB Issues'],
     [],
-    ['Area','Issue','Priority','Status']
+    ['Area','Issue','Priority','Status','Linked to']
   ];
-  isL.filter(i=>i.st!=='Fixed').forEach(s=>issRows.push([s.area, s.desc, s.pri, s.st]));
+  isL.filter(i=>i.st!=='Fixed').forEach(s=>issRows.push([s.area, s.desc, s.pri, s.st, (s.links||[]).map(l=>linkInfo(l).label).join('; ')]));
   if(isL.filter(i=>i.st!=='Fixed').length === 0) issRows.push(['No open issues','','','']);
   const issWs = XLSX.utils.aoa_to_sheet(issRows);
   issWs['!cols'] = [{wch:20},{wch:45},{wch:12},{wch:14}];
@@ -2654,8 +2749,8 @@ function exportToExcel(){
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(colRows)), 'Collections');
 
   // --- ISSUES ---
-  const isRows=[['Area','Issue','Priority','Status']];
-  isL.forEach(s=>isRows.push([s.area,s.desc,s.pri,s.st]));
+  const isRows=[['Area','Issue','Priority','Status','Linked to']];
+  isL.forEach(s=>isRows.push([s.area,s.desc,s.pri,s.st,(s.links||[]).map(l=>linkInfo(l).label).join('; ')]));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stampedRows(isRows)), 'Issues');
 
   // --- PRICING ---
