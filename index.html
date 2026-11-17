@@ -318,7 +318,9 @@ select.lk-add{width:auto!important;font-size:11.5px!important;color:var(--stone)
 @keyframes lkflash{0%,40%{box-shadow:0 0 0 3px var(--ink)}100%{box-shadow:0 0 0 0 transparent}}
 .lk-flash{animation:lkflash 1.8s var(--ease,ease) 1;border-radius:10px}
 tr.lk-flash td{background:var(--sand)!important}
-.rp-card.collapsed .rp-doc,.rp-card.collapsed .rp-fill{display:none}
+.rp-card.collapsed .rp-main,.rp-card.collapsed .rp-fill{display:none}
+.rp-card.collapsed .rp-doc{padding-top:4px}
+.rp-card.collapsed .rp-notes-l{margin-top:8px}
 .rp-ctitle{display:none;font-weight:600;font-size:14px;color:var(--ink);letter-spacing:-.01em;margin-right:6px}
 .rp-card.collapsed .rp-ctitle{display:inline}
 .rp-card.collapsed .rp-bar{border-bottom:none}
@@ -1331,11 +1333,12 @@ function rpDocHTML(r,i,editable){
   const notes=editable
     ?'<div class="rp-notes-l">Key Takeaways</div><textarea class="rp-notes" placeholder="What should the client notice? (optional, shows when presenting)" oninput="repL['+i+'].notes=this.value;autoGrow(this)">'+esc(r.notes)+'</textarea>'
     :(r.notes.trim()?'<div class="rp-notes-l">Key Takeaways</div><div class="rp-notes-v">'+esc(r.notes)+'</div>':'');
-  return '<div class="rp-doc">'
+  return '<div class="rp-doc"><div class="rp-main">'
     +(company?'<div class="rp-co">'+esc(company)+'</div>':'')
     +(editable?'<input class="rp-title" value="'+esc(r.title)+'" oninput="repL['+i+'].title=this.value" title="Click to rename">':'<div class="rp-title">'+esc(r.title)+'</div>')
     +'<div class="rp-period">'+esc(r.period||'')+'</div>'
     +'<div style="overflow-x:auto"><table class="rp-t">'+head+rows+'</table></div>'
+    +'</div>'
     +notes
     +'<div class="rp-foot"><span><img class="rp-brand" src="'+(document.querySelector('.logo-img')||{}).src+'" alt="structure"> &nbsp;Prepared by Structure</span><span>Source: QuickBooks'+(r.fileName?' ('+esc(r.fileName)+')':'')+'</span></div>'
     +'</div>';
