@@ -99,6 +99,16 @@ h2{font-size:18px;font-weight:600;letter-spacing:-.02em;margin:0 0 4px}
 .dt td input:focus,.dt td select:focus,.dt td textarea:focus{outline:none;border-color:var(--ink);background:#fff}
 .dt td textarea{resize:none;overflow:hidden;line-height:1.45;display:block}
 .dt .num{text-align:right;font-variant-numeric:tabular-nums}
+.dcell{display:flex;align-items:center;gap:2px;position:relative;min-width:150px}
+.dcell .dtxt{flex:1;min-width:0}
+.dcell .dtxt.bad{border-color:var(--bad)!important;background:var(--bad-bg)!important}
+.dcell .dpick{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.eom{border:1px dashed var(--cardb);background:transparent;border-radius:999px;font-size:11px;font-weight:500;color:var(--stone);padding:2px 8px;cursor:pointer;white-space:nowrap;margin-top:4px}
+.eom:hover{color:var(--ink);border-color:var(--ink)}
+.kind{display:inline-block;width:auto!important;border-radius:999px!important;font-size:12px!important;font-weight:600;padding:2px 8px!important;border:none!important}
+.kind.Issue{background:var(--bad-bg)!important;color:var(--bad)}
+.kind.Question{background:var(--sand)!important;color:var(--ink)}
+.kind.Suggestion{background:var(--good-bg)!important;color:var(--good)}
 .empty{text-align:center;color:var(--stone);font-size:13px;padding:20px 8px}
 
 /* chips + badges */
@@ -222,7 +232,7 @@ tr.flash td{background:var(--sand)!important}
   <button class="tab on" data-t="checklist" onclick="T('checklist')">Checklist</button>
   <button class="tab" data-t="accounts" onclick="T('accounts')">Accounts &amp; reconciliations<span class="cnt" id="c_acc"></span></button>
   <button class="tab" data-t="reports" onclick="T('reports')">QB Reports<span class="cnt" id="c_rp"></span></button>
-  <button class="tab" data-t="issues" onclick="T('issues')">Issues<span class="cnt" id="c_is"></span></button>
+  <button class="tab" data-t="issues" onclick="T('issues')">Issues &amp; questions<span class="cnt" id="c_is"></span></button>
   <button class="tab" data-t="summary" onclick="T('summary')">Summary &amp; email</button>
 </div>
 
@@ -243,14 +253,14 @@ tr.flash td{background:var(--sand)!important}
     <div class="card-h"><h3>Bank and credit card accounts</h3><span class="sp"></span>
       <button class="btn sm" onclick="flagAccounts()"><i class="ti ti-flag"></i> Add issues for flagged accounts</button>
       <button class="btn ink sm" onclick="addAccount()"><i class="ti ti-plus"></i> Add account</button></div>
-    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:22%">Account</th><th style="width:11%">Type</th><th style="width:13%">Bank feed</th><th style="width:13%">Last reconciled</th><th style="width:8%">For review</th><th>Notes</th><th style="width:16%">Status</th><th style="width:60px"></th></tr></thead><tbody id="acc_tb"></tbody></table></div>
+    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:22%">Account</th><th style="width:11%">Type</th><th style="width:13%">Bank feed</th><th style="width:15%">Last reconciled</th><th style="width:8%">For review</th><th>Notes</th><th style="width:16%">Status</th><th style="width:60px"></th></tr></thead><tbody id="acc_tb"></tbody></table></div>
   </div>
   <div class="card">
     <div class="card-h"><h3>Outstanding transactions to review</h3><span class="muted small" id="out_sum"></span><span class="sp"></span>
       <button class="btn sm" onclick="sortOut()"><i class="ti ti-sort-descending"></i> Oldest first</button>
       <button class="btn ink sm" onclick="addOut()"><i class="ti ti-plus"></i> Add transaction</button></div>
     <p class="muted small" style="margin:-4px 0 8px">Old uncleared items from reconciliations, unmatched deposits, missing receipts. These go into the bookkeeper email as a list.</p>
-    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:17%">Account</th><th style="width:12%">Date</th><th>Payee / description</th><th style="width:11%" class="num">Amount</th><th style="width:20%">Note</th><th style="width:8%">Age</th><th style="width:10%">Status</th><th style="width:30px"></th></tr></thead><tbody id="out_tb"></tbody></table></div>
+    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:17%">Account</th><th style="width:14%">Date</th><th>Payee / description</th><th style="width:11%" class="num">Amount</th><th style="width:20%">Note</th><th style="width:8%">Age</th><th style="width:10%">Status</th><th style="width:30px"></th></tr></thead><tbody id="out_tb"></tbody></table></div>
   </div>
 </div>
 
@@ -268,26 +278,28 @@ tr.flash td{background:var(--sand)!important}
 
 <!-- ISSUES -->
 <div class="pane" id="p_issues">
-  <h2>Issues</h2>
-  <p class="sub">Everything the bookkeeper (or owner) needs to fix. Open items carry forward when you start next month.</p>
+  <h2>Issues, questions and suggestions</h2>
+  <p class="sub">Everything for the bookkeeper (or owner): things to fix, questions to answer and suggestions. Open items carry forward when you start next month.</p>
   <div class="card">
     <textarea id="is_desc" class="bigtext" rows="2" placeholder="Describe the issue (Enter for a new line, Ctrl+Enter to add)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();addIssueForm();}" oninput="grow(this)"></textarea>
     <div class="row">
+      <select id="is_kind" aria-label="Type" onchange="kindForm()"><option>Issue</option><option>Question</option><option>Suggestion</option></select>
       <select id="is_area" aria-label="Area"></select>
       <select id="is_pri" aria-label="Priority"><option>High</option><option selected>Medium</option><option>Low</option></select>
       <select id="is_owner" aria-label="Owner"><option>Bookkeeper</option><option>Owner</option><option>Structure</option></select>
       <select id="is_link" aria-label="Link to" style="max-width:220px"></select>
-      <button class="btn ink" onclick="addIssueForm()"><i class="ti ti-plus"></i> Add issue</button>
+      <button class="btn ink" id="is_addbtn" onclick="addIssueForm()"><i class="ti ti-plus"></i> Add issue</button>
     </div>
   </div>
   <div class="row" style="margin:0 0 8px">
-    <select id="f_st" onchange="rIssues()"><option value="open">Not fixed</option><option value="">All statuses</option><option>Open</option><option>In progress</option><option>Fixed</option></select>
+    <select id="f_kind" onchange="rIssues()"><option value="">All types</option><option>Issue</option><option>Question</option><option>Suggestion</option></select>
+    <select id="f_st" onchange="rIssues()"><option value="open">Still open</option><option value="">All statuses</option><option>Open</option><option>In progress</option><option>Fixed</option></select>
     <select id="f_owner" onchange="rIssues()"><option value="">All owners</option><option>Bookkeeper</option><option>Owner</option><option>Structure</option></select>
     <select id="f_from" onchange="rIssues()"><option value="">Any month</option><option value="prior">From earlier months</option><option value="this">New this month</option></select>
     <span class="muted small" id="is_count"></span>
   </div>
   <div class="card" style="padding:8px 16px">
-    <div class="tw"><table class="dt" style="min-width:760px"><thead><tr><th>Issue</th><th style="width:13%">Area</th><th style="width:10%">Priority</th><th style="width:12%">Owner</th><th style="width:12%">Status</th><th style="width:40px"></th></tr></thead><tbody id="is_tb"></tbody></table></div>
+    <div class="tw"><table class="dt" style="min-width:760px"><thead><tr><th style="width:110px">Type</th><th>Item</th><th style="width:13%">Area</th><th style="width:10%">Priority</th><th style="width:12%">Owner</th><th style="width:12%">Status</th><th style="width:40px"></th></tr></thead><tbody id="is_tb"></tbody></table></div>
   </div>
 </div>
 
@@ -327,6 +339,34 @@ function money(n){if(n==null||isNaN(n))return '';const a=Math.abs(n);return (n<0
 function money0(n){if(n==null||isNaN(n))return '';const a=Math.round(Math.abs(n));return (n<0?'(':'')+'$'+a.toLocaleString('en-US')+(n<0?')':'');}
 function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function soon(f){setTimeout(f,0);}
+// ---- easy dates: type 10/31, 10/31/26, Oct 31, 31, or "end"; or use the calendar ----
+const MON3=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+function isoOK(y,m,d){if(!(y>1900&&m>=1&&m<=12&&d>=1&&d<=31))return null;const x=new Date(Date.UTC(y,m-1,d));if(x.getUTCMonth()!==m-1)return null;return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function parseDateFlex(v){
+  let t=String(v||'').trim().toLowerCase().replace(/(\d)(st|nd|rd|th)\b/g,'$1');if(!t)return '';
+  const ref=(S.month||defaultMonth()).split('-').map(Number),rY=ref[0],rM=ref[1];
+  const yr=(y,m)=>{if(y==null)return m>rM?rY-1:rY;y=+y;return y<100?2000+y:y;};
+  let m;
+  if(/^(end|eom|month ?end|me)$/.test(t))return monthEndISO(S.month||defaultMonth());
+  if((m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return isoOK(+m[1],+m[2],+m[3]);
+  if((m=t.match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2}|\d{4}))?$/)))return isoOK(yr(m[3],+m[1]),+m[1],+m[2]);
+  if((m=t.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[1].slice(0,3))+1;return mo?isoOK(yr(m[3],mo),mo,+m[2]):null;}
+  if((m=t.match(/^(\d{1,2})\s*([a-z]{3,9})\.?(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[2].slice(0,3))+1;return mo?isoOK(yr(m[3],mo),mo,+m[1]):null;}
+  if((m=t.match(/^(\d{1,2})$/)))return isoOK(rY,rM,+m[1]);
+  return null;
+}
+function fmtUS(iso){if(!iso)return '';const p=iso.split('-');return p[1]+'/'+p[2]+'/'+p[0];}
+// key like "acc:3:lastRec" or "out:2:date"
+function dateSet(key,iso){const [k,i,f]=key.split(':');const arr=k==='acc'?S.accounts:S.outstanding;if(!arr[+i])return;arr[+i][f]=iso;touch();soon(k==='acc'?rAccounts:rOut);}
+function dateTyped(el,key){const iso=parseDateFlex(el.value);
+  if(iso===null){el.classList.add('bad');toast('Could not read that date. Try 10/31, 10/31/26, Oct 31 or just 31.');return;}
+  el.classList.remove('bad');el.value=fmtUS(iso);dateSet(key,iso);}
+function datePick(btn){const p=btn.parentNode.querySelector('.dpick');try{if(p.showPicker){p.showPicker();return;}}catch(e){}p.style.pointerEvents='auto';p.focus();p.click();}
+function dateCell(iso,key){
+  return '<div class="dcell"><input class="dtxt" inputmode="numeric" value="'+esc(fmtUS(iso))+'" placeholder="mm/dd/yy" title="Type 10/31, Oct 31, or just the day" aria-label="Date" onchange="dateTyped(this,\''+key+'\')" onkeydown="if(event.key===\'Enter\'){this.blur();}">'+
+    '<button type="button" class="ibtn" title="Pick from calendar" aria-label="Pick from calendar" onclick="datePick(this)"><i class="ti ti-calendar"></i></button>'+
+    '<input type="date" class="dpick" tabindex="-1" aria-hidden="true" value="'+esc(iso||'')+'" onchange="if(this.value)dateSet(\''+key+'\',this.value)"></div>';
+}
 function grow(el){if(!el||!el.offsetParent)return;el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
 function growAll(sel){document.querySelectorAll(sel).forEach(grow);}
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -406,10 +446,10 @@ function updateCounts(){
 // ================= issues core =================
 function issuesFor(type,id,row){return S.issues.filter(i=>i.link&&i.link.type===type&&i.link.id===id&&(type!=='rp'||i.link.row===row));}
 function addIssue(o,quiet){
-  const it={id:uid('is'),desc:o.desc||'',area:o.area||'Other',pri:o.pri||'Medium',owner:o.owner||'Bookkeeper',st:'Open',from:S.month,link:o.link||null,created:new Date().toISOString().slice(0,10)};
+  const it={id:uid('is'),kind:o.kind||'Issue',desc:o.desc||'',area:o.area||'Other',pri:o.pri||'Medium',owner:o.owner||'Bookkeeper',st:'Open',from:S.month,link:o.link||null,created:new Date().toISOString().slice(0,10)};
   if(it.link)it.link.label=linkInfo(it.link).label;
   S.issues.push(it);touch();
-  if(!quiet)toast('Issue added: '+esc(it.desc.slice(0,60))+(it.desc.length>60?'…':'')+' <button onclick="this.parentNode.remove();T(\'issues\');flashIssue(\''+it.id+'\')">View</button>');
+  if(!quiet)toast(it.kind+' added: '+esc(it.desc.slice(0,60))+(it.desc.length>60?'…':'')+' <button onclick="this.parentNode.remove();T(\'issues\');flashIssue(\''+it.id+'\')">View</button>');
   return it;
 }
 function issueBadge(type,id,row){
@@ -495,7 +535,7 @@ function rAccounts(){
     '<td><input value="'+esc(a.name)+'" placeholder="e.g. Chase checking 1234" oninput="S.accounts['+i+'].name=this.value;touch()" onchange="soon(rOut)"></td>'+
     '<td><select onchange="S.accounts['+i+'].type=this.value;touch()">'+['Bank','Credit card','Loan','Other'].map(o=>'<option'+(a.type===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'+
     '<td><select onchange="S.accounts['+i+'].feed=this.value;touch();rAccounts()">'+['Connected','Disconnected','Not set up','Manual'].map(o=>'<option'+(a.feed===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'+
-    '<td><input type="date" value="'+esc(a.lastRec||'')+'" onchange="S.accounts['+i+'].lastRec=this.value;touch();soon(rAccounts)"></td>'+
+    '<td>'+dateCell(a.lastRec,'acc:'+i+':lastRec')+(S.month&&a.lastRec!==monthEndISO(S.month)?'<button type="button" class="eom" title="Set to the last day of the month reviewed" onclick="dateSet(\'acc:'+i+':lastRec\',monthEndISO(S.month))">Month end · '+esc(fmtUS(monthEndISO(S.month)).slice(0,5))+'</button>':'')+'</td>'+
     '<td><input inputmode="numeric" value="'+(a.forReview||'')+'" placeholder="0" onchange="S.accounts['+i+'].forReview=parseInt(this.value)||0;touch();soon(rAccounts)"></td>'+
     '<td><textarea rows="1" placeholder="Note" oninput="S.accounts['+i+'].note=this.value;touch();grow(this)">'+esc(a.note||'')+'</textarea></td>'+
     '<td><div class="chips">'+acctFlags(a).map(f=>'<span class="chip '+f.c+'">'+esc(f.t)+'</span>').join('')+'</div>'+issueBadge('acct',a.id)+'</td>'+
@@ -525,7 +565,7 @@ function rOut(){
     const opts=['',...accs,...(o.acct&&!accs.includes(o.acct)?[o.acct]:[])].map(n=>'<option'+(o.acct===n?' selected':'')+'>'+esc(n)+'</option>').join('');
     return '<tr data-out="'+o.id+'"'+(o.st==='Cleared'?' style="opacity:.55"':'')+'>'+
     '<td><select onchange="S.outstanding['+i+'].acct=this.value;touch()">'+opts+'</select></td>'+
-    '<td><input type="date" value="'+esc(o.date||'')+'" onchange="S.outstanding['+i+'].date=this.value;touch();soon(rOut)"></td>'+
+    '<td>'+dateCell(o.date,'out:'+i+':date')+'</td>'+
     '<td><textarea rows="1" placeholder="Payee or description" oninput="S.outstanding['+i+'].payee=this.value;touch();grow(this)">'+esc(o.payee||'')+'</textarea></td>'+
     '<td><input class="num" inputmode="decimal" value="'+(o.amount!=null?money(o.amount).replace('$',''):'')+'" placeholder="0.00" onchange="S.outstanding['+i+'].amount=num(this.value);touch();soon(rOut)"></td>'+
     '<td><textarea rows="1" placeholder="Question for bookkeeper" oninput="S.outstanding['+i+'].note=this.value;touch();grow(this)">'+esc(o.note||'')+'</textarea></td>'+
@@ -719,12 +759,17 @@ function linkOptions(first){
   return h;
 }
 function parseLink(v){if(!v)return null;const p=v.split(':');return p[0]==='rp'?{type:'rp',id:p[1],row:+p[2]}:{type:p[0],id:p[1]};}
+const KIND_PH={Issue:'Describe the issue',Question:'What do you want to ask the bookkeeper?',Suggestion:'What do you suggest?'};
+function kindForm(){const k=$('is_kind').value;$('is_desc').placeholder=KIND_PH[k]+' (Enter for a new line, Ctrl+Enter to add)';$('is_addbtn').innerHTML='<i class="ti ti-plus"></i> Add '+k.toLowerCase();
+  if(k==='Suggestion')$('is_pri').value='Low';else if($('is_pri').value==='Low')$('is_pri').value='Medium';}
+function doneLabel(k){return k==='Question'?'Answered':k==='Suggestion'?'Done':'Fixed';}
 function addIssueForm(){
   const d=$('is_desc').value.trim();if(!d){$('is_desc').focus();return;}
-  addIssue({desc:d,area:$('is_area').value,pri:$('is_pri').value,owner:$('is_owner').value,link:parseLink($('is_link').value)},true);
+  addIssue({kind:$('is_kind').value,desc:d,area:$('is_area').value,pri:$('is_pri').value,owner:$('is_owner').value,link:parseLink($('is_link').value)},true);
   $('is_desc').value='';$('is_link').value='';grow($('is_desc'));$('is_desc').focus();rIssues();
 }
 function issueVisible(i){
+  const kd=$('f_kind').value;if(kd&&(i.kind||'Issue')!==kd)return false;
   const st=$('f_st').value,ow=$('f_owner').value,fr=$('f_from').value;
   if(st==='open'&&i.st==='Fixed')return false;if(st&&st!=='open'&&i.st!==st)return false;
   if(ow&&i.owner!==ow)return false;
@@ -736,23 +781,26 @@ function rIssues(){
   $('is_area').innerHTML=AREAS.map(a=>'<option>'+esc(a)+'</option>').join('');
   const lv=$('is_link').value;$('is_link').innerHTML=linkOptions();$('is_link').value=lv;
   const vis=S.issues.filter(issueVisible);
-  $('is_count').textContent=vis.length+' shown · '+S.issues.filter(i=>i.st!=='Fixed').length+' not fixed';
+  const op=S.issues.filter(i=>i.st!=='Fixed');const kc=k=>op.filter(i=>(i.kind||'Issue')===k).length;
+  const pl=(n,w)=>n+' '+w+(n===1?'':'s');$('is_count').textContent=vis.length+' shown · Open: '+pl(kc('Issue'),'issue')+', '+pl(kc('Question'),'question')+', '+pl(kc('Suggestion'),'suggestion');
   const tb=$('is_tb');
-  if(!vis.length){tb.innerHTML='<tr><td colspan="6" class="empty">'+(S.issues.length?'No issues match these filters.':'No issues yet. Mark a checklist step as Issue, flag a report line, or add one above.')+'</td></tr>';updateCounts();return;}
+  if(!vis.length){tb.innerHTML='<tr><td colspan="7" class="empty">'+(S.issues.length?'Nothing matches these filters.':'Nothing yet. Mark a checklist step as Issue, flag a report line, or add an issue, question or suggestion above.')+'</td></tr>';updateCounts();return;}
   tb.innerHTML=vis.map(it=>{const i=S.issues.indexOf(it);const inf=linkInfo(it.link);
     const prior=it.from&&it.from<S.month;
+    const kd=it.kind||'Issue';
     return '<tr data-id="'+it.id+'">'+
+    '<td><select class="kind '+kd+'" aria-label="Type" onchange="S.issues['+i+'].kind=this.value;touch();rIssues()">'+['Issue','Question','Suggestion'].map(a=>'<option'+(kd===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
     '<td><textarea rows="1" oninput="S.issues['+i+'].desc=this.value;S.issues['+i+'].auto=false;touch();grow(this)">'+esc(it.desc)+'</textarea>'+
       '<div class="chips" style="padding-left:7px">'+(prior?'<span class="chip warn" title="Carried forward">Open since '+esc(monthShort(it.from))+'</span>':'')+
-      (it.st==='Fixed'&&it.fixedIn?'<span class="chip good">Fixed '+esc(monthShort(it.fixedIn))+'</span>':'')+
+      (it.st==='Fixed'&&it.fixedIn?'<span class="chip good">'+doneLabel(kd)+' '+esc(monthShort(it.fixedIn))+'</span>':'')+
       (it.link?'<button class="lk'+(inf.ok?'':' gone')+'" '+(inf.ok?'onclick="goLink(S.issues['+i+'].link)" title="Go to item"':'title="This item no longer exists"')+'><i class="ti ti-link"></i><span>'+esc(inf.label)+(inf.ok?'':' (removed)')+'</span></button>':
-        '<select class="lk" style="width:auto;border:1px dashed var(--cardb);background:transparent;color:var(--stone)" onchange="S.issues['+i+'].link=parseLink(this.value);if(S.issues['+i+'].link)S.issues['+i+'].link.label=linkInfo(S.issues['+i+'].link).label;touch();rIssues()">'+linkOptions('+ Link to…')+'</select>')+
+        '<select class="lk" style="width:auto!important;max-width:220px;border:1px dashed var(--cardb);background:transparent;color:var(--stone)" onchange="S.issues['+i+'].link=parseLink(this.value);if(S.issues['+i+'].link)S.issues['+i+'].link.label=linkInfo(S.issues['+i+'].link).label;touch();rIssues()">'+linkOptions('+ Link to…')+'</select>')+
       (it.link?'<button class="ibtn" title="Remove link" aria-label="Remove link" onclick="S.issues['+i+'].link=null;touch();rIssues()">×</button>':'')+'</div></td>'+
     '<td><select onchange="S.issues['+i+'].area=this.value;touch()">'+[...new Set([...AREAS,it.area])].map(a=>'<option'+(it.area===a?' selected':'')+'>'+esc(a)+'</option>').join('')+'</select></td>'+
     '<td><select onchange="S.issues['+i+'].pri=this.value;touch();rIssues()" style="'+(it.pri==='High'?'color:var(--bad);font-weight:600':'')+'">'+['High','Medium','Low'].map(a=>'<option'+(it.pri===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
     '<td><select onchange="S.issues['+i+'].owner=this.value;touch()">'+['Bookkeeper','Owner','Structure'].map(a=>'<option'+(it.owner===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
-    '<td><select onchange="setIssueStatus('+i+',this.value)" style="font-weight:600;color:'+(it.st==='Fixed'?'var(--good)':it.st==='In progress'?'var(--warn)':'var(--bad)')+'">'+['Open','In progress','Fixed'].map(a=>'<option'+(it.st===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
-    '<td><button class="ibtn" title="Delete issue" aria-label="Delete issue" onclick="if(confirm(\'Delete this issue?\')){S.issues.splice('+i+',1);touch();rIssues()}"><i class="ti ti-trash"></i></button></td></tr>';}).join('');
+    '<td><select onchange="setIssueStatus('+i+',this.value)" style="font-weight:600;color:'+(it.st==='Fixed'?'var(--good)':it.st==='In progress'?'var(--warn)':'var(--bad)')+'">'+['Open','In progress','Fixed'].map(a=>'<option value="'+a+'"'+(it.st===a?' selected':'')+'>'+(a==='Fixed'?doneLabel(kd):a)+'</option>').join('')+'</select></td>'+
+    '<td><button class="ibtn" title="Delete" aria-label="Delete" onclick="if(confirm(\'Delete this '+kd.toLowerCase()+'?\')){S.issues.splice('+i+',1);touch();rIssues()}"><i class="ti ti-trash"></i></button></td></tr>';}).join('');
   growAll('#is_tb textarea');updateCounts();
 }
 function setIssueStatus(i,v){const it=S.issues[i];it.st=v;it.fixedIn=v==='Fixed'?S.month:null;touch();rIssues();}
@@ -760,8 +808,8 @@ function setIssueStatus(i,v){const it=S.issues[i];it.st=v;it.fixedIn=v==='Fixed'
 // ================= summary + email =================
 function stats(){
   const done=ALLSTEPS.filter(s=>(S.steps[s.id]||{}).st).length;
-  const open=S.issues.filter(i=>i.st!=='Fixed');
-  return {done,total:ALLSTEPS.length,open:open.length,high:open.filter(i=>i.pri==='High').length,
+  const openAll=S.issues.filter(i=>i.st!=='Fixed');const open=openAll.filter(i=>(i.kind||'Issue')==='Issue');
+  return {done,total:ALLSTEPS.length,open:open.length,questions:openAll.filter(i=>i.kind==='Question').length,suggestions:openAll.filter(i=>i.kind==='Suggestion').length,high:open.filter(i=>i.pri==='High').length,
     prior:open.filter(i=>i.from&&i.from<S.month).length,fixedNow:S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month).length,
     accBehind:S.accounts.filter(a=>acctFlags(a).some(f=>/behind|missing/.test(f.t))).length,feedOff:S.accounts.filter(a=>a.feed==='Disconnected').length,
     out:S.outstanding.filter(o=>o.st!=='Cleared').length};
@@ -769,7 +817,7 @@ function stats(){
 function rSummary(){
   const s=stats();
   const tile=(l,v,c)=>'<div class="stat"><div class="l">'+l+'</div><div class="v '+(c||'')+'">'+v+'</div></div>';
-  $('stats').innerHTML=tile('Checklist',s.done+'/'+s.total,s.done===s.total?'good':'')+tile('Open issues',s.open,s.open?'bad':'good')+tile('High priority',s.high,s.high?'bad':'')+
+  $('stats').innerHTML=tile('Checklist',s.done+'/'+s.total,s.done===s.total?'good':'')+tile('Open issues',s.open,s.open?'bad':'good')+tile('High priority',s.high,s.high?'bad':'')+tile('Open questions',s.questions,s.questions?'warn':'')+
     tile('Open from earlier months',s.prior,s.prior?'warn':'')+tile('Fixed this month',s.fixedNow,s.fixedNow?'good':'')+tile('Accounts behind',s.accBehind,s.accBehind?'warn':'good')+tile('Feeds disconnected',s.feedOff,s.feedOff?'bad':'good')+tile('Transactions to review',s.out,s.out?'warn':'');
   $('em_to').value=S.emailTo||'';$('int_notes').value=S.notes||'';grow($('int_notes'));
   if(!S.emailEdited||!S.emailBody)buildEmail(false);else{ $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;}
@@ -780,18 +828,23 @@ function buildEmail(force){
   const who=(S.bookkeeper||'').trim().split(' ')[0];const cl=S.client||'the client';const mon=monthLabel(S.month)||'this month';
   const L=[];
   L.push('Hi'+(who?' '+who:'')+',','', 'I reviewed '+cl+"'s QuickBooks for "+mon+'. Below is what needs your attention.');
-  const bk=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
+  const one=i=>i.desc.trim().replace(/\s*\n\s*/g,' ');
+  const bk=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&(i.kind||'Issue')==='Issue').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
   if(bk.length){L.push('','Needs your action ('+bk.length+'):');bk.forEach((i,n)=>L.push((n+1)+'. '+i.desc.trim().replace(/\s*\n\s*/g,' ')+(i.pri==='High'?' [High priority]':'')+(i.from&&i.from<S.month?' [Open since '+monthShort(i.from)+']':'')));}
   const accLines=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')&&!issuesFor('acct',a.id).some(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper')).map(a=>'- '+acctIssueText(a));
   if(accLines.length){L.push('','Accounts:');L.push(...accLines);}
+  const qs=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&i.kind==='Question').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
+  if(qs.length){L.push('','Questions ('+qs.length+'):');qs.forEach((i,n)=>L.push((n+1)+'. '+one(i)+(i.from&&i.from<S.month?' [Asked in '+monthShort(i.from)+']':'')));}
   const out=S.outstanding.filter(o=>o.st!=='Cleared');
   if(out.length){L.push('','Transactions to review ('+out.length+'). Please tell me what each one is, or clear it if it is resolved:');
     out.forEach(o=>L.push('- '+[o.acct,o.date?fmtDate(o.date):'',o.payee,o.amount!=null?money(o.amount):''].filter(Boolean).join(' · ')+(outAge(o)!=null?' ('+outAge(o)+' days)':'')+(o.note?'. '+o.note:'')));}
+  const sg=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&i.kind==='Suggestion');
+  if(sg.length){L.push('','Suggestions:');sg.forEach(i=>L.push('- '+one(i)));}
   const own=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Owner');
-  if(own.length){L.push('','Waiting on the owner (for your information):');own.forEach(i=>L.push('- '+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
+  if(own.length){L.push('','Waiting on the owner (for your information):');own.forEach(i=>L.push('- '+((i.kind||'Issue')!=='Issue'?i.kind+': ':'')+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
   const fixed=S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month&&i.from&&i.from<S.month);
   if(fixed.length){L.push('','Resolved since last review, thank you:');fixed.forEach(i=>L.push('- '+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
-  if(!bk.length&&!accLines.length&&!out.length)L.push('','Everything looks good this month. Nothing needs action.');
+  if(!bk.length&&!qs.length&&!sg.length&&!accLines.length&&!out.length)L.push('','Everything looks good this month. Nothing needs action.');
   L.push('','Please reply with updates as you go. I will check these at the next review.','','Thank you,',S.reviewer||'');
   S.emailSubject=cl+' · QuickBooks review for '+mon;S.emailBody=L.join('\n');S.emailEdited=false;
   $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;
@@ -814,8 +867,8 @@ function printSummary(){
   const tbl=(head,rows)=>rows.length?'<table><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</table>':'<p>None.</p>';
   const logo=document.querySelector('.logo').src;
   $('print').innerHTML='<img src="'+logo+'" alt="Structure" style="height:22px"><h1>'+esc(cl)+' · Monthly QB review</h1><div style="color:#6B6560">'+esc(mon)+(S.reviewer?' · Reviewed by '+esc(S.reviewer):'')+'</div>'+
-    '<h2>At a glance</h2>'+tbl(['Checklist','Open issues','High priority','Open from earlier','Fixed this month','Accounts behind','Transactions to review'],[[s.done+'/'+s.total,s.open,s.high,s.prior,s.fixedNow,s.accBehind,s.out]])+
-    '<h2>Open issues</h2>'+tbl(['Issue','Area','Priority','Owner','Status','Since'],S.issues.filter(i=>i.st!=='Fixed').sort((a,b)=>PRI[a.pri]-PRI[b.pri]).map(i=>[i.desc,i.area,i.pri,i.owner,i.st,monthShort(i.from)]))+
+    '<h2>At a glance</h2>'+tbl(['Checklist','Open issues','High priority','Open questions','Open from earlier','Fixed this month','Accounts behind','Transactions to review'],[[s.done+'/'+s.total,s.open,s.high,s.questions,s.prior,s.fixedNow,s.accBehind,s.out]])+
+    '<h2>Open issues, questions and suggestions</h2>'+tbl(['Type','Item','Area','Priority','Owner','Status','Since'],S.issues.filter(i=>i.st!=='Fixed').sort((a,b)=>PRI[a.pri]-PRI[b.pri]).map(i=>[i.kind||'Issue',i.desc,i.area,i.pri,i.owner,i.st,monthShort(i.from)]))+
     '<h2>Accounts</h2>'+tbl(['Account','Feed','Last reconciled','For review','Status'],S.accounts.map(a=>[a.name,a.feed,fmtDate(a.lastRec),a.forReview||0,acctFlags(a).map(f=>f.t).join(', ')]))+
     '<h2>Transactions to review</h2>'+tbl(['Account','Date','Payee','Amount','Age','Note'],S.outstanding.filter(o=>o.st!=='Cleared').map(o=>[o.acct,fmtDate(o.date),o.payee,money(o.amount),outAge(o)!=null?outAge(o)+' days':'',o.note]))+
     '<h2>Checklist</h2>'+tbl(['Step','Status','Note'],ALLSTEPS.map(st=>{const v=S.steps[st.id]||{};return [st.l,{ok:'OK',issue:'Issue',na:'N/A'}[v.st]||'Not done',v.note||''];}))+
@@ -858,8 +911,8 @@ function exportExcel(){
   if(typeof XLSX==='undefined'){alert('The Excel library did not load. Check your internet connection and refresh.');return;}
   const wb=XLSX.utils.book_new();const s=stats();const hdr=[[(S.client||'Client')+' · Monthly QB review · '+monthLabel(S.month)],[]];
   const add=(name,rows,w)=>{const ws=XLSX.utils.aoa_to_sheet(hdr.concat(rows));if(w)ws['!cols']=w.map(x=>({wch:x}));XLSX.utils.book_append_sheet(wb,ws,name);};
-  add('Summary',[['Item','Value'],['Reviewed by',S.reviewer],['Bookkeeper',S.bookkeeper],['Checklist complete',s.done+' / '+s.total],['Open issues',s.open],['High priority',s.high],['Open from earlier months',s.prior],['Fixed this month',s.fixedNow],['Accounts behind',s.accBehind],['Feeds disconnected',s.feedOff],['Transactions to review',s.out]],[30,30]);
-  add('Issues',[['Issue','Area','Priority','Owner','Status','Opened','Fixed','Linked to']].concat(S.issues.map(i=>[i.desc,i.area,i.pri,i.owner,i.st,monthShort(i.from),i.fixedIn?monthShort(i.fixedIn):'',i.link?linkInfo(i.link).label:''])),[60,16,10,12,12,10,10,40]);
+  add('Summary',[['Item','Value'],['Reviewed by',S.reviewer],['Bookkeeper',S.bookkeeper],['Checklist complete',s.done+' / '+s.total],['Open issues',s.open],['High priority',s.high],['Open questions',s.questions],['Open suggestions',s.suggestions],['Open from earlier months',s.prior],['Fixed this month',s.fixedNow],['Accounts behind',s.accBehind],['Feeds disconnected',s.feedOff],['Transactions to review',s.out]],[30,30]);
+  add('Issues & questions',[['Type','Item','Area','Priority','Owner','Status','Opened','Closed','Linked to']].concat(S.issues.map(i=>[i.kind||'Issue',i.desc,i.area,i.pri,i.owner,i.st==='Fixed'?doneLabel(i.kind||'Issue'):i.st,monthShort(i.from),i.fixedIn?monthShort(i.fixedIn):'',i.link?linkInfo(i.link).label:''])),[11,60,16,10,12,12,10,10,40]);
   add('Accounts',[['Account','Type','Feed','Last reconciled','For review','Status','Notes']].concat(S.accounts.map(a=>[a.name,a.type,a.feed,a.lastRec,a.forReview||0,acctFlags(a).map(f=>f.t).join(', '),a.note])),[30,12,14,14,10,30,40]);
   add('Transactions',[['Account','Date','Payee / description','Amount','Age (days)','Status','Note']].concat(S.outstanding.map(o=>[o.acct,o.date,o.payee,o.amount,outAge(o),o.st||'Open',o.note])),[24,12,36,12,10,10,40]);
   add('Checklist',[['Section','Step','Status','Note']].concat(ALLSTEPS.map(st=>{const v=S.steps[st.id]||{};return [st.sec.title,st.l,{ok:'OK',issue:'Issue',na:'N/A'}[v.st]||'Not done',v.note||''];})),[28,56,10,50]);
