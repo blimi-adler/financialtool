@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly QB Review · Structure</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-5 -5 29 32'%3E%3Crect x='-5' y='-5' width='29' height='32' rx='7' fill='%23F6F1E8'/%3E%3Crect x='0' y='0' width='19' height='5' rx='1.4' fill='%23292D30'/%3E%3Crect x='0' y='8.5' width='15' height='5' rx='1.4' fill='%23A33A32'/%3E%3Crect x='0' y='17' width='19' height='5' rx='1.4' fill='%23292D30'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* Structure brand: Cream leads, Ink carries the words, Red once per screen */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#292D30;--red:#A33A32;--cream:#F6F1E8;--white:#FFFFFF;--sand:#ECE3D4;--line:#E3D9CA;--cardb:#DDD5C6;--stone:#6B6560;--soft:#FAF7F2;
+  --good:#2E6B4E;--good-bg:#E6EFE7;--warn:#8F5E17;--warn-bg:#F5EAD6;--bad:#A33A32;--bad-bg:#F4E4E1;
+  --ease:cubic-bezier(.22,.75,.22,1);--shadow:0 24px 48px -32px rgba(41,45,48,.25);
+  --font:'DM Sans',Arial,sans-serif;
+}
+body{background:var(--cream);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select,textarea{font-family:inherit;color:inherit}
+.wrap{max-width:1184px;margin:0 auto;padding:0 0 64px}
+
+/* header */
+.hdr{padding:24px 24px 16px;border-bottom:1px solid var(--line)}
+.hdr-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.logo{height:30px;width:auto;display:block}
+.app-title{font-size:17px;font-weight:500;letter-spacing:-.01em;border-left:1px solid var(--cardb);padding-left:16px}
+.hdr-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.meta{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}
+.meta label{display:block;font-size:12px;font-weight:500;color:var(--stone);margin-bottom:4px}
+.meta input{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--white);padding:8px 12px;font-size:14px}
+.meta input:focus{outline:none;border-color:var(--ink)}
+#m_client{font-size:16px;font-weight:600}
+.prog{display:flex;align-items:center;gap:12px;margin-top:16px;font-size:12px;color:var(--stone)}
+.pbar{flex:1;height:4px;background:var(--sand);border-radius:999px;overflow:hidden}
+.pfill{height:100%;background:var(--ink);border-radius:999px;width:0;transition:width .5s var(--ease)}
+
+/* tabs */
+.tabs{display:flex;gap:2px;overflow-x:auto;padding:0 16px;border-bottom:1px solid var(--line);background:var(--cream);position:sticky;top:0;z-index:50}
+.tab{border:none;background:none;padding:12px 14px;font-size:13px;font-weight:500;color:var(--stone);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s var(--ease)}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.tab .cnt{display:inline-block;min-width:18px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--sand);color:var(--ink);font-size:11px;font-weight:600;text-align:center}
+.content{padding:24px}
+.pane{display:none}.pane.on{display:block}
+
+/* type + cards */
+h2{font-size:18px;font-weight:600;letter-spacing:-.02em;margin:0 0 4px}
+.sub{font-size:13px;color:var(--stone);margin-bottom:16px}
+.card{background:var(--white);border:1px solid var(--cardb);border-radius:18px;box-shadow:var(--shadow);padding:20px 24px;margin-bottom:16px}
+.card-h{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.card-h h3{font-size:16px;font-weight:600;letter-spacing:-.015em}
+.card-h .sp{flex:1}
+.muted{color:var(--stone)}
+.small{font-size:12px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cardb);background:var(--white);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:border-color .2s var(--ease),background .2s var(--ease)}
+.btn:hover{border-color:var(--ink)}
+.btn.ink{background:var(--ink);border-color:var(--ink);color:var(--cream)}
+.btn.ink:hover{background:#3a3f43}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff;border-radius:12px}
+.btn.red:hover{background:#8E322B}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.ghost{border-style:dashed;color:var(--stone);background:transparent;font-weight:500}
+.btn.ghost:hover{color:var(--ink)}
+.ibtn{border:none;background:none;cursor:pointer;color:var(--stone);font-size:15px;padding:4px;border-radius:8px;line-height:1}
+.ibtn:hover{color:var(--ink);background:var(--sand)}
+.linkbtn{border:none;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px;padding:0}
+
+/* checklist */
+.sec-prog{font-size:12px;font-weight:600;background:var(--sand);border-radius:999px;padding:2px 10px}
+.step{display:grid;grid-template-columns:minmax(0,1.6fr) auto minmax(0,1.2fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:none}
+.step-l{font-size:14px;font-weight:500}
+.step-h{font-size:12px;color:var(--stone);margin-top:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--soft)}
+.seg button{border:none;background:none;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--stone)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.ok.on{background:var(--good-bg);color:var(--good);font-weight:600}
+.seg button.issue.on{background:var(--bad-bg);color:var(--bad);font-weight:600}
+.seg button.na.on{background:var(--sand);color:var(--ink);font-weight:600}
+.note{width:100%;min-height:34px;resize:none;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:6px 10px;font-size:13px;line-height:1.45}
+.note:focus{outline:none;border-color:var(--ink);background:#fff}
+
+/* tables */
+.tw{overflow-x:auto}
+.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt th{text-align:left;font-size:12px;font-weight:600;color:var(--stone);padding:6px 8px;border-bottom:1px solid var(--cardb);white-space:nowrap}
+.dt td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.dt tr:last-child td{border-bottom:none}
+.dt td input,.dt td select,.dt td textarea{width:100%;min-width:0;border:1px solid transparent;border-radius:8px;background:transparent;padding:5px 7px;font-size:13px}
+.dt td input:hover,.dt td select:hover,.dt td textarea:hover{border-color:var(--line);background:#fff}
+.dt td input:focus,.dt td select:focus,.dt td textarea:focus{outline:none;border-color:var(--ink);background:#fff}
+.dt td textarea{resize:none;overflow:hidden;line-height:1.45;display:block}
+.dt .num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--stone);font-size:13px;padding:20px 8px}
+
+/* chips + badges */
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.chip.good{background:var(--good-bg);color:var(--good)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.neutral{background:var(--sand);color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.lk{display:inline-flex;align-items:center;gap:4px;max-width:100%;font-size:12px;font-weight:500;background:var(--sand);border:none;border-radius:999px;padding:2px 10px;cursor:pointer;margin-top:4px}
+.lk:hover{background:var(--cardb)}
+.lk.gone{background:transparent;border:1px dashed var(--cardb);color:var(--stone);cursor:default}
+.lk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px}
+.ib{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;background:var(--sand);border:none;border-radius:999px;padding:2px 9px;cursor:pointer;white-space:nowrap}
+.ib.done{background:transparent;border:1px solid var(--cardb);color:var(--stone)}
+
+/* forms */
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row select,.row input{border:1px solid var(--line);border-radius:10px;background:var(--white);padding:7px 10px;font-size:13px}
+.row select:focus,.row input:focus{outline:none;border-color:var(--ink)}
+.bigtext{display:block;width:100%;min-height:64px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:var(--white);padding:10px 12px;font-size:14px;line-height:1.5;margin-bottom:8px}
+.bigtext:focus{outline:none;border-color:var(--ink)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:16px}
+.stat{background:var(--white);border:1px solid var(--cardb);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.stat .l{font-size:12px;font-weight:500;color:var(--stone)}
+.stat .v{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.stat .v.bad{color:var(--bad)}.stat .v.good{color:var(--good)}.stat .v.warn{color:var(--warn)}
+
+/* reports */
+.up{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed var(--cardb);border-radius:18px;background:var(--white);padding:22px 16px;text-align:center;cursor:pointer;margin-bottom:16px}
+.up:hover,.up.drag{border-color:var(--ink);background:var(--soft)}
+.up i{font-size:24px;color:var(--stone)}
+.up b{font-weight:600}
+.up span{font-size:12px;color:var(--stone)}
+.rpcard{padding:0;overflow:hidden}
+.rpbar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--soft);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.rpbar .t{font-weight:600;letter-spacing:-.01em}
+.rpbar .sp{flex:1}
+.rpbody{padding:16px}
+.rpcard.min .rpbody{display:none}
+.rpcard.min .rpbar{border-bottom:none}
+.finds{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.finds h4{font-size:13px;font-weight:600;margin-bottom:6px}
+.find{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:13px}
+.find:first-of-type{border-top:none}
+.find .tx{flex:1;min-width:0}
+.rp{width:100%;border-collapse:collapse;font-size:12.5px}
+.rp th{font-size:11.5px;font-weight:600;color:var(--stone);text-align:right;padding:5px 8px;border-bottom:1px solid var(--ink);white-space:nowrap}
+.rp th:first-child{text-align:left;position:sticky;left:0;background:#fff}
+.rp td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp td:first-child{text-align:left;white-space:normal;position:sticky;left:0;background:#fff;min-width:200px}
+.rp tr.h td{font-weight:600;padding-top:10px;border-bottom:none}
+.rp tr.tot td{font-weight:600;border-top:1px solid var(--cardb)}
+.rp tr.key td{font-weight:600;background:var(--soft)!important;border-top:1px solid var(--ink)}
+.rp td.neg{color:var(--bad)}
+.rp td.flag{background:var(--bad-bg)!important;color:var(--bad);font-weight:600}
+.rp td.spike{background:var(--warn-bg)!important;color:var(--warn);font-weight:600}
+.rp .addi{visibility:hidden;margin-left:4px}
+.rp tr:hover .addi{visibility:visible}
+
+/* flash + toast */
+@keyframes fl{0%,40%{box-shadow:0 0 0 3px var(--ink)}100%{box-shadow:0 0 0 0 transparent}}
+.flash{animation:fl 1.8s var(--ease) 1;border-radius:10px}
+tr.flash td{background:var(--sand)!important}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);max-width:min(560px,calc(100vw - 32px));background:var(--ink);color:var(--cream);padding:10px 14px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 12px 32px -12px rgba(0,0,0,.4)}
+.toast button{margin-left:8px;background:var(--cream);color:var(--ink);border:none;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.toast .x{background:transparent;color:var(--cardb)}
+
+.foot{text-align:center;font-size:13px;color:var(--stone);padding-top:16px}
+.foot b{font-weight:500;color:var(--ink)}
+#print{display:none}
+
+@media (max-width:760px){
+  .meta{grid-template-columns:1fr 1fr}
+  .step{grid-template-columns:1fr;gap:8px}
+  .content{padding:16px 20px}.hdr{padding:20px 20px 14px}
+  .card{border-radius:16px;padding:16px}
+  .hdr-actions{margin-left:0}
+}
+@media print{
+  body.printing .wrap,body.printing .toast{display:none!important}
+  body.printing{background:#fff}
+  body.printing #print{display:block;padding:8px 4px;font-size:12px}
+  #print h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:8px 0 2px}
+  #print h2{font-size:15px;margin:18px 0 6px}
+  #print table{width:100%;border-collapse:collapse}
+  #print td,#print th{text-align:left;padding:4px 6px;border-bottom:1px solid #E3D9CA;vertical-align:top}
+  #print tr{page-break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <div class="hdr-top">
+    <img class="logo" src="data:image/png;base64,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" alt="Structure">
+    <span class="app-title">Monthly QB Review</span>
+    <div class="hdr-actions">
+      <button class="btn sm" onclick="saveFile()"><i class="ti ti-device-floppy"></i> Save</button>
+      <label class="btn sm"><i class="ti ti-folder-open"></i> Load<input type="file" accept=".json" onchange="loadFile(event)" style="display:none"></label>
+      <button class="btn sm" onclick="startNextMonth()" title="Start next month's review and carry open items forward"><i class="ti ti-calendar-plus"></i> Next month</button>
+      <button class="btn sm" onclick="newReview()" title="Blank review for a different client"><i class="ti ti-file-plus"></i> New</button>
+      <button class="btn red sm" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Export to Excel</button>
+    </div>
+  </div>
+  <div class="meta">
+    <div><label for="m_client">Client</label><input id="m_client" placeholder="Client name" oninput="S.client=this.value;touch()"></div>
+    <div><label for="m_month">Month reviewed</label><input id="m_month" type="month" oninput="S.month=this.value;touch();renderAll()"></div>
+    <div><label for="m_rev">Reviewed by</label><input id="m_rev" placeholder="Your name" oninput="S.reviewer=this.value;touch()"></div>
+    <div><label for="m_bk">Bookkeeper</label><input id="m_bk" placeholder="Bookkeeper name" oninput="S.bookkeeper=this.value;touch()"></div>
+  </div>
+  <div class="prog"><span id="prog_t">0 of 0 steps</span><div class="pbar"><div class="pfill" id="prog_f"></div></div></div>
+</div>
+
+<div class="tabs" role="tablist">
+  <button class="tab on" data-t="checklist" onclick="T('checklist')">Checklist</button>
+  <button class="tab" data-t="accounts" onclick="T('accounts')">Accounts &amp; reconciliations<span class="cnt" id="c_acc"></span></button>
+  <button class="tab" data-t="reports" onclick="T('reports')">QB Reports<span class="cnt" id="c_rp"></span></button>
+  <button class="tab" data-t="issues" onclick="T('issues')">Issues<span class="cnt" id="c_is"></span></button>
+  <button class="tab" data-t="summary" onclick="T('summary')">Summary &amp; email</button>
+</div>
+
+<div class="content">
+
+<!-- CHECKLIST -->
+<div class="pane on" id="p_checklist">
+  <h2>Monthly checklist</h2>
+  <p class="sub">Mark each step OK, Issue or N/A. Marking Issue adds it to the Issues list for the bookkeeper.</p>
+  <div id="cl"></div>
+</div>
+
+<!-- ACCOUNTS -->
+<div class="pane" id="p_accounts">
+  <h2>Accounts and reconciliations</h2>
+  <p class="sub" id="acc_sub"></p>
+  <div class="card">
+    <div class="card-h"><h3>Bank and credit card accounts</h3><span class="sp"></span>
+      <button class="btn sm" onclick="flagAccounts()"><i class="ti ti-flag"></i> Add issues for flagged accounts</button>
+      <button class="btn ink sm" onclick="addAccount()"><i class="ti ti-plus"></i> Add account</button></div>
+    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:22%">Account</th><th style="width:11%">Type</th><th style="width:13%">Bank feed</th><th style="width:13%">Last reconciled</th><th style="width:8%">For review</th><th>Notes</th><th style="width:16%">Status</th><th style="width:60px"></th></tr></thead><tbody id="acc_tb"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>Outstanding transactions to review</h3><span class="muted small" id="out_sum"></span><span class="sp"></span>
+      <button class="btn sm" onclick="sortOut()"><i class="ti ti-sort-descending"></i> Oldest first</button>
+      <button class="btn ink sm" onclick="addOut()"><i class="ti ti-plus"></i> Add transaction</button></div>
+    <p class="muted small" style="margin:-4px 0 8px">Old uncleared items from reconciliations, unmatched deposits, missing receipts. These go into the bookkeeper email as a list.</p>
+    <div class="tw"><table class="dt" style="min-width:860px"><thead><tr><th style="width:17%">Account</th><th style="width:12%">Date</th><th>Payee / description</th><th style="width:11%" class="num">Amount</th><th style="width:20%">Note</th><th style="width:8%">Age</th><th style="width:10%">Status</th><th style="width:30px"></th></tr></thead><tbody id="out_tb"></tbody></table></div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div class="pane" id="p_reports">
+  <h2>QB Reports</h2>
+  <p class="sub">Upload exports from QuickBooks. The tool flags negative balances, unclassified amounts and unusual monthly amounts. Turn any flag into an issue with 1 click.</p>
+  <label class="up" id="up">
+    <i class="ti ti-file-upload"></i><b>Upload QuickBooks reports</b>
+    <span>Click or drop files. In QuickBooks: open the report, then Export to Excel (.xlsx) or CSV.<br>Good ones to use: P&amp;L by Month, P&amp;L by Class, Balance Sheet, AR and AP Aging.</span>
+    <input type="file" id="rp_file" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="rpFiles(this.files);this.value=''">
+  </label>
+  <div id="rp_list"></div>
+</div>
+
+<!-- ISSUES -->
+<div class="pane" id="p_issues">
+  <h2>Issues</h2>
+  <p class="sub">Everything the bookkeeper (or owner) needs to fix. Open items carry forward when you start next month.</p>
+  <div class="card">
+    <textarea id="is_desc" class="bigtext" rows="2" placeholder="Describe the issue (Enter for a new line, Ctrl+Enter to add)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();addIssueForm();}" oninput="grow(this)"></textarea>
+    <div class="row">
+      <select id="is_area" aria-label="Area"></select>
+      <select id="is_pri" aria-label="Priority"><option>High</option><option selected>Medium</option><option>Low</option></select>
+      <select id="is_owner" aria-label="Owner"><option>Bookkeeper</option><option>Owner</option><option>Structure</option></select>
+      <select id="is_link" aria-label="Link to" style="max-width:220px"></select>
+      <button class="btn ink" onclick="addIssueForm()"><i class="ti ti-plus"></i> Add issue</button>
+    </div>
+  </div>
+  <div class="row" style="margin:0 0 8px">
+    <select id="f_st" onchange="rIssues()"><option value="open">Not fixed</option><option value="">All statuses</option><option>Open</option><option>In progress</option><option>Fixed</option></select>
+    <select id="f_owner" onchange="rIssues()"><option value="">All owners</option><option>Bookkeeper</option><option>Owner</option><option>Structure</option></select>
+    <select id="f_from" onchange="rIssues()"><option value="">Any month</option><option value="prior">From earlier months</option><option value="this">New this month</option></select>
+    <span class="muted small" id="is_count"></span>
+  </div>
+  <div class="card" style="padding:8px 16px">
+    <div class="tw"><table class="dt" style="min-width:760px"><thead><tr><th>Issue</th><th style="width:13%">Area</th><th style="width:10%">Priority</th><th style="width:12%">Owner</th><th style="width:12%">Status</th><th style="width:40px"></th></tr></thead><tbody id="is_tb"></tbody></table></div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="pane" id="p_summary">
+  <h2>Summary and bookkeeper email</h2>
+  <p class="sub">Built from the checklist, accounts, outstanding transactions and issues. Edit anything before you send.</p>
+  <div class="stats" id="stats"></div>
+  <div class="card">
+    <div class="card-h"><h3>Email to the bookkeeper</h3><span class="sp"></span>
+      <button class="btn sm" onclick="buildEmail(true)"><i class="ti ti-refresh"></i> Rebuild from review</button>
+      <button class="btn sm" onclick="printSummary()"><i class="ti ti-printer"></i> Print / PDF</button>
+      <button class="btn sm" onclick="openMail()"><i class="ti ti-mail"></i> Open in email</button>
+      <button class="btn ink sm" onclick="copyEmail()"><i class="ti ti-copy"></i> Copy email</button></div>
+    <div class="row" style="margin-bottom:8px"><input id="em_to" placeholder="Bookkeeper email (optional)" style="flex:1;min-width:200px" oninput="S.emailTo=this.value;touch()"></div>
+    <input id="em_subj" class="bigtext" style="min-height:0" oninput="S.emailSubject=this.value;S.emailEdited=true;touch()">
+    <textarea id="em_body" class="bigtext" style="min-height:360px;font-size:13.5px" oninput="S.emailBody=this.value;S.emailEdited=true;touch()"></textarea>
+    <p class="muted small" id="em_note"></p>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>Review notes (internal)</h3></div>
+    <textarea class="bigtext" id="int_notes" placeholder="Notes for the Structure team. Not included in the email." oninput="S.notes=this.value;touch();grow(this)"></textarea>
+  </div>
+</div>
+
+<div class="foot"><b>Growth needs structure.</b> We build it.</div>
+</div><!-- content -->
+</div><!-- wrap -->
+<div id="print"></div>
+
+<script>
+// ================= helpers =================
+const $=id=>document.getElementById(id);
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function num(v){let t=String(v==null?'':v).replace(/[$,\s]/g,'');if(!t)return null;let neg=false;if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1);}const n=parseFloat(t);return isNaN(n)?null:(neg?-n:n);}
+function money(n){if(n==null||isNaN(n))return '';const a=Math.abs(n);return (n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function money0(n){if(n==null||isNaN(n))return '';const a=Math.round(Math.abs(n));return (n<0?'(':'')+'$'+a.toLocaleString('en-US')+(n<0?')':'');}
+function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function soon(f){setTimeout(f,0);}
+function grow(el){if(!el||!el.offsetParent)return;el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+function growAll(sel){document.querySelectorAll(sel).forEach(grow);}
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthLabel(m){if(!m||!/^\d{4}-\d{2}$/.test(m))return '';const [y,mo]=m.split('-');return MONTHS[+mo-1]+' '+y;}
+function monthShort(m){const l=monthLabel(m);return l?l.slice(0,3)+' '+l.split(' ')[1]:'';}
+function monthEndISO(m){const [y,mo]=m.split('-').map(Number);const d=new Date(Date.UTC(y,mo,0));return d.toISOString().slice(0,10);}
+function addMonths(m,k){const [y,mo]=m.split('-').map(Number);const d=new Date(Date.UTC(y,mo-1+k,1));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');}
+function fmtDate(d){if(!d)return '';const x=new Date(d+'T00:00:00');if(isNaN(x))return d;return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function defaultMonth(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function daysBetween(a,b){return Math.floor((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000);}
+function toast(html,ms){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.innerHTML=html+' <button class="x" onclick="this.parentNode.remove()" aria-label="Close">✕</button>';document.body.appendChild(t);setTimeout(()=>t.remove(),ms||6000);}
+function flash(el){if(!el)return;el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2000);}
+
+// ================= checklist definition =================
+const AREAS=['Banking','Reconciliation','P&L','Classes','Balance sheet','AR','AP','Payroll','Other'];
+const SECTIONS=[
+ {id:'bank',title:'Bank feeds and transactions',area:'Banking',steps:[
+  {id:'feeds',p:'Bank or credit card feed needs to be reconnected',l:'All bank and credit card feeds are connected',h:'Banking page: look for accounts that need an update or show an error. Track each account on the Accounts tab.',go:'accounts'},
+  {id:'forreview',p:'Old transactions are waiting in For review',l:'Nothing old is waiting in For review',h:'Note how many transactions are waiting per account on the Accounts tab.',go:'accounts'},
+  {id:'matching',p:'Transactions matched or categorized incorrectly',l:'Transactions are matched and categorized correctly',h:'Spot check 10 to 15 recent transactions. Watch for duplicates, transfers booked as income and wrong payees.'},
+  {id:'uncat',p:'Uncategorized income, expense or Ask My Accountant has a balance',l:'No uncategorized income, expense or Ask My Accountant',h:'These accounts should be zero on the P&L and balance sheet.'}]},
+ {id:'rec',title:'Reconciliations',area:'Reconciliation',steps:[
+  {id:'lastrec',p:'Accounts are not reconciled through the month reviewed',l:'Every account is reconciled through the month reviewed',h:'Enter the last reconciled date per account on the Accounts tab. Missed months are flagged for you.',go:'accounts'},
+  {id:'uncleared',p:'Old uncleared transactions in reconciliations',l:'No old uncleared transactions',h:'Look for uncleared items older than 60 days. List them on the Accounts tab to review with the bookkeeper.',go:'accounts'},
+  {id:'undep',p:'Undeposited funds has old items',l:'Undeposited funds has no old items',h:'Check the Undeposited Funds register for items older than the month reviewed.'}]},
+ {id:'pl',title:'Profit and loss',area:'P&L',steps:[
+  {id:'plmonth',p:'P&L by month has unusual amounts',l:'P&L by month looks normal',h:'Look for spikes, missing or doubled recurring charges, and items in the wrong account. Upload it on QB Reports to flag spikes.',go:'reports'},
+  {id:'plclass',p:'P&L by class has unclassified or misclassified amounts',l:'P&L by class: nothing unclassified or in the wrong class',h:'Mark N/A if the client does not use classes. Upload it on QB Reports to flag unclassified amounts.',go:'reports'},
+  {id:'cogs',p:'COGS and expenses are miscoded',l:'COGS and expenses are coded correctly',h:'Job costs in COGS, overhead in expenses.'},
+  {id:'plneg',p:'Negative lines on the P&L',l:'No negative lines on the P&L',h:'Negative income or expense usually means a miscoded refund or transfer.',go:'reports'}]},
+ {id:'bs',title:'Balance sheet',area:'Balance sheet',steps:[
+  {id:'bsneg',p:'Negative balances on the balance sheet',l:'No negative balances on the balance sheet',h:'Upload the balance sheet on QB Reports to flag negatives.',go:'reports'},
+  {id:'ar',p:'AR aging has old or negative balances',l:'AR aging: nothing old, no negative customer balances',h:'Flag anything over 90 days or below zero.',area:'AR'},
+  {id:'ap',p:'AP aging has old or negative balances',l:'AP aging: nothing old, no negative vendor balances',h:'Flag anything over 90 days or below zero.',area:'AP'},
+  {id:'payroll',p:'Payroll liabilities are not clearing',l:'Payroll liabilities clear each month',h:'Payroll liability accounts should return to zero after payments.',area:'Payroll'},
+  {id:'loans',p:'Loan or credit card balances do not match statements',l:'Loan and credit card balances match statements',h:'Compare to the latest statements.'},
+  {id:'obe',p:'Opening balance equity has a balance',l:'Opening balance equity is zero',h:'Anything here needs to be moved to the right account.'}]},
+ {id:'fu',title:'Follow up',area:'Other',steps:[
+  {id:'prior',p:'Open issues from the last review need follow up',l:'Reviewed open issues from the last review',h:'',go:'issues'},
+  {id:'sent',p:'Review email not sent yet',l:'Sent the review email to the bookkeeper',h:'The Summary & email tab writes it for you.',go:'summary'}]},
+];
+const ALLSTEPS=[];SECTIONS.forEach(s=>s.steps.forEach(st=>ALLSTEPS.push(Object.assign({sec:s},st))));
+const stepById=id=>ALLSTEPS.find(s=>s.id===id);
+
+// ================= state =================
+function blank(){return {v:1,client:'',month:defaultMonth(),reviewer:'',bookkeeper:'',emailTo:'',steps:{},accounts:[],outstanding:[],issues:[],reports:[],notes:'',emailSubject:'',emailBody:'',emailEdited:false};}
+let S=blank();
+const DRAFT='structure_monthly_qb_review_draft';
+let saveT=null;
+function touch(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(DRAFT,JSON.stringify(S));}catch(e){}},400);updateProgress();updateCounts();}
+
+// ================= tabs =================
+function T(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p_'+t));
+  if(t==='checklist')rChecklist();
+  if(t==='accounts'){rAccounts();rOut();}
+  if(t==='reports')rReports();
+  if(t==='issues')rIssues();
+  if(t==='summary')rSummary();
+}
+function renderAll(){
+  $('m_client').value=S.client||'';$('m_month').value=S.month||'';$('m_rev').value=S.reviewer||'';$('m_bk').value=S.bookkeeper||'';
+  rChecklist();rAccounts();rOut();rReports();rIssues();rSummary();updateProgress();updateCounts();
+}
+function updateProgress(){
+  const done=ALLSTEPS.filter(s=>(S.steps[s.id]||{}).st).length;
+  $('prog_t').textContent=done+' of '+ALLSTEPS.length+' steps'+(S.client?' · '+S.client:'')+(S.month?' · '+monthLabel(S.month):'');
+  $('prog_f').style.width=(done/ALLSTEPS.length*100)+'%';
+}
+function updateCounts(){
+  const open=S.issues.filter(i=>i.st!=='Fixed').length;$('c_is').textContent=open||'';$('c_is').style.display=open?'':'none';
+  const fl=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')).length;$('c_acc').textContent=fl||'';$('c_acc').style.display=fl?'':'none';
+  const rf=S.reports.reduce((a,r)=>a+rpFindings(r).length,0);$('c_rp').textContent=rf||'';$('c_rp').style.display=rf?'':'none';
+}
+
+// ================= issues core =================
+function issuesFor(type,id,row){return S.issues.filter(i=>i.link&&i.link.type===type&&i.link.id===id&&(type!=='rp'||i.link.row===row));}
+function addIssue(o,quiet){
+  const it={id:uid('is'),desc:o.desc||'',area:o.area||'Other',pri:o.pri||'Medium',owner:o.owner||'Bookkeeper',st:'Open',from:S.month,link:o.link||null,created:new Date().toISOString().slice(0,10)};
+  if(it.link)it.link.label=linkInfo(it.link).label;
+  S.issues.push(it);touch();
+  if(!quiet)toast('Issue added: '+esc(it.desc.slice(0,60))+(it.desc.length>60?'…':'')+' <button onclick="this.parentNode.remove();T(\'issues\');flashIssue(\''+it.id+'\')">View</button>');
+  return it;
+}
+function issueBadge(type,id,row){
+  const l=issuesFor(type,id,row);if(!l.length)return '';
+  const open=l.filter(i=>i.st!=='Fixed').length;
+  return '<button type="button" class="ib'+(open?'':' done')+'" onclick="event.stopPropagation();goIssues(\''+type+'\',\''+esc(id)+'\','+(row==null?'null':row)+')" title="Show linked issues"><i class="ti ti-flag"></i>'+(open?open+' open':l.length+' fixed')+'</button>';
+}
+function linkInfo(l){
+  if(!l)return {label:'',ok:false};
+  if(l.type==='step'){const s=stepById(l.id);return s?{label:'Checklist · '+s.l,ok:true}:{label:l.label||'Checklist step',ok:false};}
+  if(l.type==='acct'){const a=S.accounts.find(x=>x.id===l.id);return a?{label:'Account · '+(a.name||'(unnamed)'),ok:true}:{label:l.label||'Account',ok:false};}
+  if(l.type==='out'){const o=S.outstanding.find(x=>x.id===l.id);return o?{label:'Transaction · '+[o.payee||'(no payee)',o.amount!=null?money(o.amount):''].filter(Boolean).join(' '),ok:true}:{label:l.label||'Transaction',ok:false};}
+  if(l.type==='rp'){const r=S.reports.find(x=>x.id===l.id);const row=r&&r.rows[l.row];return row?{label:r.title+' › '+(row.label||'Total'),ok:true}:{label:l.label||'QB report line',ok:false};}
+  return {label:'',ok:false};
+}
+function goLink(l){
+  if(!l)return;
+  if(l.type==='step'){T('checklist');flash(document.querySelector('[data-step="'+l.id+'"]'));}
+  else if(l.type==='acct'){T('accounts');flash(document.querySelector('tr[data-acct="'+l.id+'"]'));}
+  else if(l.type==='out'){T('accounts');flash(document.querySelector('tr[data-out="'+l.id+'"]'));}
+  else if(l.type==='rp'){const r=S.reports.find(x=>x.id===l.id);if(!r)return;r.min=false;T('reports');flash(document.querySelector('tr[data-rp="'+l.id+'"][data-row="'+l.row+'"]'));}
+}
+function goIssues(type,id,row){$('f_st').value='';$('f_owner').value='';$('f_from').value='';T('issues');
+  issuesFor(type,id,row).forEach((i,n)=>{const tr=document.querySelector('#is_tb tr[data-id="'+i.id+'"]');if(tr){if(n===0)flash(tr);else tr.classList.add('flash');}});}
+function flashIssue(id){$('f_st').value='';rIssues();flash(document.querySelector('#is_tb tr[data-id="'+id+'"]'));}
+
+// ================= checklist =================
+function rChecklist(){
+  const priorOpen=S.issues.filter(i=>i.st!=='Fixed'&&i.from&&i.from<S.month).length;
+  $('cl').innerHTML=SECTIONS.map(sec=>{
+    const done=sec.steps.filter(s=>(S.steps[s.id]||{}).st).length;
+    return '<div class="card"><div class="card-h"><h3>'+esc(sec.title)+'</h3><span class="sec-prog">'+done+'/'+sec.steps.length+'</span></div>'+
+    sec.steps.map(st=>{
+      const v=S.steps[st.id]||{};
+      let hint=st.h;
+      if(st.id==='prior')hint=priorOpen?(priorOpen+' issue'+(priorOpen>1?'s are':' is')+' still open from earlier months. Update their status on the Issues tab.'):'No open issues from earlier months.';
+      const go=st.go?' <button type="button" class="linkbtn" onclick="'+(st.id==='prior'?"$('f_from').value='prior';":'')+'T(\''+st.go+'\')">Open '+({accounts:'Accounts',reports:'QB Reports',issues:'Issues',summary:'Summary'}[st.go])+'</button>':'';
+      return '<div class="step" data-step="'+st.id+'">'+
+        '<div><div class="step-l">'+esc(st.l)+'</div><div class="step-h">'+esc(hint)+go+'</div><div style="margin-top:4px">'+issueBadge('step',st.id)+'</div></div>'+
+        '<div class="seg" role="group" aria-label="Status">'+['ok','issue','na'].map(k=>'<button type="button" class="'+k+(v.st===k?' on':'')+'" aria-pressed="'+(v.st===k)+'" onclick="setStep(\''+st.id+'\',\''+k+'\')">'+({ok:'OK',issue:'Issue',na:'N/A'}[k])+'</button>').join('')+'</div>'+
+        '<textarea class="note" rows="1" placeholder="Note" oninput="noteStep(\''+st.id+'\',this.value);grow(this)">'+esc(v.note||'')+'</textarea>'+
+        '<button type="button" class="ibtn" title="Add an issue for this step" aria-label="Add issue" onclick="issueFromStep(\''+st.id+'\',true)"><i class="ti ti-flag-plus"></i></button>'+
+      '</div>';}).join('')+'</div>';
+  }).join('');
+  growAll('#cl .note');
+}
+function setStep(id,k){
+  const v=S.steps[id]=S.steps[id]||{};
+  v.st=v.st===k?'':k;
+  if(v.st==='issue'&&!issuesFor('step',id).some(i=>i.st!=='Fixed'))issueFromStep(id,false);
+  touch();rChecklist();
+}
+function noteStep(id,t){(S.steps[id]=S.steps[id]||{}).note=t;
+  // keep an auto-created issue in step with the note until the issue is edited by hand
+  const st=stepById(id);S.issues.forEach(i=>{if(i.auto&&i.st!=='Fixed'&&i.link&&i.link.type==='step'&&i.link.id===id)i.desc=(st.p||st.l)+(t.trim()?': '+t.trim():'');});
+  touch();}
+function issueFromStep(id,manual){
+  const st=stepById(id),v=S.steps[id]||{};
+  const it=addIssue({desc:(st.p||st.l)+(v.note?': '+v.note:''),area:st.area||st.sec.area,pri:'Medium',link:{type:'step',id}});it.auto=true;
+  if(manual){(S.steps[id]=v).st=v.st||'issue';rChecklist();}
+}
+
+// ================= accounts =================
+function acctFlags(a){
+  const f=[];
+  if(a.feed==='Disconnected')f.push({c:'bad',t:'Feed disconnected'});
+  if(a.feed==='Not set up')f.push({c:'warn',t:'No bank feed'});
+  const exp=S.month?monthEndISO(S.month):null;
+  if(exp){
+    if(!a.lastRec)f.push({c:'warn',t:'Reconciled date missing'});
+    else{const [y1,m1]=a.lastRec.split('-').map(Number),[y2,m2]=exp.split('-').map(Number);const behind=(y2*12+m2)-(y1*12+m1);
+      if(behind>=1)f.push({c:behind>=2?'bad':'warn',t:behind+' month'+(behind>1?'s':'')+' behind'});}
+  }
+  if((a.forReview||0)>0)f.push({c:(a.forReview>25?'bad':'warn'),t:a.forReview+' for review'});
+  if(!f.length&&a.name)f.push({c:'good',t:'Up to date'});
+  return f;
+}
+function rAccounts(){
+  $('acc_sub').textContent=S.month?('Expected: reconciled through '+fmtDate(monthEndISO(S.month))+'. Accounts behind, disconnected or with transactions waiting are flagged.'):'Pick the month reviewed at the top.';
+  const tb=$('acc_tb');
+  if(!S.accounts.length){tb.innerHTML='<tr><td colspan="8" class="empty">No accounts yet. Add each bank, credit card and loan account you check.</td></tr>';return;}
+  tb.innerHTML=S.accounts.map((a,i)=>'<tr data-acct="'+a.id+'">'+
+    '<td><input value="'+esc(a.name)+'" placeholder="e.g. Chase checking 1234" oninput="S.accounts['+i+'].name=this.value;touch()" onchange="soon(rOut)"></td>'+
+    '<td><select onchange="S.accounts['+i+'].type=this.value;touch()">'+['Bank','Credit card','Loan','Other'].map(o=>'<option'+(a.type===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'+
+    '<td><select onchange="S.accounts['+i+'].feed=this.value;touch();rAccounts()">'+['Connected','Disconnected','Not set up','Manual'].map(o=>'<option'+(a.feed===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'+
+    '<td><input type="date" value="'+esc(a.lastRec||'')+'" onchange="S.accounts['+i+'].lastRec=this.value;touch();soon(rAccounts)"></td>'+
+    '<td><input inputmode="numeric" value="'+(a.forReview||'')+'" placeholder="0" onchange="S.accounts['+i+'].forReview=parseInt(this.value)||0;touch();soon(rAccounts)"></td>'+
+    '<td><textarea rows="1" placeholder="Note" oninput="S.accounts['+i+'].note=this.value;touch();grow(this)">'+esc(a.note||'')+'</textarea></td>'+
+    '<td><div class="chips">'+acctFlags(a).map(f=>'<span class="chip '+f.c+'">'+esc(f.t)+'</span>').join('')+'</div>'+issueBadge('acct',a.id)+'</td>'+
+    '<td style="white-space:nowrap"><button class="ibtn" title="Add issue for this account" aria-label="Add issue" onclick="issueFromAcct('+i+')"><i class="ti ti-flag-plus"></i></button><button class="ibtn" title="Remove account" aria-label="Remove account" onclick="if(confirm(\'Remove this account?\')){S.accounts.splice('+i+',1);touch();rAccounts();rOut()}"><i class="ti ti-trash"></i></button></td>'+
+  '</tr>').join('');
+  growAll('#acc_tb textarea');updateCounts();
+}
+function addAccount(){S.accounts.push({id:uid('ac'),name:'',type:'Bank',feed:'Connected',lastRec:'',forReview:0,note:''});touch();rAccounts();const ins=document.querySelectorAll('#acc_tb tr:last-child input');if(ins[0])ins[0].focus();}
+function acctIssueText(a){const f=acctFlags(a).filter(x=>x.c!=='good');
+  const parts=f.map(x=>/behind/.test(x.t)?('Not reconciled since '+fmtDate(a.lastRec)+'. Please reconcile through '+fmtDate(monthEndISO(S.month))+'.'):/missing/.test(x.t)?'Please confirm the last reconciled date.':/disconnected/i.test(x.t)?'Bank feed is disconnected. Please reconnect.':/No bank feed/.test(x.t)?'No bank feed is set up.':(a.forReview+' transaction'+(a.forReview>1?'s are':' is')+' waiting in For review.'));
+  return (a.name||'Account')+': '+(parts.join(' ')||'Please review.');}
+function issueFromAcct(i){const a=S.accounts[i];addIssue({desc:acctIssueText(a),area:/behind|reconcil/i.test(acctIssueText(a))?'Reconciliation':'Banking',pri:'Medium',link:{type:'acct',id:a.id}});rAccounts();}
+function flagAccounts(){
+  let n=0;S.accounts.forEach(a=>{if(!acctFlags(a).some(f=>f.c!=='good'))return;if(issuesFor('acct',a.id).some(i=>i.st!=='Fixed'))return;
+    const t=acctIssueText(a);addIssue({desc:t,area:/reconcil/i.test(t)?'Reconciliation':'Banking',pri:acctFlags(a).some(f=>f.c==='bad')?'High':'Medium',link:{type:'acct',id:a.id}},true);n++;});
+  rAccounts();toast(n?(n+' issue'+(n>1?'s':'')+' added for flagged accounts. <button onclick="this.parentNode.remove();T(\'issues\')">View</button>'):'No new flags. Accounts already flagged have an open issue.');
+}
+
+// ================= outstanding =================
+function outAge(o){if(!o.date||!S.month)return null;return daysBetween(o.date,monthEndISO(S.month));}
+function rOut(){
+  const tb=$('out_tb');const accs=S.accounts.map(a=>a.name).filter(Boolean);
+  const open=S.outstanding.filter(o=>o.st!=='Cleared');
+  $('out_sum').textContent=open.length?(open.length+' open · '+money(open.reduce((s,o)=>s+(o.amount||0),0))):'';
+  if(!S.outstanding.length){tb.innerHTML='<tr><td colspan="8" class="empty">No outstanding transactions listed.</td></tr>';return;}
+  tb.innerHTML=S.outstanding.map((o,i)=>{const age=outAge(o);const ac=age==null?'':age>90?'bad':age>60?'warn':'neutral';
+    const opts=['',...accs,...(o.acct&&!accs.includes(o.acct)?[o.acct]:[])].map(n=>'<option'+(o.acct===n?' selected':'')+'>'+esc(n)+'</option>').join('');
+    return '<tr data-out="'+o.id+'"'+(o.st==='Cleared'?' style="opacity:.55"':'')+'>'+
+    '<td><select onchange="S.outstanding['+i+'].acct=this.value;touch()">'+opts+'</select></td>'+
+    '<td><input type="date" value="'+esc(o.date||'')+'" onchange="S.outstanding['+i+'].date=this.value;touch();soon(rOut)"></td>'+
+    '<td><textarea rows="1" placeholder="Payee or description" oninput="S.outstanding['+i+'].payee=this.value;touch();grow(this)">'+esc(o.payee||'')+'</textarea></td>'+
+    '<td><input class="num" inputmode="decimal" value="'+(o.amount!=null?money(o.amount).replace('$',''):'')+'" placeholder="0.00" onchange="S.outstanding['+i+'].amount=num(this.value);touch();soon(rOut)"></td>'+
+    '<td><textarea rows="1" placeholder="Question for bookkeeper" oninput="S.outstanding['+i+'].note=this.value;touch();grow(this)">'+esc(o.note||'')+'</textarea></td>'+
+    '<td>'+(age==null?'':'<span class="chip '+ac+'">'+age+' days</span>')+'</td>'+
+    '<td><select onchange="S.outstanding['+i+'].st=this.value;touch();rOut()">'+['Open','Cleared'].map(x=>'<option'+((o.st||'Open')===x?' selected':'')+'>'+x+'</option>').join('')+'</select></td>'+
+    '<td><button class="ibtn" title="Remove" aria-label="Remove" onclick="S.outstanding.splice('+i+',1);touch();rOut()"><i class="ti ti-trash"></i></button></td></tr>';}).join('');
+  growAll('#out_tb textarea');
+}
+function addOut(){S.outstanding.push({id:uid('ot'),acct:(S.accounts[0]||{}).name||'',date:'',payee:'',amount:null,note:'',st:'Open',from:S.month});touch();rOut();const t=document.querySelector('#out_tb tr:last-child input[type=date]');if(t)t.focus();}
+function sortOut(){S.outstanding.sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));touch();rOut();}
+
+// ================= QB reports (same reader as the Financial Health Tracker) =================
+const RP_KEY=/^(gross profit|net income|net operating income|net other income|net profit|total assets|total liabilities (and|&) (equity|shareholders'? equity)|net cash (increase|decrease)|cash at end of period|net change in cash)/i;
+const RP_FINAL=/^(net income|net profit|total liabilities (and|&) (equity|shareholders'? equity)|cash at end of period)/i;
+function rpNum(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number')return isFinite(v)?v:null;
+  let t=String(v).trim();if(!t)return null;
+  let neg=false;
+  if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1);}
+  t=t.replace(/[$,\s]/g,'');
+  if(/-$/.test(t)){neg=!neg;t=t.slice(0,-1);}
+  if(!/^-?\d*\.?\d+$/.test(t))return null;
+  const n=parseFloat(t);return neg?-n:n;
+}
+function rpParse(aoa,fileName){
+  const rows=aoa.map(r=>(r||[]).map(c=>c===null||c===undefined?'':(typeof c==='string'?c.replace(/\s+$/,''):c)));
+  const width=Math.max(0,...rows.map(r=>r.length));
+  // numeric columns = columns with at least 2 numbers
+  const numCount=Array(width).fill(0);
+  rows.forEach(r=>r.forEach((c,i)=>{if(rpNum(c)!==null&&!(typeof c==='string'&&/^\d{4}$/.test(c.trim())))numCount[i]++;}));
+  let numCols=numCount.map((n,i)=>n>=2?i:-1).filter(i=>i>=0);
+  if(!numCols.length)throw new Error('No numbers found in this file.');
+  const firstNum=numCols[0];
+  numCols=numCols.filter(i=>i>=firstNum);
+  // first data row = first row with a number in a numeric column
+  const isYear=c=>/^\s*(19|20)\d{2}\s*$/.test(String(c));
+  const firstData=rows.findIndex(r=>numCols.some(i=>rpNum(r[i])!==null&&!isYear(r[i])));
+  // header row: last row before data with text in numeric columns
+  let hdrIdx=-1;
+  for(let k=firstData-1;k>=0;k--){if(numCols.some(i=>String(rows[k][i]||'').trim()!=='')){hdrIdx=k;break;}}
+  const cols=numCols.map(i=>hdrIdx>=0?String(rows[hdrIdx][i]||'').trim():'');
+  // preamble: company / title / period
+  const pre=[];
+  for(let k=0;k<(hdrIdx>=0?hdrIdx:firstData);k++){const t=rows[k].find(c=>String(c).trim()!=='');if(t!==undefined&&String(t).trim())pre.push(String(t).trim());}
+  let title='',company='',period='';
+  pre.forEach(t=>{
+    if(!title&&/(profit|loss|balance sheet|cash flow|aging|ledger|statement|summary|detail|report|budget|journal|register|list)/i.test(t))title=t;
+    else if(!period&&/(\d{4}|as of|through|january|february|march|april|may|june|july|august|september|october|november|december|this |last |year|month|quarter)/i.test(t))period=t;
+    else if(!company)company=t;
+  });
+  if(!title)title=(fileName||'Report').replace(/\.(xlsx|xls|csv)$/i,'');
+  // body
+  const body=[];
+  const labelColsUsed=new Set();
+  const start=(hdrIdx>=0?hdrIdx:firstData-1)+1;
+  for(let k=start;k<rows.length;k++){
+    const r=rows[k];
+    let li=-1,label='';
+    for(let i=0;i<firstNum;i++){if(String(r[i]).trim()!==''){li=i;label=String(r[i]);break;}}
+    const vals=numCols.map(i=>rpNum(r[i]));
+    const hasVal=vals.some(v=>v!==null);
+    if(li<0&&!hasVal)continue;
+    if(li<0&&hasVal){li=0;label='';}
+    const lead=(label.match(/^\s*/)||[''])[0].length;
+    label=label.trim();
+    // footer lines like "Accrual Basis Monday, ..." after the table
+    if(!hasVal&&/(cash|accrual) basis|^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),/i.test(label))continue;
+    labelColsUsed.add(li);
+    body.push({label,vals,li,lead,hasVal});
+  }
+  // depth: from label column (QB Desktop), leading spaces, or section/total pairing (QB Online)
+  const useCol=labelColsUsed.size>1, useLead=!useCol&&body.some(b=>b.lead>0);
+  const stack=[];
+  const out=body.map(b=>{
+    const isTotal=/^total\b/i.test(b.label);
+    const isKey=RP_KEY.test(b.label);
+    let kind=!b.hasVal?'h':isKey?'key':isTotal?'tot':'line';
+    let depth;
+    if(useCol)depth=b.li;
+    else if(useLead)depth=Math.round(b.lead/2);
+    else{
+      if(kind==='h'){depth=stack.length;stack.push(b.label.toLowerCase());}
+      else if(kind==='tot'||(kind==='key'&&/^total\b/i.test(b.label))){
+        const nm=b.label.replace(/^total\s+(for\s+)?/i,'').toLowerCase();
+        let at=stack.lastIndexOf(nm);
+        if(at<0)at=stack.length-1;
+        if(at>=0)stack.length=at;
+        depth=stack.length;
+      } else depth=stack.length;
+    }
+    return {label:b.label,vals:b.vals,kind,depth};
+  });
+  // tidy: key lines only at top level (e.g. Net Income inside Equity is a normal line); no skipped indent levels
+  const hs=[];
+  out.forEach(x=>{
+    if(x.kind==='key'&&x.depth>0)x.kind='line';
+    if(x.kind==='h'){while(hs.length&&hs[hs.length-1]>=x.depth)hs.pop();x.depth=hs.length?Math.min(x.depth,hs[hs.length-1]+1):0;hs.push(x.depth);}
+    else if(x.kind==='tot'){while(hs.length&&hs[hs.length-1]>x.depth)hs.pop();if(hs.length)x.depth=hs.pop();}
+    else if(x.kind==='line'){x.depth=hs.length?hs[hs.length-1]+1:0;}
+    else if(x.kind==='key'){hs.length=0;}
+    x.final=x.kind==='key'&&RP_FINAL.test(x.label);
+  });
+  // a lone row named like a total with values but no "Total" (e.g. account with no sub-accounts) stays a line
+  const isPL=/profit|loss|income statement/i.test(title)||out.some(r=>/^total (income|revenue)/i.test(r.label));
+  return {id:'rp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,company,period,cols,rows:out,notes:'',showPct:isPL,summary:false,fileName:fileName||'',isPL,added:new Date().toISOString().slice(0,10)};
+}
+function rpFiles(files){
+  if(typeof XLSX==='undefined'){alert('The Excel reader did not load. Check your internet connection and refresh.');return;}
+  const list=Array.from(files||[]);let done=0;const bad=[],got=[];
+  list.forEach((file,fi)=>{const rd=new FileReader();
+    rd.onload=e=>{try{const isCSV=/\.csv$/i.test(file.name);const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',raw:isCSV});
+        const aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:'',blankrows:false});got[fi]=rpParse(aoa,file.name);}
+      catch(err){bad.push(file.name+(err&&err.message?' ('+err.message+')':''));}
+      if(++done===list.length){got.forEach(r=>{if(r){r.min=false;S.reports.push(r);}});touch();rReports();
+        const n=got.filter(Boolean).reduce((a,r)=>a+rpFindings(r).length,0);
+        if(got.some(Boolean))toast(n?(n+' item'+(n>1?'s':'')+' flagged for review.'):'No negatives, unclassified amounts or spikes found.');
+        if(bad.length)alert('Could not read:\n'+bad.join('\n')+'\n\nExport the report from QuickBooks as Excel or CSV and try again.');}};
+    rd.readAsArrayBuffer(file);});
+}
+const MON_RE=/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*('?\d{2,4})?$|^\d{1,2}\/\d{2,4}$/i;
+const NEG_OK=/(depreciation|amortization|draw|distribution|dividend|treasury|net income|retained earnings|net other income|net operating income|discount|allowance|contra|returns|refunds)/i;
+function rpKind(r){
+  if(/balance sheet/i.test(r.title)||r.rows.some(x=>/^total assets$/i.test(x.label)))return 'bs';
+  if(/class/i.test(r.title)||r.cols.some(c=>/not specified|unclassified|no class|without class/i.test(c)))return 'class';
+  if(/month/i.test(r.title)||r.cols.filter(c=>MON_RE.test(c.trim())).length>=3)return 'month';
+  if(/aging/i.test(r.title))return 'aging';
+  if(/profit|loss|income/i.test(r.title))return 'pl';
+  return 'other';
+}
+function rpFindings(r){
+  if(r._f&&r._fv===r.rows.length)return r._f;
+  const out=[];const kind=rpKind(r);
+  const totCol=r.cols.findIndex(c=>/^total$/i.test(c.trim()));
+  // negatives
+  const negCols=totCol>=0?[totCol]:r.cols.map((_,i)=>i);
+  r.rows.forEach((x,ri)=>{
+    if(x.kind!=='line'||NEG_OK.test(x.label)||!x.label)return;
+    if(kind==='aging'){const v=x.vals[totCol>=0?totCol:x.vals.length-1];if(v!=null&&v<-0.004)out.push({row:ri,col:totCol>=0?totCol:x.vals.length-1,c:'flag',area:/payable|vendor/i.test(r.title)?'AP':'AR',t:x.label+' has a negative balance of '+money(v)});return;}
+    negCols.forEach(ci=>{const v=x.vals[ci];if(v!=null&&v<-0.004)out.push({row:ri,col:ci,c:'flag',area:kind==='bs'?'Balance sheet':'P&L',t:x.label+' is negative'+(r.cols.length>1?' ('+(r.cols[ci]||'Total')+')':'')+': '+money(v)});});
+  });
+  // unclassified
+  if(kind==='class'){const uc=r.cols.findIndex(c=>/not specified|unclassified|no class|without class/i.test(c));
+    if(uc>=0)r.rows.forEach((x,ri)=>{if(x.kind==='line'&&x.vals[uc]&&Math.abs(x.vals[uc])>=0.01)out.push({row:ri,col:uc,c:'flag',area:'Classes',t:x.label+': '+money(x.vals[uc])+' has no class'});});}
+  // spikes in monthly columns
+  if(kind==='month'){
+    const mc=r.cols.map((c,i)=>({c,i})).filter(o=>!/^total$/i.test(o.c.trim())).map(o=>o.i);
+    if(mc.length>=3)r.rows.forEach((x,ri)=>{
+      if(x.kind!=='line')return;
+      const vs=mc.map(i=>x.vals[i]).filter(v=>v!=null&&v!==0).map(Math.abs).sort((a,b)=>a-b);
+      if(vs.length<3)return;const med=vs[Math.floor(vs.length/2)];
+      mc.forEach(i=>{const v=x.vals[i];if(v==null)return;const a=Math.abs(v);
+        if(a>med*2&&a-med>=500)out.push({row:ri,col:i,c:'spike',area:'P&L',t:x.label+' in '+(r.cols[i]||'')+': '+money(v)+' vs a usual '+money(med)});});
+    });
+  }
+  r._f=out;r._fv=r.rows.length;return out;
+}
+function rReports(){
+  const w=$('rp_list');
+  if(!S.reports.length){w.innerHTML='<div class="empty">No reports yet.</div>';updateCounts();return;}
+  w.innerHTML=S.reports.map((r,i)=>{
+    const F=rpFindings(r);const cellCls={};F.forEach(f=>{cellCls[f.row+'_'+f.col]=f.c;});
+    const head='<tr><th></th>'+r.cols.map(c=>'<th>'+esc(c||'Total')+'</th>').join('')+'</tr>';
+    const rows=r.rows.map((x,ri)=>{const cls=x.kind==='h'?'h':x.kind==='tot'?'tot':x.kind==='key'?'key':'';
+      return '<tr class="'+cls+'" data-rp="'+r.id+'" data-row="'+ri+'"><td style="padding-left:'+(8+x.depth*14)+'px">'+esc(x.label)+(x.kind!=='h'?' <button class="ibtn addi" title="Add issue for this line" aria-label="Add issue" onclick="issueFromRow('+i+','+ri+')"><i class="ti ti-flag-plus"></i></button>':'')+' '+issueBadge('rp',r.id,ri)+'</td>'+
+        x.vals.map((v,ci)=>'<td class="'+(cellCls[ri+'_'+ci]||(v<0?'neg':''))+'">'+(x.kind==='h'?'':money0(v))+'</td>').join('')+'</tr>';}).join('');
+    const fl=F.length?'<div class="finds"><h4>'+F.length+' item'+(F.length>1?'s':'')+' to review</h4>'+F.slice(0,60).map((f,k)=>{const has=issuesFor('rp',r.id,f.row).length;
+        return '<div class="find"><span class="chip '+(f.c==='spike'?'warn':'bad')+'">'+(f.c==='spike'?'Spike':/no class/.test(f.t)?'Unclassified':'Negative')+'</span><span class="tx">'+esc(f.t)+'</span>'+
+        (has?issueBadge('rp',r.id,f.row):'<button class="btn sm" onclick="issueFromFinding('+i+','+k+')"><i class="ti ti-flag-plus"></i> Add issue</button>')+
+        '<button class="ibtn" title="Show in report" aria-label="Show in report" onclick="flash(document.querySelector(\'tr[data-rp=&quot;'+r.id+'&quot;][data-row=&quot;'+f.row+'&quot;]\'))"><i class="ti ti-eye"></i></button></div>';}).join('')+(F.length>60?'<div class="muted small">Showing first 60.</div>':'')+'</div>'
+      :'<div class="finds"><span class="chip good">Nothing flagged</span> <span class="muted small">No negatives, unclassified amounts or spikes found.</span></div>';
+    return '<div class="card rpcard'+(r.min?' min':'')+'"><div class="rpbar">'+
+      '<button class="ibtn" aria-expanded="'+!r.min+'" title="'+(r.min?'Open':'Minimize')+'" onclick="S.reports['+i+'].min=!S.reports['+i+'].min;touch();rReports()"><i class="ti ti-chevron-'+(r.min?'right':'down')+'"></i></button>'+
+      '<span class="t">'+esc(r.title)+'</span><span class="muted small">'+esc(r.period||'')+'</span>'+(F.length?'<span class="chip '+(F.some(f=>f.c==='flag')?'bad':'warn')+'">'+F.length+' flagged</span>':'<span class="chip good">OK</span>')+
+      '<span class="sp"></span><button class="ibtn" title="Remove report" aria-label="Remove report" onclick="if(confirm(\'Remove this report?\')){S.reports.splice('+i+',1);touch();rReports()}"><i class="ti ti-trash"></i></button></div>'+
+      '<div class="rpbody">'+fl+'<div class="tw"><table class="rp">'+head+rows+'</table></div></div></div>';
+  }).join('');
+  updateCounts();
+}
+function issueFromFinding(i,k){const r=S.reports[i],f=rpFindings(r)[k];addIssue({desc:r.title+(r.period?' ('+r.period+')':'')+': '+f.t,area:f.area,pri:f.c==='flag'?'High':'Medium',link:{type:'rp',id:r.id,row:f.row}});rReports();}
+function issueFromRow(i,ri){const r=S.reports[i],x=r.rows[ri];const v=x.vals[x.vals.length-1];addIssue({desc:r.title+': '+x.label+(v!=null?' ('+money(v)+')':'')+'. ',area:rpKind(r)==='bs'?'Balance sheet':'P&L',link:{type:'rp',id:r.id,row:ri}});rReports();}
+(function(){const d=$('up');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('drag');}));['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('drag');}));d.addEventListener('drop',e=>rpFiles(e.dataTransfer.files));})();
+
+// ================= issues tab =================
+function linkOptions(first){
+  let h='<option value="">'+(first||'Link to (optional)')+'</option>';
+  SECTIONS.forEach(s=>{h+='<optgroup label="Checklist · '+esc(s.title)+'">'+s.steps.map(st=>'<option value="step:'+st.id+'">'+esc(st.l)+'</option>').join('')+'</optgroup>';});
+  if(S.accounts.length)h+='<optgroup label="Accounts">'+S.accounts.map(a=>'<option value="acct:'+a.id+'">'+esc(a.name||'(unnamed)')+'</option>').join('')+'</optgroup>';
+  if(S.outstanding.length)h+='<optgroup label="Outstanding transactions">'+S.outstanding.map(o=>'<option value="out:'+o.id+'">'+esc([o.payee||'(no payee)',o.amount!=null?money(o.amount):''].join(' '))+'</option>').join('')+'</optgroup>';
+  S.reports.forEach(r=>{h+='<optgroup label="QB · '+esc(r.title)+'">'+r.rows.map((x,ri)=>x.kind==='h'?'':'<option value="rp:'+r.id+':'+ri+'">'+' '.repeat(Math.min(x.depth,3)*2)+esc(x.label||'Total')+'</option>').join('')+'</optgroup>';});
+  return h;
+}
+function parseLink(v){if(!v)return null;const p=v.split(':');return p[0]==='rp'?{type:'rp',id:p[1],row:+p[2]}:{type:p[0],id:p[1]};}
+function addIssueForm(){
+  const d=$('is_desc').value.trim();if(!d){$('is_desc').focus();return;}
+  addIssue({desc:d,area:$('is_area').value,pri:$('is_pri').value,owner:$('is_owner').value,link:parseLink($('is_link').value)},true);
+  $('is_desc').value='';$('is_link').value='';grow($('is_desc'));$('is_desc').focus();rIssues();
+}
+function issueVisible(i){
+  const st=$('f_st').value,ow=$('f_owner').value,fr=$('f_from').value;
+  if(st==='open'&&i.st==='Fixed')return false;if(st&&st!=='open'&&i.st!==st)return false;
+  if(ow&&i.owner!==ow)return false;
+  if(fr==='prior'&&!(i.from&&i.from<S.month))return false;if(fr==='this'&&i.from!==S.month)return false;
+  return true;
+}
+const PRI={High:0,Medium:1,Low:2};
+function rIssues(){
+  $('is_area').innerHTML=AREAS.map(a=>'<option>'+esc(a)+'</option>').join('');
+  const lv=$('is_link').value;$('is_link').innerHTML=linkOptions();$('is_link').value=lv;
+  const vis=S.issues.filter(issueVisible);
+  $('is_count').textContent=vis.length+' shown · '+S.issues.filter(i=>i.st!=='Fixed').length+' not fixed';
+  const tb=$('is_tb');
+  if(!vis.length){tb.innerHTML='<tr><td colspan="6" class="empty">'+(S.issues.length?'No issues match these filters.':'No issues yet. Mark a checklist step as Issue, flag a report line, or add one above.')+'</td></tr>';updateCounts();return;}
+  tb.innerHTML=vis.map(it=>{const i=S.issues.indexOf(it);const inf=linkInfo(it.link);
+    const prior=it.from&&it.from<S.month;
+    return '<tr data-id="'+it.id+'">'+
+    '<td><textarea rows="1" oninput="S.issues['+i+'].desc=this.value;S.issues['+i+'].auto=false;touch();grow(this)">'+esc(it.desc)+'</textarea>'+
+      '<div class="chips" style="padding-left:7px">'+(prior?'<span class="chip warn" title="Carried forward">Open since '+esc(monthShort(it.from))+'</span>':'')+
+      (it.st==='Fixed'&&it.fixedIn?'<span class="chip good">Fixed '+esc(monthShort(it.fixedIn))+'</span>':'')+
+      (it.link?'<button class="lk'+(inf.ok?'':' gone')+'" '+(inf.ok?'onclick="goLink(S.issues['+i+'].link)" title="Go to item"':'title="This item no longer exists"')+'><i class="ti ti-link"></i><span>'+esc(inf.label)+(inf.ok?'':' (removed)')+'</span></button>':
+        '<select class="lk" style="width:auto;border:1px dashed var(--cardb);background:transparent;color:var(--stone)" onchange="S.issues['+i+'].link=parseLink(this.value);if(S.issues['+i+'].link)S.issues['+i+'].link.label=linkInfo(S.issues['+i+'].link).label;touch();rIssues()">'+linkOptions('+ Link to…')+'</select>')+
+      (it.link?'<button class="ibtn" title="Remove link" aria-label="Remove link" onclick="S.issues['+i+'].link=null;touch();rIssues()">×</button>':'')+'</div></td>'+
+    '<td><select onchange="S.issues['+i+'].area=this.value;touch()">'+[...new Set([...AREAS,it.area])].map(a=>'<option'+(it.area===a?' selected':'')+'>'+esc(a)+'</option>').join('')+'</select></td>'+
+    '<td><select onchange="S.issues['+i+'].pri=this.value;touch();rIssues()" style="'+(it.pri==='High'?'color:var(--bad);font-weight:600':'')+'">'+['High','Medium','Low'].map(a=>'<option'+(it.pri===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
+    '<td><select onchange="S.issues['+i+'].owner=this.value;touch()">'+['Bookkeeper','Owner','Structure'].map(a=>'<option'+(it.owner===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
+    '<td><select onchange="setIssueStatus('+i+',this.value)" style="font-weight:600;color:'+(it.st==='Fixed'?'var(--good)':it.st==='In progress'?'var(--warn)':'var(--bad)')+'">'+['Open','In progress','Fixed'].map(a=>'<option'+(it.st===a?' selected':'')+'>'+a+'</option>').join('')+'</select></td>'+
+    '<td><button class="ibtn" title="Delete issue" aria-label="Delete issue" onclick="if(confirm(\'Delete this issue?\')){S.issues.splice('+i+',1);touch();rIssues()}"><i class="ti ti-trash"></i></button></td></tr>';}).join('');
+  growAll('#is_tb textarea');updateCounts();
+}
+function setIssueStatus(i,v){const it=S.issues[i];it.st=v;it.fixedIn=v==='Fixed'?S.month:null;touch();rIssues();}
+
+// ================= summary + email =================
+function stats(){
+  const done=ALLSTEPS.filter(s=>(S.steps[s.id]||{}).st).length;
+  const open=S.issues.filter(i=>i.st!=='Fixed');
+  return {done,total:ALLSTEPS.length,open:open.length,high:open.filter(i=>i.pri==='High').length,
+    prior:open.filter(i=>i.from&&i.from<S.month).length,fixedNow:S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month).length,
+    accBehind:S.accounts.filter(a=>acctFlags(a).some(f=>/behind|missing/.test(f.t))).length,feedOff:S.accounts.filter(a=>a.feed==='Disconnected').length,
+    out:S.outstanding.filter(o=>o.st!=='Cleared').length};
+}
+function rSummary(){
+  const s=stats();
+  const tile=(l,v,c)=>'<div class="stat"><div class="l">'+l+'</div><div class="v '+(c||'')+'">'+v+'</div></div>';
+  $('stats').innerHTML=tile('Checklist',s.done+'/'+s.total,s.done===s.total?'good':'')+tile('Open issues',s.open,s.open?'bad':'good')+tile('High priority',s.high,s.high?'bad':'')+
+    tile('Open from earlier months',s.prior,s.prior?'warn':'')+tile('Fixed this month',s.fixedNow,s.fixedNow?'good':'')+tile('Accounts behind',s.accBehind,s.accBehind?'warn':'good')+tile('Feeds disconnected',s.feedOff,s.feedOff?'bad':'good')+tile('Transactions to review',s.out,s.out?'warn':'');
+  $('em_to').value=S.emailTo||'';$('int_notes').value=S.notes||'';grow($('int_notes'));
+  if(!S.emailEdited||!S.emailBody)buildEmail(false);else{ $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;}
+  $('em_note').textContent=S.emailEdited?'You edited this email. Rebuild from review to start over from the latest data.':'This email updates from the review until you edit it.';
+}
+function buildEmail(force){
+  if(force&&S.emailEdited&&!confirm('Replace your edits with a fresh email built from the review?'))return;
+  const who=(S.bookkeeper||'').trim().split(' ')[0];const cl=S.client||'the client';const mon=monthLabel(S.month)||'this month';
+  const L=[];
+  L.push('Hi'+(who?' '+who:'')+',','', 'I reviewed '+cl+"'s QuickBooks for "+mon+'. Below is what needs your attention.');
+  const bk=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
+  if(bk.length){L.push('','Needs your action ('+bk.length+'):');bk.forEach((i,n)=>L.push((n+1)+'. '+i.desc.trim().replace(/\s*\n\s*/g,' ')+(i.pri==='High'?' [High priority]':'')+(i.from&&i.from<S.month?' [Open since '+monthShort(i.from)+']':'')));}
+  const accLines=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')&&!issuesFor('acct',a.id).some(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper')).map(a=>'- '+acctIssueText(a));
+  if(accLines.length){L.push('','Accounts:');L.push(...accLines);}
+  const out=S.outstanding.filter(o=>o.st!=='Cleared');
+  if(out.length){L.push('','Transactions to review ('+out.length+'). Please tell me what each one is, or clear it if it is resolved:');
+    out.forEach(o=>L.push('- '+[o.acct,o.date?fmtDate(o.date):'',o.payee,o.amount!=null?money(o.amount):''].filter(Boolean).join(' · ')+(outAge(o)!=null?' ('+outAge(o)+' days)':'')+(o.note?'. '+o.note:'')));}
+  const own=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Owner');
+  if(own.length){L.push('','Waiting on the owner (for your information):');own.forEach(i=>L.push('- '+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
+  const fixed=S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month&&i.from&&i.from<S.month);
+  if(fixed.length){L.push('','Resolved since last review, thank you:');fixed.forEach(i=>L.push('- '+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
+  if(!bk.length&&!accLines.length&&!out.length)L.push('','Everything looks good this month. Nothing needs action.');
+  L.push('','Please reply with updates as you go. I will check these at the next review.','','Thank you,',S.reviewer||'');
+  S.emailSubject=cl+' · QuickBooks review for '+mon;S.emailBody=L.join('\n');S.emailEdited=false;
+  $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;
+  if(force){touch();$('em_note').textContent='Rebuilt from the latest review.';}
+}
+function copyEmail(){
+  const txt=$('em_body').value;
+  const ok=()=>{toast('Email copied. Paste it into your email or task comment.');if(!(S.steps.sent||{}).st){(S.steps.sent=S.steps.sent||{}).st='ok';touch();}};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{$('em_body').select();document.execCommand('copy');ok();});
+  else{$('em_body').select();document.execCommand('copy');ok();}
+}
+function openMail(){
+  const body=$('em_body').value,subj=$('em_subj').value,to=$('em_to').value.trim();
+  let url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  if(url.length>1900){copyEmail();url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj);toast('The email is long, so it was copied. Paste it into the new message.');}
+  window.location.href=url;
+}
+function printSummary(){
+  const s=stats();const cl=S.client||'Client',mon=monthLabel(S.month);
+  const tbl=(head,rows)=>rows.length?'<table><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</table>':'<p>None.</p>';
+  const logo=document.querySelector('.logo').src;
+  $('print').innerHTML='<img src="'+logo+'" alt="Structure" style="height:22px"><h1>'+esc(cl)+' · Monthly QB review</h1><div style="color:#6B6560">'+esc(mon)+(S.reviewer?' · Reviewed by '+esc(S.reviewer):'')+'</div>'+
+    '<h2>At a glance</h2>'+tbl(['Checklist','Open issues','High priority','Open from earlier','Fixed this month','Accounts behind','Transactions to review'],[[s.done+'/'+s.total,s.open,s.high,s.prior,s.fixedNow,s.accBehind,s.out]])+
+    '<h2>Open issues</h2>'+tbl(['Issue','Area','Priority','Owner','Status','Since'],S.issues.filter(i=>i.st!=='Fixed').sort((a,b)=>PRI[a.pri]-PRI[b.pri]).map(i=>[i.desc,i.area,i.pri,i.owner,i.st,monthShort(i.from)]))+
+    '<h2>Accounts</h2>'+tbl(['Account','Feed','Last reconciled','For review','Status'],S.accounts.map(a=>[a.name,a.feed,fmtDate(a.lastRec),a.forReview||0,acctFlags(a).map(f=>f.t).join(', ')]))+
+    '<h2>Transactions to review</h2>'+tbl(['Account','Date','Payee','Amount','Age','Note'],S.outstanding.filter(o=>o.st!=='Cleared').map(o=>[o.acct,fmtDate(o.date),o.payee,money(o.amount),outAge(o)!=null?outAge(o)+' days':'',o.note]))+
+    '<h2>Checklist</h2>'+tbl(['Step','Status','Note'],ALLSTEPS.map(st=>{const v=S.steps[st.id]||{};return [st.l,{ok:'OK',issue:'Issue',na:'N/A'}[v.st]||'Not done',v.note||''];}))+
+    '<p style="margin-top:16px;color:#6B6560">Prepared by Structure</p>';
+  document.body.classList.add('printing');const t=document.title;document.title=cl+' · QB review · '+mon;
+  const done=()=>{document.body.classList.remove('printing');document.title=t;window.removeEventListener('afterprint',done);};
+  window.addEventListener('afterprint',done);window.print();setTimeout(()=>{if(!matchMedia('print').matches)done();},1000);
+}
+
+// ================= save / load / next month =================
+function fileBase(){return 'Structure_QB_Review_'+(S.client||'Client').replace(/[^\w]+/g,'_')+'_'+(S.month||'');}
+function saveFile(){
+  const data=JSON.parse(JSON.stringify(S));data.reports.forEach(r=>{delete r._f;delete r._fv;});data.savedAt=new Date().toISOString();data.app='structure-monthly-qb-review';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));a.download=fileBase()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('Saved '+esc(a.download));
+}
+function loadFile(ev){
+  const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.app!=='structure-monthly-qb-review')throw new Error('x');S=Object.assign(blank(),d);renderAll();touch();T('checklist');toast('Loaded '+esc(S.client||'review')+' · '+esc(monthLabel(S.month)));}
+    catch(err){alert('Could not load this file. Pick a file saved from the Monthly QB Review.');}};
+  rd.readAsText(f);ev.target.value='';
+}
+function newReview(){if(!confirm('Start a blank review? Save first if you need this one.'))return;S=blank();try{localStorage.removeItem(DRAFT);}catch(e){}renderAll();T('checklist');}
+function startNextMonth(){
+  if(!S.month){alert('Pick the month reviewed first.');return;}
+  const next=addMonths(S.month,1);
+  if(!confirm('Start the '+monthLabel(next)+' review?\n\nKept: client, accounts, open issues and open transactions.\nCleared: checklist, fixed issues, reports and the email.'))return;
+  if(confirm('Save a copy of the '+monthLabel(S.month)+' review first? (Recommended)'))saveFile();
+  const n=blank();
+  n.client=S.client;n.reviewer=S.reviewer;n.bookkeeper=S.bookkeeper;n.emailTo=S.emailTo;n.month=next;
+  n.accounts=S.accounts.map(a=>Object.assign({},a,{forReview:0,note:''}));
+  n.outstanding=S.outstanding.filter(o=>o.st!=='Cleared');
+  n.issues=S.issues.filter(i=>i.st!=='Fixed').map(i=>{const c=Object.assign({},i);if(c.link&&(c.link.type==='rp'))c.link=null;return c;});
+  S=n;touch();renderAll();T('checklist');
+  toast('Started '+esc(monthLabel(next))+'. '+S.issues.length+' open issue'+(S.issues.length===1?'':'s')+' carried forward.');
+}
+
+// ================= Excel =================
+function exportExcel(){
+  if(typeof XLSX==='undefined'){alert('The Excel library did not load. Check your internet connection and refresh.');return;}
+  const wb=XLSX.utils.book_new();const s=stats();const hdr=[[(S.client||'Client')+' · Monthly QB review · '+monthLabel(S.month)],[]];
+  const add=(name,rows,w)=>{const ws=XLSX.utils.aoa_to_sheet(hdr.concat(rows));if(w)ws['!cols']=w.map(x=>({wch:x}));XLSX.utils.book_append_sheet(wb,ws,name);};
+  add('Summary',[['Item','Value'],['Reviewed by',S.reviewer],['Bookkeeper',S.bookkeeper],['Checklist complete',s.done+' / '+s.total],['Open issues',s.open],['High priority',s.high],['Open from earlier months',s.prior],['Fixed this month',s.fixedNow],['Accounts behind',s.accBehind],['Feeds disconnected',s.feedOff],['Transactions to review',s.out]],[30,30]);
+  add('Issues',[['Issue','Area','Priority','Owner','Status','Opened','Fixed','Linked to']].concat(S.issues.map(i=>[i.desc,i.area,i.pri,i.owner,i.st,monthShort(i.from),i.fixedIn?monthShort(i.fixedIn):'',i.link?linkInfo(i.link).label:''])),[60,16,10,12,12,10,10,40]);
+  add('Accounts',[['Account','Type','Feed','Last reconciled','For review','Status','Notes']].concat(S.accounts.map(a=>[a.name,a.type,a.feed,a.lastRec,a.forReview||0,acctFlags(a).map(f=>f.t).join(', '),a.note])),[30,12,14,14,10,30,40]);
+  add('Transactions',[['Account','Date','Payee / description','Amount','Age (days)','Status','Note']].concat(S.outstanding.map(o=>[o.acct,o.date,o.payee,o.amount,outAge(o),o.st||'Open',o.note])),[24,12,36,12,10,10,40]);
+  add('Checklist',[['Section','Step','Status','Note']].concat(ALLSTEPS.map(st=>{const v=S.steps[st.id]||{};return [st.sec.title,st.l,{ok:'OK',issue:'Issue',na:'N/A'}[v.st]||'Not done',v.note||''];})),[28,56,10,50]);
+  const fr=[['Report','Line','Finding','Type']];S.reports.forEach(r=>rpFindings(r).forEach(f=>fr.push([r.title,r.rows[f.row].label,f.t,f.c==='spike'?'Spike':'Flag'])));
+  add('Report flags',fr,[30,30,70,10]);
+  XLSX.writeFile(wb,fileBase()+'.xlsx');
+}
+
+// ================= init =================
+(function init(){
+  let restored=false;
+  try{const d=localStorage.getItem(DRAFT);if(d){const x=JSON.parse(d);if(x&&(x.client||x.issues.length||x.accounts.length||Object.keys(x.steps||{}).length)){S=Object.assign(blank(),x);restored=true;}}}catch(e){}
+  renderAll();
+  if(restored)toast('Restored your unsaved review'+(S.client?' for '+esc(S.client):'')+' · '+esc(monthLabel(S.month))+'. <button onclick="this.parentNode.remove();newReview()">Start blank</button>',9000);
+})();
+</script>
+</body>
+</html>
