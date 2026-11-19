@@ -2116,7 +2116,7 @@ function renderDash(){
       <div class="met"><div class="ml">Monthly Overhead</div><div class="mv">${fD(moOH||null)}</div><div class="ms">Annual: ${fD(annOH||null)}</div></div>
       <div class="met ${breakEven?'good':''}"><div class="ml">Break-even Revenue</div><div class="mv">${fD(breakEven)}</div><div class="ms">annual, incl. owner pay</div></div>
     </div>
-    ${advDashHTML()}
+    <div data-adv="dashboard"></div>
     ${flags.length?`<div class="card"><h3>Flags</h3><div class="flags">${flags.map(f=>`<span class="fl ${f.c}"><i class="ti ti-${f.c==='red'?'alert-circle':f.c==='amber'?'alert-triangle':'circle-check'}"></i>${f.t}</span>`).join('')}</div></div>`:''}
     <div class="card"><h3>Key Ratios</h3>
       <div class="kv"><span class="kk">COGS % of revenue</span><span class="kv2 ${cogsP!==null&&cogsP>70?'bad':''}">${fP(cogsP)}</span></div>
@@ -2145,7 +2145,7 @@ function renderDash(){
     </div>
     <div class="br">
       <button class="btn dark" onclick="exportSummaryExcel()"><i class="ti ti-file-text"></i> Export Client Summary</button>
-    </div>`;}
+    </div>`;advPanel('dashboard');}
 
 // ---- SNAPSHOT SYSTEM ----
 const snPL = [
@@ -2547,7 +2547,7 @@ function loadSession(event){
       // Issues
       if(data.issues){ isL.splice(0,isL.length,...data.issues); rIss(); }
       if(Array.isArray(data.reports)){ repL.splice(0,repL.length,...data.reports); rRep(); }
-      if(data.advice&&typeof data.advice==='object'){ Object.keys(data.advice).forEach(k=>{ if(ADV_TABS[k]) ADV[k]=data.advice[k]; }); }
+      if(data.advice&&typeof data.advice==='object'){ Object.keys(data.advice).forEach(k=>{ if(ADV_TABS[k]||k==='dashboard') ADV[k]=data.advice[k]; }); }
 
       // Pricing
       if(data.pricing){
@@ -3022,6 +3022,50 @@ const ADV_RULES={
   return {take:T,rec:R,data:D};
  }
 };
+
+// combined view for the Dashboard: the most important points across every tab, ranked
+ADV_RULES.dashboard=function(){
+  const T=[],R=[],D=[];const add=(a,s,t)=>a.push({s,t});
+  const fm=finMetrics(),bc=fm.bc,pc=fm.pc,L=advSnapLatest();let gmRec=false;
+  if(L){const d=L.d,nm=d.net/d.income*100,gm=d.gp/d.income*100;
+    add(T,90,'In '+L.label+', the business made '+fD(d.income)+' in sales and '+fD(d.net)+' in net profit, a '+advPct(nm)+' net margin.'+advVsText(nm,'net','high'));
+    const d1=snCalcDerived('p1'),d2=snCalcDerived('p2');
+    if(d1.income&&d2.income){const g1=(d2.income-d1.income)/d1.income*100;
+      if(g1>0&&d2.net<d1.net){add(T,95,'Sales grew '+advPct(g1)+' but net profit fell from '+fD(d1.net)+' to '+fD(d2.net)+'. Growth is costing more than it brings in.');add(R,88,'Find which costs grew faster than sales, and fix pricing or job costs before pushing for more growth.');}
+      else add(T,70,'Sales '+(g1>=0?'grew':'fell')+' '+advPct(Math.abs(g1))+' and net profit went from '+fD(d1.net)+' to '+fD(d2.net)+'.');}
+    const x=advVs(gm,'gm','high');
+    if(x&&x.pos==='below'){gmRec=true;add(T,80,'Gross margin is '+advPct(gm)+', below the usual '+x.lo+' to '+x.hi+'% for '+x.name+'.');add(R,84,'Raise gross margin by reviewing pricing and job costs. Reaching '+x.lo+'% would add about '+fD((x.lo-gm)/100*d.income)+' in gross profit a year.');}
+    if(d.net<0)add(R,98,'The business lost '+fD(-d.net)+' in '+L.label+'. Stop the loss first by reviewing pricing and the largest costs.');}
+  if(bc){const act=L?L.d.income:null;
+    if(act){const cush=(act-bc.beSales)/bc.beSales*100;
+      if(cush<0){add(T,92,'Sales are '+fD(bc.beSales-act)+' below break-even ('+fD(bc.beSales)+' a year).');add(R,95,'Close the '+fD(bc.beSales-act)+' gap to break-even with more jobs, higher prices or lower fixed costs.');}
+      else add(T,75,'Sales are '+advPct(cush)+' above break-even ('+fD(bc.beSales)+' a year), a cushion of '+fD(act-bc.beSales)+'.');}
+    else add(T,60,'The business needs '+fD(bc.beSales)+' a year in sales to break even, about '+fD(bc.beSales/12)+' a month.');
+    if(bc.target)add(T,55,'Reaching the '+fD(bc.target)+' profit goal takes '+fD(bc.annSalesReq)+' in sales a year.');
+    if(!gmRec){const up1=bc.annTotal/((bc.gpm+1)/100);add(R,50,'Margin is the strongest lever: every 1 point of gross margin lowers break-even by about '+fD(bc.beSales-up1)+' a year.');}}
+  const oh=ohGetTotal(),rev=advRev();
+  if(oh&&rev){const p=oh*12/rev*100,x=advVs(p,'oh','low');if(x&&x.pos==='above'){add(T,78,'Overhead is '+advPct(p)+' of sales, above the usual '+x.lo+' to '+x.hi+'%.');add(R,76,'Cut about '+fD(oh-(x.hi/100*rev/12))+' a month in overhead to get back in range, starting with the largest lines.');}}
+  const cash=g('cf_cash'),mc=advMonthlyCosts();
+  if(cash!=null&&mc){const m=cash/mc;
+    if(m<1){add(T,96,'Cash covers less than 1 month of fixed costs ('+fD(cash)+' in the bank).');add(R,97,'Protect cash now: collect overdue invoices and delay non essential spending.');}
+    else if(m<3){add(T,65,'Cash covers about '+m.toFixed(1)+' months of fixed costs.');add(R,60,'Build a reserve of 3 months of costs, about '+fD(mc*3)+'.');}
+    else add(T,40,'Cash covers about '+m.toFixed(1)+' months of fixed costs, a healthy reserve.');}
+  if(pc){const low=pc.months.reduce((a,m)=>m.end<a.end?m:a,pc.months[0]);if(low.end<0){add(T,93,'The 12 month plan runs out of cash in '+low.label+' (lowest point '+fD(low.end)+').');add(R,94,'Plan for '+low.label+' now: move large purchases, line up a credit line, or collect deposits earlier.');}}
+  if(colL.length){const tot=colL.reduce((a,c)=>a+c.a,0),old=colL.filter(c=>c.age==='90+ days').reduce((a,c)=>a+c.a,0);
+    if(tot&&old/tot>0.1){add(T,72,fD(old)+' of the '+fD(tot)+' customers owe is over 90 days old.');add(R,79,'Collect the '+fD(old)+' that is over 90 days old. Call the largest balances this week and ask for deposits on new work.');}}
+  const curr=g('px_curr'),ind=g('px_ind'),cost=(g('px_labor')||0)+(g('px_mat')||0)+(g('px_oh')||0);
+  if(curr&&cost&&curr<cost)add(R,96,'The current price is below cost, so every job loses '+fD(cost-curr)+'. Raise the price or cut job costs right away.');
+  else if(curr&&ind&&curr<ind){add(T,62,'Prices are '+fD(ind-curr)+' below the industry average of '+fD(ind)+'.');add(R,70,'Test a price increase toward the market average of '+fD(ind)+' on new quotes.');}
+  const open=isL.filter(i=>i.st!=='Fixed'),hi=open.filter(i=>i.pri==='High');
+  if(open.length){add(T,hi.length?68:45,open.length+' bookkeeping issue'+(open.length>1?'s are':' is')+' still open'+(hi.length?' ('+hi.length+' high priority)':'')+', so some numbers may change once '+(open.length>1?'they are':'it is')+' fixed.');
+    if(hi.length)add(R,82,'Fix the '+hi.length+' high priority bookkeeping item'+(hi.length>1?'s':'')+' first, so decisions are based on accurate numbers.');}
+  Object.keys(ADV_TABS).forEach(t=>ADV_RULES[t]().data.forEach(x=>D.push(ADV_TABS[t]+' · '+x)));
+  if(!T.length&&!R.length)return {take:['Fill in the Overhead, Break-even, Snapshot and Cash Flow tabs to see the key takeaways for this client.'],rec:[],data:D};
+  if(!R.length)add(R,10,'Keep reviewing these numbers every month so changes are caught early.');
+  const top=(a,n)=>a.sort((x,y)=>y.s-x.s).slice(0,n).map(x=>x.t);
+  return {take:top(T,6),rec:top(R,6),data:D};
+};
+function advTitle(t){return ADV_TABS[t]||'Overall summary';}
 function advDraftHTML(tab){const r=ADV_RULES[tab]();
   return (r.take.length?'<p><b>Key takeaways</b></p><ul>'+r.take.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
     (r.rec.length?'<p><b>Recommendations</b></p><ul>'+r.rec.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'');}
@@ -3039,11 +3083,11 @@ function advPanel(tab){
   const badge=a.src==='claude'?'<span class="pill green">Polished with Claude</span>':a.edited?'<span class="pill amber">Edited</span>':'<span class="pill gray">Draft from the numbers</span>';
   host.innerHTML='<div class="card adv"><h3>Key takeaways &amp; recommendations '+badge+'</h3>'+
     '<div class="adv-bar"><button class="btn sm" onclick="advUpdate(\''+tab+'\')" title="Write a fresh draft from the current numbers"><i class="ti ti-refresh"></i> Update draft</button>'+
-    '<button class="btn sm" onclick="advPolish(\''+tab+'\')" title="Copy a prompt with these numbers to paste into Claude"><i class="ti ti-sparkles"></i> Polish with Claude</button><span class="adv-sp"></span>'+
+    '<button class="btn sm" onclick="advPolish(\''+tab+'\')" title="Copy a prompt with these numbers to paste into Claude"><i class="ti ti-sparkles"></i> Polish with Claude</button>'+(tab==='dashboard'?'<button class="btn dark sm" onclick="advPrint()"><i class="ti ti-printer"></i> Print / PDF for client</button>':'')+'<span class="adv-sp"></span>'+
     '<span class="adv-tools"><button type="button" title="Bold" onmousedown="event.preventDefault()" onclick="advFmt(\''+tab+'\',\'bold\')"><b>B</b></button><button type="button" title="Bullets" onmousedown="event.preventDefault()" onclick="advFmt(\''+tab+'\',\'insertUnorderedList\')">• List</button><button type="button" title="Sub-bullet" onmousedown="event.preventDefault()" onclick="advFmt(\''+tab+'\',\'indent\')">→</button><button type="button" title="Back out" onmousedown="event.preventDefault()" onclick="advFmt(\''+tab+'\',\'outdent\')">←</button></span></div>'+
     '<div class="adv-ed" id="adv_ed_'+tab+'" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Key takeaways and recommendations">'+a.html+'</div>'+
     '<div class="adv-paste" id="adv_paste_'+tab+'" style="display:none"><div class="adv-note"><b>Paste Claude\'s answer here.</b> It replaces the text above (you can still edit it).</div><textarea id="adv_pt_'+tab+'" rows="6" placeholder="Paste the answer from Claude"></textarea><div class="adv-bar"><button class="btn primary sm" onclick="advUsePaste(\''+tab+'\')">Use this answer</button><button class="btn sm" onclick="document.getElementById(\'adv_paste_'+tab+'\').style.display=\'none\'">Cancel</button></div></div>'+
-    '<div class="adv-note">Written from the numbers on this tab'+(advBench()?' and the '+esc(advBench().name)+' benchmark':'')+'. Edit anything before sharing with the client. Shows on the Dashboard under Client recommendations.</div></div>';
+    '<div class="adv-note">'+(tab==='dashboard'?'Combined from all tabs, most important first':'Written from the numbers on this tab')+(advBench()?' and the '+esc(advBench().name)+' benchmark':'')+'. Edit anything before sharing with the client.'+(tab==='dashboard'?'':' The Dashboard combines all tabs into one summary.')+'</div></div>';
   const ed=document.getElementById('adv_ed_'+tab);
   ed.addEventListener('input',()=>{a.html=ed.innerHTML;if(!a.edited){a.edited=true;advBadge(tab);}});
   ed.addEventListener('keydown',e=>{if(e.key==='Tab'&&getSelection().anchorNode&&getSelection().anchorNode.parentElement&&getSelection().anchorNode.parentElement.closest('li')){e.preventDefault();document.execCommand(e.shiftKey?'outdent':'indent');a.html=ed.innerHTML;a.edited=true;}});
@@ -3056,7 +3100,7 @@ function advPrompt(tab){
   const r=ADV_RULES[tab]();const client=(document.getElementById('client_name')||{}).value||'the client';const b=advBench();
   return ['You are helping a business consultant at Structure write advice for a small business owner.',
     'Client: '+client+(b?'. Industry: '+b.name+' (typical COGS '+b.cogs[0]+' to '+b.cogs[1]+'%, gross margin '+b.gm[0]+' to '+b.gm[1]+'%, overhead '+b.oh[0]+' to '+b.oh[1]+'%, net profit '+b.net[0]+' to '+b.net[1]+'% of sales)':'')+'.',
-    'Section: '+ADV_TABS[tab]+'.','',
+    'Section: '+advTitle(tab)+(tab==='dashboard'?' (combine everything into the most important points for the owner)':'')+'.','',
     'Write 2 short lists:',
     'Key takeaways: 3 to 5 bullets that tell the owner something useful they would not see from the raw numbers alone.',
     'Recommendations: 3 to 5 specific next steps, each tied to the numbers.',
@@ -3067,7 +3111,7 @@ function advPrompt(tab){
 function advPolish(tab){
   const txt=advPrompt(tab);
   const show=()=>{const p=document.getElementById('adv_paste_'+tab);if(p){p.style.display='block';}window.open('https://claude.ai/new','_blank','noopener');
-    toast('Prompt copied with the '+esc(ADV_TABS[tab])+' numbers. In Claude, paste it (Ctrl+V), then copy the answer back into the box below. Client numbers will be in your Claude chat.',12000);};
+    toast('Prompt copied with the '+esc(advTitle(tab))+' numbers. In Claude, paste it (Ctrl+V), then copy the answer back into the box below. Client numbers will be in your Claude chat.',12000);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(show,()=>{advCopyFallback(txt);show();});else{advCopyFallback(txt);show();}
 }
 function advCopyFallback(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
@@ -3093,25 +3137,17 @@ function advWatch(){Object.keys(ADV_TABS).forEach(tab=>{const el=document.getEle
   el.addEventListener('input',go);el.addEventListener('change',go);el.addEventListener('click',e=>{if(e.target.closest('button'))go(e);});});}
 
 // ---------- dashboard: client recommendations ----------
-function advDashHTML(){
-  const parts=Object.keys(ADV_TABS).map(t=>{const a=ADV[t];const html=a&&a.edited?a.html:advDraftHTML(t);const txt=advText(html);
-    if(!txt||/^Key takeaways\s*•?\s*(Add|Enter)/.test(txt)||/^(Add|Enter) /.test(txt.replace(/^Key takeaways\s*/,'').replace(/^•\s*/,'')))return '';
-    return '<div class="adv-sec"><div class="adv-sec-h">'+esc(ADV_TABS[t])+(a&&a.edited?'':' <span class="pill gray">draft</span>')+' <button class="linkish" onclick="T(\''+t+'\');setTimeout(()=>{const e=document.querySelector(\'[data-adv=&quot;'+t+'&quot;]\');if(e)e.scrollIntoView({behavior:\'smooth\',block:\'start\'});},50)">Edit</button></div>'+html+'</div>';}).filter(Boolean);
-  if(!parts.length)return '';
-  return '<div class="card adv-dash"><h3>Client recommendations</h3><div class="adv-note" style="margin-top:-6px;margin-bottom:10px">Collected from each tab. Edit them on their tab. Items marked draft have not been reviewed yet.</div>'+parts.join('')+
-    '<div class="adv-bar" style="margin-top:12px"><button class="btn dark" onclick="advPrint()"><i class="ti ti-printer"></i> Print / PDF for client</button></div></div>';
-}
 function advPrint(){
   const client=(document.getElementById('client_name')||{}).value||'Client';const logo=(document.querySelector('.logo-img')||{}).src||'';
-  const secs=Object.keys(ADV_TABS).map(t=>{const a=ADV[t];const html=a&&a.edited?a.html:advDraftHTML(t);const txt=advText(html);if(!txt||/^(Key takeaways\s*•\s*)?(Add|Enter) /.test(txt))return '';return '<h2>'+esc(ADV_TABS[t])+'</h2>'+html;}).filter(Boolean).join('');
+  const a=ADV.dashboard;const html=a&&a.edited?a.html:advDraftHTML('dashboard');
   const pa=document.getElementById('rp-print');
-  pa.innerHTML='<div class="adv-print"><img src="'+logo+'" alt="Structure" style="height:22px"><h1>'+esc(client)+' · Key takeaways and recommendations</h1><div class="adv-date">'+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>'+secs+'<p class="adv-foot">Prepared by Structure · Growth needs structure. We build it.</p></div>';
+  pa.innerHTML='<div class="adv-print"><img src="'+logo+'" alt="Structure" style="height:22px"><h1>'+esc(client)+' · Key takeaways and recommendations</h1><div class="adv-date">'+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>'+html+'<p class="adv-foot">Prepared by Structure · Growth needs structure. We build it.</p></div>';
   document.body.classList.add('rp-printing');const t0=document.title;document.title=client+' · Recommendations';
   const done=()=>{document.body.classList.remove('rp-printing');pa.innerHTML='';document.title=t0;window.removeEventListener('afterprint',done);};
   window.addEventListener('afterprint',done);window.print();setTimeout(()=>{if(!window.matchMedia('print').matches)done();},1000);
 }
 function advExcelRows(){const rows=[['Section','Takeaways and recommendations','Status']];
-  Object.keys(ADV_TABS).forEach(t=>{const a=ADV[t];const txt=advText(a&&a.edited?a.html:advDraftHTML(t));if(txt)rows.push([ADV_TABS[t],txt,a&&a.edited?(a.src==='claude'?'Polished with Claude':'Reviewed'):'Draft']);});return rows;}
+  ['dashboard'].concat(Object.keys(ADV_TABS)).forEach(t=>{const a=ADV[t];const txt=advText(a&&a.edited?a.html:advDraftHTML(t));if(txt)rows.push([advTitle(t),txt,a&&a.edited?(a.src==='claude'?'Polished with Claude':'Reviewed'):'Draft']);});return rows;}
 
 // ---------- QB report: suggest key takeaways ----------
 function rpSuggest(i){
