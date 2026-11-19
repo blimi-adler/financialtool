@@ -329,7 +329,7 @@ tr.flash td{background:var(--sand)!important}
       <button class="btn ink sm" onclick="copyEmail()"><i class="ti ti-copy"></i> Copy email</button></div>
     <div class="row" style="margin-bottom:8px"><input id="em_to" placeholder="Bookkeeper email (optional)" style="flex:1;min-width:200px" oninput="S.emailTo=this.value;touch()"></div>
     <div class="eopts">
-      <label>Organize by <select id="em_group" onchange="S.emailGroup=this.value;touch();buildEmail(true)"><option value="area">Area (Undeposited funds, payroll…)</option><option value="type">Type (changes, questions, going forward)</option></select></label>
+      <label>Organize by <select id="em_group" onchange="S.emailGroup=this.value;touch();buildEmail(true)"><option value="type">Type (changes, questions, going forward)</option><option value="area">Area (reconciliations, balance sheet…)</option></select></label>
       <label>Reply by <input id="em_due" placeholder="optional, e.g. 11/24" style="width:150px" onchange="emailDue(this)"></label>
     </div>
     <input id="em_subj" class="bigtext" style="min-height:0" aria-label="Subject" oninput="S.emailSubject=this.value;S.emailEdited=true;touch()">
@@ -443,7 +443,7 @@ const ALLSTEPS=[];SECTIONS.forEach(s=>s.steps.forEach(st=>ALLSTEPS.push(Object.a
 const stepById=id=>ALLSTEPS.find(s=>s.id===id);
 
 // ================= state =================
-function blank(){return {v:1,client:'',month:defaultMonth(),reviewer:'',bookkeeper:'',emailTo:'',steps:{},accounts:[],outstanding:[],issues:[],reports:[],notes:'',emailSubject:'',emailBody:'',emailHTML:'',emailEdited:false,emailGroup:'area',emailDue:''};}
+function blank(){return {v:1,client:'',month:defaultMonth(),reviewer:'',bookkeeper:'',emailTo:'',steps:{},accounts:[],outstanding:[],issues:[],reports:[],notes:'',emailSubject:'',emailBody:'',emailHTML:'',emailEdited:false,emailGroup:'type',emailDue:''};}
 let S=blank();
 const DRAFT='structure_monthly_qb_review_draft';
 let saveT=null;
@@ -551,9 +551,9 @@ function acctFlags(a){
   if(a.feed==='Not set up')f.push({c:'warn',t:'No bank feed'});
   const exp=S.month?monthEndISO(S.month):null;
   if(exp){
-    if(!a.lastRec)f.push({c:'warn',t:'Reconciled date missing'});
-    else{const [y1,m1]=a.lastRec.split('-').map(Number),[y2,m2]=exp.split('-').map(Number);const behind=(y2*12+m2)-(y1*12+m1);
-      if(behind>=1)f.push({c:behind>=2?'bad':'warn',t:behind+' month'+(behind>1?'s':'')+' behind'});}
+    if(!a.lastRec)f.push({c:'warn',t:'Never reconciled'});
+    else if(a.lastRec<exp){const [y1,m1]=a.lastRec.split('-').map(Number),[y2,m2]=exp.split('-').map(Number);const behind=(y2*12+m2)-(y1*12+m1);
+      f.push({c:behind>=2?'bad':'warn',t:behind>=1?behind+' month'+(behind>1?'s':'')+' behind':'Reconciled to '+fmtDate(a.lastRec).replace(/, \d{4}$/,'')+' only'});}
   }
   if((a.forReview||0)>0)f.push({c:(a.forReview>25?'bad':'warn'),t:a.forReview+' for review'});
   if(!f.length&&a.name)f.push({c:'good',t:'Up to date'});
@@ -577,7 +577,7 @@ function rAccounts(){
 }
 function addAccount(){S.accounts.push({id:uid('ac'),name:'',type:'Bank',feed:'Connected',lastRec:'',forReview:0,note:''});touch();rAccounts();const ins=document.querySelectorAll('#acc_tb tr:last-child input');if(ins[0])ins[0].focus();}
 function acctIssueText(a){const f=acctFlags(a).filter(x=>x.c!=='good');
-  const parts=f.map(x=>/behind/.test(x.t)?('Not reconciled since '+fmtDate(a.lastRec)+'. Please reconcile through '+fmtDate(monthEndISO(S.month))+'.'):/missing/.test(x.t)?'Please confirm the last reconciled date.':/disconnected/i.test(x.t)?'Bank feed is disconnected. Please reconnect.':/No bank feed/.test(x.t)?'No bank feed is set up.':(a.forReview+' transaction'+(a.forReview>1?'s are':' is')+' waiting in For review.'));
+  const parts=f.map(x=>/behind| only$/.test(x.t)?('Not reconciled since '+fmtDate(a.lastRec)+'. Please reconcile through '+fmtDate(monthEndISO(S.month))+'.'):/Never reconciled/.test(x.t)?'Never reconciled. Please reconcile through '+fmtDate(monthEndISO(S.month))+'.':/disconnected/i.test(x.t)?'Bank feed is disconnected. Please reconnect.':/No bank feed/.test(x.t)?'No bank feed is set up.':(a.forReview+' transaction'+(a.forReview>1?'s are':' is')+' waiting in For review.'));
   return (a.name||'Account')+': '+(parts.join(' ')||'Please review.');}
 function issueFromAcct(i){const a=S.accounts[i];addIssue({desc:acctIssueText(a),area:/behind|reconcil/i.test(acctIssueText(a))?'Reconciliation':'Banking',pri:'Medium',link:{type:'acct',id:a.id}});rAccounts();}
 function flagAccounts(){
@@ -843,7 +843,7 @@ function stats(){
   const openAll=S.issues.filter(i=>i.st!=='Fixed');const open=openAll.filter(i=>(i.kind||'Issue')==='Issue');
   return {done,total:ALLSTEPS.length,open:open.length,questions:openAll.filter(i=>i.kind==='Question').length,suggestions:openAll.filter(i=>i.kind==='Suggestion').length,high:open.filter(i=>i.pri==='High').length,
     prior:open.filter(i=>i.from&&i.from<S.month).length,fixedNow:S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month).length,
-    accBehind:S.accounts.filter(a=>acctFlags(a).some(f=>/behind|missing/.test(f.t))).length,feedOff:S.accounts.filter(a=>a.feed==='Disconnected').length,
+    accBehind:S.accounts.filter(a=>acctFlags(a).some(f=>/behind| only$|Never reconciled/.test(f.t))).length,feedOff:S.accounts.filter(a=>a.feed==='Disconnected').length,
     out:S.outstanding.filter(o=>o.st!=='Cleared').length};
 }
 function rSummary(){
@@ -852,7 +852,7 @@ function rSummary(){
   $('stats').innerHTML=tile('Checklist',s.done+'/'+s.total,s.done===s.total?'good':'')+tile('Open issues',s.open,s.open?'bad':'good')+tile('High priority',s.high,s.high?'bad':'')+tile('Open questions',s.questions,s.questions?'warn':'')+
     tile('Open from earlier months',s.prior,s.prior?'warn':'')+tile('Fixed this month',s.fixedNow,s.fixedNow?'good':'')+tile('Accounts behind',s.accBehind,s.accBehind?'warn':'good')+tile('Feeds disconnected',s.feedOff,s.feedOff?'bad':'good')+tile('Transactions to review',s.out,s.out?'warn':'');
   $('em_to').value=S.emailTo||'';$('int_notes').value=S.notes||'';grow($('int_notes'));
-  $('em_group').value=S.emailGroup||'area';$('em_due').value=S.emailDue?fmtUS(S.emailDue):'';
+  $('em_group').value=S.emailGroup||'type';$('em_due').value=S.emailDue?fmtUS(S.emailDue):'';
   // older saves kept plain text: turn it into simple paragraphs
   if(S.emailEdited&&!S.emailHTML&&S.emailBody)S.emailHTML=S.emailBody.split(/\n{2,}/).map(p=>'<p>'+esc(p).replace(/\n/g,'<br>')+'</p>').join('');
   if(!S.emailEdited||!S.emailHTML)buildEmail(false);else{$('em_subj').value=S.emailSubject;$('em_html').innerHTML=S.emailHTML;}
@@ -867,32 +867,57 @@ function emChanged(){S.emailHTML=$('em_html').innerHTML;S.emailEdited=true;touch
 
 // ---- email content ----
 const AREA_TITLE={'Banking':'Bank feeds and transactions','Reconciliation':'Reconciliations','P&L':'Profit and loss','Classes':'P&L by class','Balance sheet':'Balance sheet','AR':'Accounts receivable','AP':'Accounts payable','Payroll':'Payroll','Other':'Other'};
-function itemParts(i){const lines=String(i.desc||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);const main=(lines.shift()||'').replace(/^[-•*]\s*/,'');return {main,subs:lines.map(x=>x.replace(/^[-•*]\s*/,''))};}
+function itemParts(i){const lines=String(i.desc||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);let main=(lines.shift()||'').replace(/^[-•*]\s*/,'');const subs=lines.map(x=>x.replace(/^[-•*]\s*/,'')).filter(Boolean);
+  // "Heading: first detail" + more lines -> "Heading:" with every detail as its own sub-bullet
+  const c=main.indexOf(': ');if(subs.length&&c>0){const rest=main.slice(c+2).trim();main=main.slice(0,c+1);if(rest)subs.unshift(rest);}
+  return {main,subs};}
 function itemTags(i){const t=[];if(i.pri==='High')t.push('high priority');if(i.from&&i.from<S.month)t.push((i.kind==='Question'?'asked in ':'open since ')+monthShort(i.from));return t;}
 function liHTML(i,prefix){const {main,subs}=itemParts(i);const t=itemTags(i);
-  return '<li>'+(prefix?'<b>'+esc(prefix)+'</b> ':'')+esc(main)+(t.length?' <i>('+esc(t.join(', '))+')</i>':'')+(subs.length?'<ul>'+subs.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+'</li>';}
-function acctItem(a){const f=acctFlags(a).filter(x=>x.c!=='good');return {kind:'Issue',area:f.some(x=>/behind|missing/.test(x.t))?'Reconciliation':'Banking',pri:f.some(x=>x.c==='bad')?'High':'Medium',desc:acctIssueText(a)};}
+  return '<li>'+(prefix?'<b>'+esc(prefix)+'</b> ':'')+esc(main)+(t.length?' <i>('+esc(t.join(', '))+')</i>':'')+(subs.length?'<ul>'+subs.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+(i._ol&&i._ol.length?'<ol>'+i._ol.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+'</li>';}
+// accounts grouped under 1 item each: reconciliations, bank feeds, For review
+function accountGroups(open){
+  const rec=[],feed=[],rev=[];
+  S.accounts.forEach(a=>{const f=acctFlags(a).filter(x=>x.c!=='good');if(!f.length)return;
+    if(f.some(x=>/behind| only$|Never reconciled/.test(x.t)))rec.push(a);
+    if(f.some(x=>/disconnected|No bank feed/i.test(x.t)))feed.push(a);
+    if((a.forReview||0)>0)rev.push(a);});
+  const used=new Set([...rec,...feed,...rev].map(a=>a.id));
+  const groups=[];
+  const parent=(stepId,synth,list,line,hi)=>{if(!list.length)return;
+    const st=open.find(i=>i.link&&i.link.type==='step'&&i.link.id===stepId);
+    const base=st?Object.assign({},st):{kind:'Issue',area:synth.area,pri:'Medium',desc:synth.desc};
+    if(hi)base.pri='High';
+    base._ol=list.map(line);base._step=st;groups.push(base);};
+  const me=fmtDate(monthEndISO(S.month));
+  parent('lastrec',{area:'Reconciliation',desc:'Accounts are not reconciled through '+me+':'},rec,a=>(a.name||'Account')+': '+(a.lastRec?'Not reconciled since '+fmtDate(a.lastRec)+'.':'Never reconciled.'),rec.some(a=>acctFlags(a).some(x=>x.c==='bad'&&/behind/.test(x.t))));
+  parent('feeds',{area:'Banking',desc:'Bank feeds need attention:'},feed,a=>(a.name||'Account')+': '+(a.feed==='Disconnected'?'Feed is disconnected. Please reconnect.':'No bank feed is set up.'),feed.some(a=>a.feed==='Disconnected'));
+  parent('forreview',{area:'Banking',desc:'Transactions are waiting in For review:'},rev,a=>(a.name||'Account')+': '+a.forReview+' transaction'+(a.forReview>1?'s':''),false);
+  return {groups,used};
+}
+function acctItem(a){const f=acctFlags(a).filter(x=>x.c!=='good');return {kind:'Issue',area:f.some(x=>/behind| only$|Never reconciled/.test(x.t))?'Reconciliation':'Banking',pri:f.some(x=>x.c==='bad')?'High':'Medium',desc:acctIssueText(a)};}
 function outHTML(o){const age=outAge(o);const head=[o.date?fmtDate(o.date):'',o.amount!=null?money(o.amount):'',o.payee||''].filter(Boolean).join(' · ')+(o.acct?' ('+o.acct+')':'');
   return '<li>'+esc(head||'Transaction')+(age!=null&&age>60?' <i>('+age+' days old)</i>':'')+(o.note?'<ul><li>'+esc(o.note)+'</li></ul>':'')+'</li>';}
 function buildEmail(force){
-  if(force&&S.emailEdited&&!confirm('Replace your edits with a fresh email built from the review?')){$('em_group').value=S.emailGroup||'area';return;}
+  if(force&&S.emailEdited&&!confirm('Replace your edits with a fresh email built from the review?')){$('em_group').value=S.emailGroup||'type';return;}
   const who=(S.bookkeeper||'').trim().split(' ')[0];const cl=S.client||'the client';const mon=monthLabel(S.month)||'this month';
   const open=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper');
   const byPri=(a,b)=>PRI[a.pri]-PRI[b.pri];
-  const acc=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')&&!issuesFor('acct',a.id).some(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper')).map(acctItem);
-  const items=open.concat(acc);
+  const ag=accountGroups(open);
+  // account issues and their step issue are shown inside the grouped item instead
+  const items=ag.groups.concat(open.filter(i=>!(i.link&&i.link.type==='acct'&&ag.used.has(i.link.id))&&!ag.groups.some(g=>g._step===i)));
   const nCh=items.filter(i=>(i.kind||'Issue')==='Issue').length,nQ=items.filter(i=>i.kind==='Question').length,nS=items.filter(i=>i.kind==='Suggestion').length;
   const out=S.outstanding.filter(o=>o.st!=='Cleared');
   const fixed=S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month&&i.from&&i.from<S.month);
   const own=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Owner');
   const H=[];
   H.push('<p>Hi'+(who?' '+esc(who):'')+',</p>');
-  H.push('<p>Hope you\'re doing well! I went through '+esc(cl)+'\'s QuickBooks for '+esc(mon)+'.'+(fixed.length?' Thank you for taking care of '+fixed.length+' item'+(fixed.length>1?'s':'')+' from last time.':'')+'</p>');
+  H.push('<p>Hope you\'re doing well!</p>');
+  H.push('<p>I went through your QuickBooks for '+esc(mon)+'.'+(fixed.length?' Thank you for taking care of '+fixed.length+' item'+(fixed.length>1?'s':'')+' from last time.':'')+'</p>');
   const total=nCh+nQ+nS+(out.length?1:0);
   if(total){
-    const parts=[];if(nCh)parts.push(nCh+' change'+(nCh>1?'s':''));if(nQ)parts.push(nQ+' question'+(nQ>1?'s':''));if(nS)parts.push(nS+' note'+(nS>1?'s':'')+' for going forward');if(out.length)parts.push(out.length+' transaction'+(out.length>1?'s':'')+' to clarify');
-    H.push('<p><b>What I need from you:</b> '+esc(parts.join(', ').replace(/, ([^,]*)$/,' and $1'))+'. For each item, please make the change or reply with an answer'+(S.emailDue?', and send me an update by <b>'+esc(new Date(S.emailDue+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</b>':', and let me know where things stand')+'.</p>');
-    if(S.emailGroup==='type'){
+    const what=nQ&&(nCh||out.length)?'issues and questions':nQ?'questions':'items';
+    H.push('<p>See below all the '+what+' I found that need your attention. For each item, please make the change or reply with an answer'+(S.emailDue?', and send me an update by <b>'+esc(new Date(S.emailDue+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</b>':', and let me know where things stand')+'.</p>');
+    if((S.emailGroup||'type')==='type'){
       const sect=(title,list,ordered,prefix)=>{if(!list.length)return;H.push('<p><b>'+esc(title)+'</b></p><'+(ordered?'ol':'ul')+'>'+list.map(i=>liHTML(i,prefix)).join('')+'</'+(ordered?'ol':'ul')+'>');};
       sect('Changes needed',items.filter(i=>(i.kind||'Issue')==='Issue').sort(byPri),true);
       sect('Questions',items.filter(i=>i.kind==='Question').sort(byPri),true);
@@ -915,9 +940,8 @@ function buildEmail(force){
   }
   if(own.length)H.push('<p><b>For your information</b></p><p>I am checking these with the owner, so no action needed from you yet:</p><ul>'+own.map(i=>liHTML(i)).join('')+'</ul>');
   if(fixed.length)H.push('<p><b>Resolved since last review</b></p><ul>'+fixed.map(i=>'<li>'+esc(itemParts(i).main)+'</li>').join('')+'</ul>');
-  if(total)H.push('<p>If anything is unclear, just let me know, or we can go over it on a quick call. Happy to help.</p>');
+  if(total)H.push('<p>If anything is unclear, just let me know and I am happy to help.</p>');
   H.push('<p>Thank you for all your work keeping everything accurate!</p>');
-  H.push('<p>'+esc(S.reviewer||'')+'</p>');
   S.emailSubject=cl+' · QuickBooks review for '+mon+(total?' · '+total+' item'+(total>1?'s':'')+' for you':'');
   S.emailHTML=H.join('');S.emailBody=htmlToText(S.emailHTML);S.emailEdited=false;
   $('em_subj').value=S.emailSubject;$('em_html').innerHTML=S.emailHTML;
@@ -995,7 +1019,7 @@ function startNextMonth(){
   if(!confirm('Start the '+monthLabel(next)+' review?\n\nKept: client, accounts, open issues and open transactions.\nCleared: checklist, fixed issues, reports and the email.'))return;
   if(confirm('Save a copy of the '+monthLabel(S.month)+' review first? (Recommended)'))saveFile();
   const n=blank();
-  n.client=S.client;n.reviewer=S.reviewer;n.bookkeeper=S.bookkeeper;n.emailTo=S.emailTo;n.month=next;n.emailGroup=S.emailGroup||'area';
+  n.client=S.client;n.reviewer=S.reviewer;n.bookkeeper=S.bookkeeper;n.emailTo=S.emailTo;n.month=next;n.emailGroup=S.emailGroup||'type';
   n.accounts=S.accounts.map(a=>Object.assign({},a,{forReview:0,note:''}));
   n.outstanding=S.outstanding.filter(o=>o.st!=='Cleared');
   n.issues=S.issues.filter(i=>i.st!=='Fixed').map(i=>{const c=Object.assign({},i);if(c.link&&(c.link.type==='rp'))c.link=null;return c;});
