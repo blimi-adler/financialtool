@@ -109,6 +109,19 @@ h2{font-size:18px;font-weight:600;letter-spacing:-.02em;margin:0 0 4px}
 .kind.Issue{background:var(--bad-bg)!important;color:var(--bad)}
 .kind.Question{background:var(--sand)!important;color:var(--ink)}
 .kind.Suggestion{background:var(--good-bg)!important;color:var(--good)}
+.etools{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px;border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;background:var(--soft)}
+.etools button{border:1px solid transparent;background:none;border-radius:8px;padding:4px 9px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);min-width:30px}
+.etools button:hover{border-color:var(--cardb);background:#fff}
+.etools .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.editor{min-height:360px;border:1px solid var(--line);border-radius:0 0 12px 12px;background:#fff;padding:14px 18px;font-size:14px;line-height:1.55;outline:none;overflow-wrap:anywhere}
+.editor:focus{border-color:var(--ink)}
+.editor p{margin:0 0 10px}
+.editor ul,.editor ol{margin:0 0 10px 22px;padding:0}
+.editor li{margin:2px 0}
+.editor li>ul,.editor li>ol{margin:4px 0 4px 20px}
+.eopts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px;font-size:13px}
+.eopts label{display:inline-flex;align-items:center;gap:6px;color:var(--stone);font-weight:500}
+.eopts select,.eopts input{border:1px solid var(--line);border-radius:10px;background:#fff;padding:6px 10px;font-size:13px}
 .empty{text-align:center;color:var(--stone);font-size:13px;padding:20px 8px}
 
 /* chips + badges */
@@ -315,8 +328,25 @@ tr.flash td{background:var(--sand)!important}
       <button class="btn sm" onclick="openMail()"><i class="ti ti-mail"></i> Open in email</button>
       <button class="btn ink sm" onclick="copyEmail()"><i class="ti ti-copy"></i> Copy email</button></div>
     <div class="row" style="margin-bottom:8px"><input id="em_to" placeholder="Bookkeeper email (optional)" style="flex:1;min-width:200px" oninput="S.emailTo=this.value;touch()"></div>
-    <input id="em_subj" class="bigtext" style="min-height:0" oninput="S.emailSubject=this.value;S.emailEdited=true;touch()">
-    <textarea id="em_body" class="bigtext" style="min-height:360px;font-size:13.5px" oninput="S.emailBody=this.value;S.emailEdited=true;touch()"></textarea>
+    <div class="eopts">
+      <label>Organize by <select id="em_group" onchange="S.emailGroup=this.value;touch();buildEmail(true)"><option value="area">Area (Undeposited funds, payroll…)</option><option value="type">Type (changes, questions, going forward)</option></select></label>
+      <label>Reply by <input id="em_due" placeholder="optional, e.g. 11/24" style="width:150px" onchange="emailDue(this)"></label>
+    </div>
+    <input id="em_subj" class="bigtext" style="min-height:0" aria-label="Subject" oninput="S.emailSubject=this.value;S.emailEdited=true;touch()">
+    <div class="etools" role="toolbar" aria-label="Formatting">
+      <button type="button" title="Bold (Ctrl+B)" aria-label="Bold" onmousedown="event.preventDefault()" onclick="fmt('bold')"><b>B</b></button>
+      <button type="button" title="Italic (Ctrl+I)" aria-label="Italic" onmousedown="event.preventDefault()" onclick="fmt('italic')"><i>I</i></button>
+      <button type="button" title="Underline (Ctrl+U)" aria-label="Underline" onmousedown="event.preventDefault()" onclick="fmt('underline')"><u>U</u></button>
+      <span class="sep"></span>
+      <button type="button" title="Bullets" onmousedown="event.preventDefault()" onclick="fmt('insertUnorderedList')">• Bullets</button>
+      <button type="button" title="Numbered list" onmousedown="event.preventDefault()" onclick="fmt('insertOrderedList')">1. Numbers</button>
+      <button type="button" title="Make a sub-bullet (Tab)" onmousedown="event.preventDefault()" onclick="fmt('indent')">→ Sub-bullet</button>
+      <button type="button" title="Move back out (Shift+Tab)" onmousedown="event.preventDefault()" onclick="fmt('outdent')">← Back out</button>
+      <span class="sep"></span>
+      <button type="button" title="Section heading" onmousedown="event.preventDefault()" onclick="fmtHeading()">Heading</button>
+      <button type="button" title="Clear formatting" onmousedown="event.preventDefault()" onclick="fmt('removeFormat')">Clear</button>
+    </div>
+    <div id="em_html" class="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Email body" spellcheck="true"></div>
     <p class="muted small" id="em_note"></p>
   </div>
   <div class="card">
@@ -342,17 +372,18 @@ function soon(f){setTimeout(f,0);}
 // ---- easy dates: type 10/31, 10/31/26, Oct 31, 31, or "end"; or use the calendar ----
 const MON3=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 function isoOK(y,m,d){if(!(y>1900&&m>=1&&m<=12&&d>=1&&d<=31))return null;const x=new Date(Date.UTC(y,m-1,d));if(x.getUTCMonth()!==m-1)return null;return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
-function parseDateFlex(v){
+function parseDateFlex(v,future){
   let t=String(v||'').trim().toLowerCase().replace(/(\d)(st|nd|rd|th)\b/g,'$1');if(!t)return '';
   const ref=(S.month||defaultMonth()).split('-').map(Number),rY=ref[0],rM=ref[1];
-  const yr=(y,m)=>{if(y==null)return m>rM?rY-1:rY;y=+y;return y<100?2000+y:y;};
+  const now=new Date(),cY=now.getFullYear();
+  const yr=(y,m,d)=>{if(y==null){if(future){const t=new Date(cY,m-1,d||1);return t<new Date(cY,now.getMonth(),now.getDate())?cY+1:cY;}return m>rM?rY-1:rY;}y=+y;return y<100?2000+y:y;};
   let m;
   if(/^(end|eom|month ?end|me)$/.test(t))return monthEndISO(S.month||defaultMonth());
   if((m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return isoOK(+m[1],+m[2],+m[3]);
-  if((m=t.match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2}|\d{4}))?$/)))return isoOK(yr(m[3],+m[1]),+m[1],+m[2]);
-  if((m=t.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[1].slice(0,3))+1;return mo?isoOK(yr(m[3],mo),mo,+m[2]):null;}
-  if((m=t.match(/^(\d{1,2})\s*([a-z]{3,9})\.?(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[2].slice(0,3))+1;return mo?isoOK(yr(m[3],mo),mo,+m[1]):null;}
-  if((m=t.match(/^(\d{1,2})$/)))return isoOK(rY,rM,+m[1]);
+  if((m=t.match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2}|\d{4}))?$/)))return isoOK(yr(m[3],+m[1],+m[2]),+m[1],+m[2]);
+  if((m=t.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[1].slice(0,3))+1;return mo?isoOK(yr(m[3],mo,+m[2]),mo,+m[2]):null;}
+  if((m=t.match(/^(\d{1,2})\s*([a-z]{3,9})\.?(?:,?\s*(\d{2}|\d{4}))?$/))){const mo=MON3.indexOf(m[2].slice(0,3))+1;return mo?isoOK(yr(m[3],mo,+m[1]),mo,+m[1]):null;}
+  if((m=t.match(/^(\d{1,2})$/))){if(future){const d=+m[1];let y=cY,mo=now.getMonth()+1;if(d<now.getDate()){mo++;if(mo>12){mo=1;y++;}}return isoOK(y,mo,d);}return isoOK(rY,rM,+m[1]);}
   return null;
 }
 function fmtUS(iso){if(!iso)return '';const p=iso.split('-');return p[1]+'/'+p[2]+'/'+p[0];}
@@ -412,10 +443,11 @@ const ALLSTEPS=[];SECTIONS.forEach(s=>s.steps.forEach(st=>ALLSTEPS.push(Object.a
 const stepById=id=>ALLSTEPS.find(s=>s.id===id);
 
 // ================= state =================
-function blank(){return {v:1,client:'',month:defaultMonth(),reviewer:'',bookkeeper:'',emailTo:'',steps:{},accounts:[],outstanding:[],issues:[],reports:[],notes:'',emailSubject:'',emailBody:'',emailEdited:false};}
+function blank(){return {v:1,client:'',month:defaultMonth(),reviewer:'',bookkeeper:'',emailTo:'',steps:{},accounts:[],outstanding:[],issues:[],reports:[],notes:'',emailSubject:'',emailBody:'',emailHTML:'',emailEdited:false,emailGroup:'area',emailDue:''};}
 let S=blank();
 const DRAFT='structure_monthly_qb_review_draft';
 let saveT=null;
+window.addEventListener('beforeunload',()=>{clearTimeout(saveT);try{localStorage.setItem(DRAFT,JSON.stringify(S));}catch(e){}});
 function touch(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(DRAFT,JSON.stringify(S));}catch(e){}},400);updateProgress();updateCounts();}
 
 // ================= tabs =================
@@ -820,48 +852,113 @@ function rSummary(){
   $('stats').innerHTML=tile('Checklist',s.done+'/'+s.total,s.done===s.total?'good':'')+tile('Open issues',s.open,s.open?'bad':'good')+tile('High priority',s.high,s.high?'bad':'')+tile('Open questions',s.questions,s.questions?'warn':'')+
     tile('Open from earlier months',s.prior,s.prior?'warn':'')+tile('Fixed this month',s.fixedNow,s.fixedNow?'good':'')+tile('Accounts behind',s.accBehind,s.accBehind?'warn':'good')+tile('Feeds disconnected',s.feedOff,s.feedOff?'bad':'good')+tile('Transactions to review',s.out,s.out?'warn':'');
   $('em_to').value=S.emailTo||'';$('int_notes').value=S.notes||'';grow($('int_notes'));
-  if(!S.emailEdited||!S.emailBody)buildEmail(false);else{ $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;}
-  $('em_note').textContent=S.emailEdited?'You edited this email. Rebuild from review to start over from the latest data.':'This email updates from the review until you edit it.';
+  $('em_group').value=S.emailGroup||'area';$('em_due').value=S.emailDue?fmtUS(S.emailDue):'';
+  // older saves kept plain text: turn it into simple paragraphs
+  if(S.emailEdited&&!S.emailHTML&&S.emailBody)S.emailHTML=S.emailBody.split(/\n{2,}/).map(p=>'<p>'+esc(p).replace(/\n/g,'<br>')+'</p>').join('');
+  if(!S.emailEdited||!S.emailHTML)buildEmail(false);else{$('em_subj').value=S.emailSubject;$('em_html').innerHTML=S.emailHTML;}
+  emNote();
 }
+function emNote(){$('em_note').textContent=S.emailEdited?'You edited this email. "Rebuild from review" starts over from the latest data.':'This email updates from the review until you edit it. Tip: extra lines in an item become sub-bullets.';}
+function emailDue(el){const iso=parseDateFlex(el.value,true);if(iso===null){el.classList.add('bad');toast('Could not read that date. Try 11/24 or Nov 24.');return;}
+  el.classList.remove('bad');S.emailDue=iso||'';el.value=iso?fmtUS(iso):'';touch();if(!S.emailEdited)buildEmail(false);else toast('Reply-by date saved. Rebuild the email to add it.');}
+function fmt(cmd){$('em_html').focus();document.execCommand(cmd,false,null);emChanged();}
+function fmtHeading(){$('em_html').focus();document.execCommand('formatBlock',false,'p');document.execCommand('bold',false,null);emChanged();}
+function emChanged(){S.emailHTML=$('em_html').innerHTML;S.emailEdited=true;touch();emNote();}
+
+// ---- email content ----
+const AREA_TITLE={'Banking':'Bank feeds and transactions','Reconciliation':'Reconciliations','P&L':'Profit and loss','Classes':'P&L by class','Balance sheet':'Balance sheet','AR':'Accounts receivable','AP':'Accounts payable','Payroll':'Payroll','Other':'Other'};
+function itemParts(i){const lines=String(i.desc||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);const main=(lines.shift()||'').replace(/^[-•*]\s*/,'');return {main,subs:lines.map(x=>x.replace(/^[-•*]\s*/,''))};}
+function itemTags(i){const t=[];if(i.pri==='High')t.push('high priority');if(i.from&&i.from<S.month)t.push((i.kind==='Question'?'asked in ':'open since ')+monthShort(i.from));return t;}
+function liHTML(i,prefix){const {main,subs}=itemParts(i);const t=itemTags(i);
+  return '<li>'+(prefix?'<b>'+esc(prefix)+'</b> ':'')+esc(main)+(t.length?' <i>('+esc(t.join(', '))+')</i>':'')+(subs.length?'<ul>'+subs.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+'</li>';}
+function acctItem(a){const f=acctFlags(a).filter(x=>x.c!=='good');return {kind:'Issue',area:f.some(x=>/behind|missing/.test(x.t))?'Reconciliation':'Banking',pri:f.some(x=>x.c==='bad')?'High':'Medium',desc:acctIssueText(a)};}
+function outHTML(o){const age=outAge(o);const head=[o.date?fmtDate(o.date):'',o.amount!=null?money(o.amount):'',o.payee||''].filter(Boolean).join(' · ')+(o.acct?' ('+o.acct+')':'');
+  return '<li>'+esc(head||'Transaction')+(age!=null&&age>60?' <i>('+age+' days old)</i>':'')+(o.note?'<ul><li>'+esc(o.note)+'</li></ul>':'')+'</li>';}
 function buildEmail(force){
-  if(force&&S.emailEdited&&!confirm('Replace your edits with a fresh email built from the review?'))return;
+  if(force&&S.emailEdited&&!confirm('Replace your edits with a fresh email built from the review?')){$('em_group').value=S.emailGroup||'area';return;}
   const who=(S.bookkeeper||'').trim().split(' ')[0];const cl=S.client||'the client';const mon=monthLabel(S.month)||'this month';
-  const L=[];
-  L.push('Hi'+(who?' '+who:'')+',','', 'I reviewed '+cl+"'s QuickBooks for "+mon+'. Below is what needs your attention.');
-  const one=i=>i.desc.trim().replace(/\s*\n\s*/g,' ');
-  const bk=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&(i.kind||'Issue')==='Issue').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
-  if(bk.length){L.push('','Needs your action ('+bk.length+'):');bk.forEach((i,n)=>L.push((n+1)+'. '+i.desc.trim().replace(/\s*\n\s*/g,' ')+(i.pri==='High'?' [High priority]':'')+(i.from&&i.from<S.month?' [Open since '+monthShort(i.from)+']':'')));}
-  const accLines=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')&&!issuesFor('acct',a.id).some(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper')).map(a=>'- '+acctIssueText(a));
-  if(accLines.length){L.push('','Accounts:');L.push(...accLines);}
-  const qs=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&i.kind==='Question').sort((a,b)=>PRI[a.pri]-PRI[b.pri]);
-  if(qs.length){L.push('','Questions ('+qs.length+'):');qs.forEach((i,n)=>L.push((n+1)+'. '+one(i)+(i.from&&i.from<S.month?' [Asked in '+monthShort(i.from)+']':'')));}
+  const open=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper');
+  const byPri=(a,b)=>PRI[a.pri]-PRI[b.pri];
+  const acc=S.accounts.filter(a=>acctFlags(a).some(f=>f.c!=='good')&&!issuesFor('acct',a.id).some(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper')).map(acctItem);
+  const items=open.concat(acc);
+  const nCh=items.filter(i=>(i.kind||'Issue')==='Issue').length,nQ=items.filter(i=>i.kind==='Question').length,nS=items.filter(i=>i.kind==='Suggestion').length;
   const out=S.outstanding.filter(o=>o.st!=='Cleared');
-  if(out.length){L.push('','Transactions to review ('+out.length+'). Please tell me what each one is, or clear it if it is resolved:');
-    out.forEach(o=>L.push('- '+[o.acct,o.date?fmtDate(o.date):'',o.payee,o.amount!=null?money(o.amount):''].filter(Boolean).join(' · ')+(outAge(o)!=null?' ('+outAge(o)+' days)':'')+(o.note?'. '+o.note:'')));}
-  const sg=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Bookkeeper'&&i.kind==='Suggestion');
-  if(sg.length){L.push('','Suggestions:');sg.forEach(i=>L.push('- '+one(i)));}
-  const own=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Owner');
-  if(own.length){L.push('','Waiting on the owner (for your information):');own.forEach(i=>L.push('- '+((i.kind||'Issue')!=='Issue'?i.kind+': ':'')+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
   const fixed=S.issues.filter(i=>i.st==='Fixed'&&i.fixedIn===S.month&&i.from&&i.from<S.month);
-  if(fixed.length){L.push('','Resolved since last review, thank you:');fixed.forEach(i=>L.push('- '+i.desc.trim().replace(/\s*\n\s*/g,' ')));}
-  if(!bk.length&&!qs.length&&!sg.length&&!accLines.length&&!out.length)L.push('','Everything looks good this month. Nothing needs action.');
-  L.push('','Please reply with updates as you go. I will check these at the next review.','','Thank you,',S.reviewer||'');
-  S.emailSubject=cl+' · QuickBooks review for '+mon;S.emailBody=L.join('\n');S.emailEdited=false;
-  $('em_subj').value=S.emailSubject;$('em_body').value=S.emailBody;
-  if(force){touch();$('em_note').textContent='Rebuilt from the latest review.';}
+  const own=S.issues.filter(i=>i.st!=='Fixed'&&i.owner==='Owner');
+  const H=[];
+  H.push('<p>Hi'+(who?' '+esc(who):'')+',</p>');
+  H.push('<p>Hope you\'re doing well! I went through '+esc(cl)+'\'s QuickBooks for '+esc(mon)+'.'+(fixed.length?' Thank you for taking care of '+fixed.length+' item'+(fixed.length>1?'s':'')+' from last time.':'')+'</p>');
+  const total=nCh+nQ+nS+(out.length?1:0);
+  if(total){
+    const parts=[];if(nCh)parts.push(nCh+' change'+(nCh>1?'s':''));if(nQ)parts.push(nQ+' question'+(nQ>1?'s':''));if(nS)parts.push(nS+' note'+(nS>1?'s':'')+' for going forward');if(out.length)parts.push(out.length+' transaction'+(out.length>1?'s':'')+' to clarify');
+    H.push('<p><b>What I need from you:</b> '+esc(parts.join(', ').replace(/, ([^,]*)$/,' and $1'))+'. For each item, please make the change or reply with an answer'+(S.emailDue?', and send me an update by <b>'+esc(new Date(S.emailDue+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</b>':', and let me know where things stand')+'.</p>');
+    if(S.emailGroup==='type'){
+      const sect=(title,list,ordered,prefix)=>{if(!list.length)return;H.push('<p><b>'+esc(title)+'</b></p><'+(ordered?'ol':'ul')+'>'+list.map(i=>liHTML(i,prefix)).join('')+'</'+(ordered?'ol':'ul')+'>');};
+      sect('Changes needed',items.filter(i=>(i.kind||'Issue')==='Issue').sort(byPri),true);
+      sect('Questions',items.filter(i=>i.kind==='Question').sort(byPri),true);
+      sect('Going forward',items.filter(i=>i.kind==='Suggestion'),false);
+    } else {
+      const o=Object.keys(AREA_TITLE),top=ar=>Math.min(...items.filter(i=>(i.area||'Other')===ar).map(i=>PRI[i.pri]??1));
+      const areas=[...new Set(items.map(i=>i.area||'Other'))].sort((a,b)=>(top(a)-top(b))||((o.indexOf(a)<0?99:o.indexOf(a))-(o.indexOf(b)<0?99:o.indexOf(b))));
+      areas.forEach(ar=>{
+        const li=items.filter(i=>(i.area||'Other')===ar);
+        const ch=li.filter(i=>(i.kind||'Issue')==='Issue').sort(byPri),q=li.filter(i=>i.kind==='Question').sort(byPri),sg=li.filter(i=>i.kind==='Suggestion');
+        H.push('<p><b>'+esc(AREA_TITLE[ar]||ar)+'</b></p>');
+        if(ch.length)H.push('<ul>'+ch.map(i=>liHTML(i)).join('')+'</ul>');
+        if(q.length)H.push((ch.length?'<p>A few questions:</p>':'')+'<ul>'+q.map(i=>liHTML(i)).join('')+'</ul>');
+        if(sg.length)H.push('<ul>'+sg.map(i=>liHTML(i,'Going forward:')).join('')+'</ul>');
+      });
+    }
+    if(out.length)H.push('<p><b>Transactions to clarify</b></p><p>Please tell me what each one is for, or clear it if it is already resolved:</p><ul>'+out.map(outHTML).join('')+'</ul>');
+  } else {
+    H.push('<p>Everything looks great this month. Nothing needs action from you. Thank you for keeping the books so clean!</p>');
+  }
+  if(own.length)H.push('<p><b>For your information</b></p><p>I am checking these with the owner, so no action needed from you yet:</p><ul>'+own.map(i=>liHTML(i)).join('')+'</ul>');
+  if(fixed.length)H.push('<p><b>Resolved since last review</b></p><ul>'+fixed.map(i=>'<li>'+esc(itemParts(i).main)+'</li>').join('')+'</ul>');
+  if(total)H.push('<p>If anything is unclear, just let me know, or we can go over it on a quick call. Happy to help.</p>');
+  H.push('<p>Thank you for all your work keeping everything accurate!</p>');
+  H.push('<p>'+esc(S.reviewer||'')+'</p>');
+  S.emailSubject=cl+' · QuickBooks review for '+mon+(total?' · '+total+' item'+(total>1?'s':'')+' for you':'');
+  S.emailHTML=H.join('');S.emailBody=htmlToText(S.emailHTML);S.emailEdited=false;
+  $('em_subj').value=S.emailSubject;$('em_html').innerHTML=S.emailHTML;
+  if(force){touch();}emNote();if(force)$('em_note').textContent='Rebuilt from the latest review.';
+}
+// plain-text version (for mailto and apps that do not take formatting)
+function htmlToText(html){
+  const box=document.createElement('div');box.innerHTML=html;const out=[];
+  const walk=(node,depth,listType,idx)=>{
+    node.childNodes.forEach(n=>{
+      if(n.nodeType===3){out.push(n.textContent);return;}
+      if(n.nodeType!==1)return;const tag=n.tagName;
+      if(tag==='BR'){out.push('\n');return;}
+      if(tag==='UL'||tag==='OL'){let k=0;if(depth===0)out.push('\n');else out.push('\n');
+        n.childNodes.forEach(c=>{if(c.tagName==='LI'){k++;out.push('  '.repeat(depth)+(tag==='OL'?k+'. ':'- '));walk(c,depth+1,tag,k);out.push('\n');}
+          else if(c.tagName==='UL'||c.tagName==='OL'){const w=document.createElement('div');w.appendChild(c.cloneNode(true));walk(w,depth+1);}});
+        if(depth===0)out.push('\n');return;}
+      if(tag==='P'||tag==='DIV'){walk(n,depth);out.push('\n\n');return;}
+      walk(n,depth);
+    });
+  };
+  walk(box,0);
+  return out.join('').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 function copyEmail(){
-  const txt=$('em_body').value;
-  const ok=()=>{toast('Email copied. Paste it into your email or task comment.');if(!(S.steps.sent||{}).st){(S.steps.sent=S.steps.sent||{}).st='ok';touch();}};
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{$('em_body').select();document.execCommand('copy');ok();});
-  else{$('em_body').select();document.execCommand('copy');ok();}
+  const el=$('em_html');const html=el.innerHTML,txt=htmlToText(html);
+  const ok=()=>{toast('Email copied with its formatting. Paste it into your email or task comment.');if(!(S.steps.sent||{}).st){(S.steps.sent=S.steps.sent||{}).st='ok';touch();}};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);document.execCommand('copy');sel.removeAllRanges();ok();};
+  try{if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob(['<div style="font-family:Arial,sans-serif;font-size:14px">'+html+'</div>'],{type:'text/html'}),'text/plain':new Blob([txt],{type:'text/plain'})})]).then(ok,fallback);return;}}catch(e){}
+  fallback();
 }
 function openMail(){
-  const body=$('em_body').value,subj=$('em_subj').value,to=$('em_to').value.trim();
+  const body=htmlToText($('em_html').innerHTML),subj=$('em_subj').value,to=$('em_to').value.trim();
   let url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
-  if(url.length>1900){copyEmail();url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj);toast('The email is long, so it was copied. Paste it into the new message.');}
+  if(url.length>1900){copyEmail();url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subj);toast('The email is long, so it was copied with formatting. Paste it into the new message.');}
   window.location.href=url;
 }
+(function(){const ed=$('em_html');
+  ed.addEventListener('input',emChanged);
+  ed.addEventListener('keydown',e=>{if(e.key==='Tab'){const inList=getSelection().anchorNode&&getSelection().anchorNode.parentElement&&getSelection().anchorNode.parentElement.closest('li');if(inList){e.preventDefault();document.execCommand(e.shiftKey?'outdent':'indent');emChanged();}}});
+})();
 function printSummary(){
   const s=stats();const cl=S.client||'Client',mon=monthLabel(S.month);
   const tbl=(head,rows)=>rows.length?'<table><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</table>':'<p>None.</p>';
@@ -898,7 +995,7 @@ function startNextMonth(){
   if(!confirm('Start the '+monthLabel(next)+' review?\n\nKept: client, accounts, open issues and open transactions.\nCleared: checklist, fixed issues, reports and the email.'))return;
   if(confirm('Save a copy of the '+monthLabel(S.month)+' review first? (Recommended)'))saveFile();
   const n=blank();
-  n.client=S.client;n.reviewer=S.reviewer;n.bookkeeper=S.bookkeeper;n.emailTo=S.emailTo;n.month=next;
+  n.client=S.client;n.reviewer=S.reviewer;n.bookkeeper=S.bookkeeper;n.emailTo=S.emailTo;n.month=next;n.emailGroup=S.emailGroup||'area';
   n.accounts=S.accounts.map(a=>Object.assign({},a,{forReview:0,note:''}));
   n.outstanding=S.outstanding.filter(o=>o.st!=='Cleared');
   n.issues=S.issues.filter(i=>i.st!=='Fixed').map(i=>{const c=Object.assign({},i);if(c.link&&(c.link.type==='rp'))c.link=null;return c;});
